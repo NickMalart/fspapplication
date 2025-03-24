@@ -9,5 +9,5 @@ export default {
 </script>
 
 <style>
-/* optional global styles */
+/* optional global styls */
 </style>
