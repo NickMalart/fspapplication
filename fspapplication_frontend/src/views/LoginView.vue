@@ -110,11 +110,9 @@ export default {
   },
   methods: {
     getBaseApiUrl() {
-      // Grabs full domain including subdomain and port (if any)
-      const protocol = window.location.protocol // http: or https:
-      const host = window.location.host         // e.g., dev.localhost:5173
+      const protocol = window.location.protocol
+      const host = window.location.host        
 
-      // Replace Vite port with backend port (optional: make this smarter if needed)
       const backendHost = host.replace(':5173', ':8000')
 
       return `${protocol}//${backendHost}`
@@ -133,7 +131,7 @@ export default {
         localStorage.setItem('refreshToken', response.data.refresh)
 
         alert('✅ Login successful!')
-        this.$router.push('/dashboard') // adjust route if needed
+        this.$router.push('/dashboard') 
       } catch (error) {
         if (error.response) {
           this.error = error.response.data.detail || 'Login failed. Please try again.'
