@@ -1,13 +1,12 @@
 <template>
-  <router-view /> <!-- Just render the page directly -->
+  <ThemeProvider>
+    <SidebarProvider>
+      <RouterView />
+    </SidebarProvider>
+  </ThemeProvider>
 </template>
 
-<script>
-export default {
-  name: 'App',
-}
+<script setup lang="ts">
+import ThemeProvider from './components/layout/ThemeProvider.vue'
+import SidebarProvider from './components/layout/SidebarProvider.vue'
 </script>
-
-<style>
-/* optional global styls */
-</style>
