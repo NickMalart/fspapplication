@@ -97,6 +97,7 @@
 <script>
 import axios from 'axios'
 import loginImg from '@/assets/103.png'
+import { useAuthStore } from '@/stores/auth'
 
 export default {
   name: 'LoginPage',
@@ -111,15 +112,14 @@ export default {
   methods: {
     getBaseApiUrl() {
       const protocol = window.location.protocol
-      const host = window.location.host        
-
+      const host = window.location.host
       const backendHost = host.replace(':5173', ':8000')
-
       return `${protocol}//${backendHost}`
     },
 
     async handleLogin() {
       this.error = null
+      const auth = useAuthStore()  
 
       try {
         const response = await axios.post(`${this.getBaseApiUrl()}/api/login/`, {
@@ -127,19 +127,26 @@ export default {
           password: this.password,
         })
 
-        localStorage.setItem('accessToken', response.data.access)
-        localStorage.setItem('refreshToken', response.data.refresh)
+        auth.setToken({
+          access: response.data.access,
+          refresh: response.data.refresh
+        })
+
+        axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.access}`
+
+        const userResponse = await axios.get(`${this.getBaseApiUrl()}/api/user/`)
+        console.log('User response data:', userResponse.data) 
+        auth.setUser(userResponse.data)
 
         alert('✅ Login successful!')
-        this.$router.push('/Dashboard') 
+        this.$router.push('/Dashboard')
       } catch (error) {
         if (error.response) {
           this.error = error.response.data.detail || 'Login failed. Please try again.'
         } else {
           this.error = 'Server is not responding. Check your network or try again later.'
-          console.log('❌ Login error →', error)
+          console.error('❌ Login error →', error)
         }
-
         alert(`❌ ${this.error}`)
       }
     }
