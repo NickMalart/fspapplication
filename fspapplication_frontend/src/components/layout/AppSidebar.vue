@@ -207,7 +207,6 @@
           </div>
         </div>
       </nav>
-      <SidebarWidget v-if="isExpanded || isHovered || isMobileOpen" />
     </div>
   </aside>
 </template>
@@ -219,17 +218,13 @@ import { useRoute } from "vue-router";
 import {
   GridIcon,
   UserCircleIcon,
-  PieChartIcon,
   ChevronDownIcon,
   HorizontalDots,
-  PageIcon,
-  TableIcon,
   HelpdeskIcon,
-  PlugInIcon,
   EmployeeIcon,
+  AgentIcon,
+  ClientIcon,
 } from "../../icons";
-import SidebarWidget from "./SidebarWidget.vue";
-import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
@@ -276,15 +271,39 @@ const menuGroups = [
             // Employee Admin Group
             { name: "Settings", path: "/employee-settings", pro: false },
           ],
-        },
-      {
-        name: "Pages",
-        icon: PageIcon,
-        subItems: [
-          { name: "Black Page", path: "/blank", pro: false },
-          { name: "404 Page", path: "/error-404", pro: false },
-        ],
-      },
+        },      
+        {
+          name: "Agents",
+          icon: AgentIcon,
+          subItems: [
+            // Agent Group
+            { name: "My Workorders", path: "/my-workorder-list", pro: false },
+            { name: "Workorder Search", path: "/workorder-search", pro: false },
+            { name: "Warehouse Search", path: "/warehouse-list", pro: false },
+
+            // Divider
+            { type: "divider", label: "Agent Admin" },
+
+            // Agent Admin Group
+            { name: "Billing", path: "/billing-list", pro: false },
+            { name: "Settings", path: "/agent-settings", pro: false },
+          ],
+        },      
+        {
+          name: "Clients",
+          icon: ClientIcon,
+          subItems: [
+            // Client Group
+            { name: "Workorder Search", path: "/workorder-search", pro: false },
+            { name: "Warehouse Search", path: "/warehouse-list", pro: false },
+
+            // Divider
+            { type: "divider", label: "Client Admin" },
+
+            // Client Admin Group
+            { name: "Settings", path: "/agent-settings", pro: false },
+          ],
+        },      
     ],
   },
   {
@@ -294,35 +313,7 @@ const menuGroups = [
         icon: UserCircleIcon,
         name: "User Profile",
         path: "/profile",
-      },
-      {
-        icon: PieChartIcon,
-        name: "Charts",
-        subItems: [
-          { name: "Line Chart", path: "/line-chart", pro: false },
-          { name: "Bar Chart", path: "/bar-chart", pro: false },
-        ],
-      },
-      {
-        icon: BoxCubeIcon,
-        name: "Ui Elements",
-        subItems: [
-          { name: "Alerts", path: "/alerts", pro: false },
-          { name: "Avatars", path: "/avatars", pro: false },
-          { name: "Badge", path: "/badge", pro: false },
-          { name: "Buttons", path: "/buttons", pro: false },
-          { name: "Images", path: "/images", pro: false },
-          { name: "Videos", path: "/videos", pro: false },
-        ],
-      },
-      {
-        icon: PlugInIcon,
-        name: "Authentication",
-        subItems: [
-          { name: "Signin", path: "/signin", pro: false },
-          { name: "Signup", path: "/signup", pro: false },
-        ],
-      },
+      },      
     ],
   },
 ];

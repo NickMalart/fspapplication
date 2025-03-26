@@ -47,6 +47,10 @@ import BellIcon from "./BellIcon.vue";
 import BarChartIcon from "./BarChartIcon.vue";
 import HelpdeskIcon from "./HelpdeskIcon.vue";
 import EmployeeIcon from "./EmployeeIcon.vue";
+import AgentIcon from "./AgentIcon.vue";
+import ClientIcon from "./ClientIcon.vue";
+
+
 
 
 export {
@@ -99,4 +103,6 @@ export {
   DraftIcon,
   HelpdeskIcon,
   EmployeeIcon,
+  AgentIcon,
+  ClientIcon,
 };
