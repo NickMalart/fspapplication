@@ -1,5 +1,4 @@
 import './assets/main.css'
-// Import Swiper styles
 import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
@@ -10,8 +9,11 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import VueApexCharts from 'vue3-apexcharts'
+import auth from '@/composables/auth'
 
 const app = createApp(App)
+
+auth.init()
 
 app.use(router)
 app.use(VueApexCharts)

@@ -71,8 +71,8 @@ SHARED_APPS = (
 )
 
 TENANT_APPS = (
-    'dummy_app',
     'account',
+    'dashboard',
 )
 
 INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]

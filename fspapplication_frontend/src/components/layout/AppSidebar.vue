@@ -146,18 +146,27 @@
                     "
                   >
                     <ul class="mt-2 space-y-1 ml-9">
-                      <li v-for="subItem in item.subItems" :key="subItem.name">
+                      <li
+                        v-for="subItem in item.subItems"
+                        :key="subItem.name || subItem.label"
+                      >
+                        <!-- Divider Label -->
+                        <div
+                          v-if="subItem.type === 'divider'"
+                          class="text-xs uppercase text-gray-500 dark:text-gray-400 mt-4 mb-1 border-t border-gray-200 dark:border-gray-700 pt-2"
+                        >
+                          {{ subItem.label }}
+                        </div>
+
+                        <!-- Regular Menu Items -->
                         <router-link
+                          v-else
                           :to="subItem.path"
                           :class="[
                             'menu-dropdown-item',
                             {
-                              'menu-dropdown-item-active': isActive(
-                                subItem.path
-                              ),
-                              'menu-dropdown-item-inactive': !isActive(
-                                subItem.path
-                              ),
+                              'menu-dropdown-item-active': isActive(subItem.path),
+                              'menu-dropdown-item-inactive': !isActive(subItem.path),
                             },
                           ]"
                         >
@@ -168,12 +177,8 @@
                               :class="[
                                 'menu-dropdown-badge',
                                 {
-                                  'menu-dropdown-badge-active': isActive(
-                                    subItem.path
-                                  ),
-                                  'menu-dropdown-badge-inactive': !isActive(
-                                    subItem.path
-                                  ),
+                                  'menu-dropdown-badge-active': isActive(subItem.path),
+                                  'menu-dropdown-badge-inactive': !isActive(subItem.path),
                                 },
                               ]"
                             >
@@ -184,12 +189,8 @@
                               :class="[
                                 'menu-dropdown-badge',
                                 {
-                                  'menu-dropdown-badge-active': isActive(
-                                    subItem.path
-                                  ),
-                                  'menu-dropdown-badge-inactive': !isActive(
-                                    subItem.path
-                                  ),
+                                  'menu-dropdown-badge-active': isActive(subItem.path),
+                                  'menu-dropdown-badge-inactive': !isActive(subItem.path),
                                 },
                               ]"
                             >
@@ -217,18 +218,15 @@ import { useRoute } from "vue-router";
 
 import {
   GridIcon,
-  CalenderIcon,
   UserCircleIcon,
-  ChatIcon,
-  MailIcon,
-  DocsIcon,
   PieChartIcon,
   ChevronDownIcon,
   HorizontalDots,
   PageIcon,
   TableIcon,
-  ListIcon,
+  HelpdeskIcon,
   PlugInIcon,
+  EmployeeIcon,
 } from "../../icons";
 import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
@@ -245,31 +243,40 @@ const menuGroups = [
       {
         icon: GridIcon,
         name: "Dashboard",
-        subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+        path: "/dashboard",
       },
       {
-        icon: CalenderIcon,
-        name: "Calendar",
-        path: "/calendar",
-      },
-      {
-        icon: UserCircleIcon,
-        name: "User Profile",
-        path: "/profile",
-      },
-
-      {
-        name: "Forms",
-        icon: ListIcon,
+        name: "Helpdesk",
+        icon: HelpdeskIcon,
         subItems: [
-          { name: "Form Elements", path: "/form-elements", pro: false },
+          // Helpdesk Group
+          { name: "Workorder Search", path: "/workorder-search", pro: false },
+          { name: "Warehouse Search", path: "/warehouse-search", pro: false },
+
+          // Divider 
+          { type: "divider", label: "Helpdesk Admin" },
+
+          // Helpdesk Admin Group
+          { name: "Create Workorder", path: "/create-workorder", pro: false },
+          { name: "Settings", path: "/helpdesk-settings", pro: false },
         ],
       },
       {
-        name: "Tables",
-        icon: TableIcon,
-        subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-      },
+          name: "Employees",
+          icon: EmployeeIcon,
+          subItems: [
+            // Employee Group
+            { name: "My Workorders", path: "/my-workorder-list", pro: false },
+            { name: "Workorder Search", path: "/workorder-search", pro: false },
+            { name: "Warehouse Search", path: "/warehouse-list", pro: false },
+
+            // Divider
+            { type: "divider", label: "Employee Admin" },
+
+            // Employee Admin Group
+            { name: "Settings", path: "/employee-settings", pro: false },
+          ],
+        },
       {
         name: "Pages",
         icon: PageIcon,
@@ -283,6 +290,11 @@ const menuGroups = [
   {
     title: "Others",
     items: [
+      {
+        icon: UserCircleIcon,
+        name: "User Profile",
+        path: "/profile",
+      },
       {
         icon: PieChartIcon,
         name: "Charts",
@@ -311,7 +323,6 @@ const menuGroups = [
           { name: "Signup", path: "/signup", pro: false },
         ],
       },
-      // ... Add other menu items here
     ],
   },
 ];
@@ -347,7 +358,7 @@ const startTransition = (el) => {
   el.style.height = "auto";
   const height = el.scrollHeight;
   el.style.height = "0px";
-  el.offsetHeight; // force reflow
+  el.offsetHeight; 
   el.style.height = height + "px";
 };
 

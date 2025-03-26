@@ -131,7 +131,7 @@ export default {
         localStorage.setItem('refreshToken', response.data.refresh)
 
         alert('✅ Login successful!')
-        this.$router.push('/Ecommerce') 
+        this.$router.push('/Dashboard') 
       } catch (error) {
         if (error.response) {
           this.error = error.response.data.detail || 'Login failed. Please try again.'
