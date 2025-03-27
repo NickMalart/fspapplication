@@ -17,10 +17,6 @@ class Migration(migrations.Migration):
                 ('objects', account.models.CustomUserManager()),
             ],
         ),
-        migrations.RemoveField(
-            model_name='user',
-            name='name',
-        ),
         migrations.AddField(
             model_name='user',
             name='first_name',
@@ -30,5 +26,24 @@ class Migration(migrations.Migration):
             model_name='user',
             name='last_name',
             field=models.CharField(blank=True, default='', max_length=150),
+        ),
+        migrations.RunSQL(
+            # Forward SQL - safely try to remove name column if it exists
+            """
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns 
+                    WHERE table_name = 'account_user' 
+                    AND column_name = 'name'
+                ) THEN
+                    ALTER TABLE account_user DROP COLUMN name;
+                END IF;
+            END $$;
+            """,
+            # Reverse SQL - add name column back if needed
+            """
+            ALTER TABLE account_user ADD COLUMN IF NOT EXISTS name varchar(255) DEFAULT '';
+            """
         ),
     ]

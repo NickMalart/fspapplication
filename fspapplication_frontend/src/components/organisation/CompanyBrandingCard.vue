@@ -164,13 +164,11 @@ const formData = reactive({
 })
 
 function openModal() {
-  // Initialize form with current values
   formData.primary_color = company.value.primary_color || '#3B82F6'
   formData.secondary_color = company.value.secondary_color || '#1E40AF'
   formData.logo = company.value.logo || null
   previewLogo.value = company.value.logo || null
   isModalOpen.value = true
-  // Prevent body scrolling when modal is open
   document.body.style.overflow = 'hidden'
 }
 
@@ -178,7 +176,6 @@ function closeModal() {
   isModalOpen.value = false
   logoFile.value = null
   previewLogo.value = null
-  // Restore body scrolling when modal is closed
   document.body.style.overflow = ''
 }
 
@@ -191,35 +188,9 @@ function handleFileUpload(event: Event) {
 }
 
 async function saveBranding() {
-  const updateData: Record<string, any> = {
+  const updateData = {
     primary_color: formData.primary_color,
     secondary_color: formData.secondary_color
-  }
-
-  // Handle logo upload if there's a new file
-  if (logoFile.value) {
-    // In a real app, you would upload the file to server and get back a URL
-    // For this example, we'll just use a mock implementation
-    // This would normally be a FormData upload to an API endpoint
-    
-    // Mock implementation - in production this would be replaced with actual upload logic
-    const formData = new FormData()
-    formData.append('logo', logoFile.value)
-    
-    try {
-      // This is where you'd actually upload the file
-      // const uploadResponse = await axios.post('/api/upload-logo', formData)
-      // updateData.logo = uploadResponse.data.logo_url
-      
-      // For now, we'll just pretend the upload succeeded
-      // In a real implementation, you would remove this comment and use the actual API
-      console.log('Would upload logo file:', logoFile.value.name)
-      // Mock success - keeping existing logo for this demo
-      updateData.logo = company.value.logo
-    } catch (error) {
-      console.error('Error uploading logo:', error)
-      return // Stop if file upload fails
-    }
   }
 
   const success = await companyStore.updateCompany(updateData)
@@ -227,4 +198,4 @@ async function saveBranding() {
     closeModal()
   }
 }
-</script> 
+</script>

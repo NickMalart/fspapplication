@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
+import { configureApi } from '@/utils/api'
 
 interface UserProfile {
   phoneNumber: string
@@ -49,6 +50,7 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: false,
     accessToken: '',
     refreshToken: '',
+    tenant: '',
     user: {
       id: null as string | null,
       firstName: '',
@@ -75,6 +77,7 @@ export const useAuthStore = defineStore('auth', {
     init() {
       this.accessToken = localStorage.getItem('auth.access') || ''
       this.refreshToken = localStorage.getItem('auth.refresh') || ''
+      this.tenant = localStorage.getItem('auth.tenant') || ''
       this.user.id = localStorage.getItem('auth.user.id')
       this.user.firstName = localStorage.getItem('auth.user.firstName') || ''
       this.user.lastName = localStorage.getItem('auth.user.lastName') || ''
@@ -91,6 +94,19 @@ export const useAuthStore = defineStore('auth', {
       }
 
       this.isAuthenticated = !!this.accessToken && !!this.refreshToken
+      
+      // Configure API with base URL and tenant
+      configureApi()
+      
+      // Setup axios with tenant header if available
+      if (this.tenant) {
+        axios.defaults.headers.common['X-DTS-TENANT'] = this.tenant
+      }
+      
+      // Setup axios with auth token if available
+      if (this.accessToken) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${this.accessToken}`
+      }
     },
 
     setToken(data: { access: string; refresh: string }) {
@@ -102,9 +118,13 @@ export const useAuthStore = defineStore('auth', {
       axios.defaults.headers.common['Authorization'] = `Bearer ${data.access}`
     },
 
+    setTenant(tenant: string) {
+      this.tenant = tenant
+      localStorage.setItem('auth.tenant', tenant)
+      axios.defaults.headers.common['X-DTS-TENANT'] = tenant
+    },
+
     setUser(backendUser: Record<string, any>) {
-      // The backend now returns camelCase, so we can directly use the data
-      // However, we keep convertKeys for backward compatibility or other APIs
       const userData = backendUser as User
       
       this.user = {
@@ -133,7 +153,6 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('auth.user.lastName', this.user.lastName)
       localStorage.setItem('auth.user.email', this.user.email)
       
-      // Store profile data
       if (this.user.profile) {
         localStorage.setItem('auth.user.profile', JSON.stringify(this.user.profile))
       }
@@ -142,6 +161,7 @@ export const useAuthStore = defineStore('auth', {
     removeToken() {
       this.accessToken = ''
       this.refreshToken = ''
+      this.tenant = ''
       this.isAuthenticated = false
       this.user = {
         id: null,
@@ -166,11 +186,16 @@ export const useAuthStore = defineStore('auth', {
 
       localStorage.removeItem('auth.access')
       localStorage.removeItem('auth.refresh')
+      localStorage.removeItem('auth.tenant')
       localStorage.removeItem('auth.user.id')
       localStorage.removeItem('auth.user.firstName')
       localStorage.removeItem('auth.user.lastName')
       localStorage.removeItem('auth.user.email')
       localStorage.removeItem('auth.user.profile')
+      
+      // Clear headers
+      delete axios.defaults.headers.common['Authorization']
+      delete axios.defaults.headers.common['X-DTS-TENANT']
     },
 
     refreshTokenAction() {

@@ -122,6 +122,13 @@ export default {
       const auth = useAuthStore()  
 
       try {
+        // Extract tenant from hostname (dev.localhost)
+        const hostname = window.location.hostname
+        const tenant = hostname.split('.')[0]
+        
+        // Setup axios with tenant header
+        axios.defaults.headers.common["X-DTS-TENANT"] = tenant
+        
         const response = await axios.post(`${this.getBaseApiUrl()}/api/login/`, {
           email: this.email,
           password: this.password,
@@ -133,6 +140,9 @@ export default {
           refresh: response.data.refresh
         })
 
+        // Save tenant info in auth store
+        auth.setTenant(tenant)
+        
         axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.access}`
 
         const userResponse = await axios.get(`${this.getBaseApiUrl()}/api/user/`)

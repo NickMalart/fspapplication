@@ -1,8 +1,9 @@
 from django.urls import path
-from .views import CompanyAPIView
-
-app_name = 'organisation'
+from .views import CompanyViewSet
 
 urlpatterns = [
-    path('company/', CompanyAPIView.as_view(), name='company'),
-] 
+    path('company/', CompanyViewSet.as_view({
+        'get': 'retrieve',
+        'put': 'update'
+    }), name='company'),
+]
