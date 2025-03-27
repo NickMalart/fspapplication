@@ -11,6 +11,9 @@ interface UserProfile {
   addressLine2: string
   latitude: number | null
   longitude: number | null
+  emergencyContact: string
+  emergencyContactFirstName: string
+  emergencyContactLastName: string
 }
 
 interface User {
@@ -61,6 +64,9 @@ export const useAuthStore = defineStore('auth', {
         addressLine2: '',
         latitude: null as number | null,
         longitude: null as number | null,
+        emergencyContact: '',
+        emergencyContactFirstName: '',
+        emergencyContactLastName: '',
       } as UserProfile
     },
   }),
@@ -116,6 +122,9 @@ export const useAuthStore = defineStore('auth', {
           addressLine2: userData.profile?.addressLine2 || '',
           latitude: userData.profile?.latitude || null,
           longitude: userData.profile?.longitude || null,
+          emergencyContact: userData.profile?.emergencyContact || '',
+          emergencyContactFirstName: userData.profile?.emergencyContactFirstName || '',
+          emergencyContactLastName: userData.profile?.emergencyContactLastName || '',
         }
       }
       
@@ -149,6 +158,9 @@ export const useAuthStore = defineStore('auth', {
           addressLine2: '',
           latitude: null,
           longitude: null,
+          emergencyContact: '',
+          emergencyContactFirstName: '',
+          emergencyContactLastName: '',
         }
       }
 

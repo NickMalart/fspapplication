@@ -7,11 +7,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
     addressLine2 = serializers.SerializerMethodField()
     postalCode = serializers.CharField(source='postal_code')
     phoneNumber = serializers.CharField(source='phone_number')
+    emergencyContact = serializers.CharField(source='emergency_contact')
+    emergencyContactFirstName = serializers.CharField(source='emergency_contact_first_name')
+    emergencyContactLastName = serializers.CharField(source='emergency_contact_last_name')
     
     class Meta:
         model = UserProfile
         fields = ('phoneNumber', 'country', 'city', 'state', 'postalCode', 
-                 'addressLine1', 'addressLine2', 'latitude', 'longitude')
+                 'addressLine1', 'addressLine2', 'latitude', 'longitude',
+                 'emergencyContact', 'emergencyContactFirstName', 'emergencyContactLastName')
     
     def get_addressLine1(self, obj):
         # Combine street_number and street_name for addressLine1
