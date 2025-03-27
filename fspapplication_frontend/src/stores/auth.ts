@@ -1,6 +1,46 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
+interface UserProfile {
+  phoneNumber: string
+  country: string
+  city: string
+  state: string
+  postalCode: string
+  addressLine1: string
+  addressLine2: string
+  latitude: number | null
+  longitude: number | null
+}
+
+interface User {
+  id: string | null
+  firstName: string
+  lastName: string
+  email: string
+  profile?: Partial<UserProfile>
+}
+
+// This function will still be useful for other API responses
+function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (g) => g[1].toUpperCase())
+}
+
+function convertKeys(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(v => convertKeys(v))
+  } else if (obj !== null && obj.constructor === Object) {
+    return Object.keys(obj).reduce(
+      (result, key) => ({
+        ...result,
+        [toCamelCase(key)]: convertKeys(obj[key])
+      }),
+      {}
+    )
+  }
+  return obj
+}
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     isAuthenticated: false,
@@ -8,9 +48,20 @@ export const useAuthStore = defineStore('auth', {
     refreshToken: '',
     user: {
       id: null as string | null,
-      first_name: '',
-      last_name: '',
+      firstName: '',
+      lastName: '',
       email: '',
+      profile: {
+        phoneNumber: '',
+        country: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        addressLine1: '',
+        addressLine2: '',
+        latitude: null as number | null,
+        longitude: null as number | null,
+      } as UserProfile
     },
   }),
 
@@ -19,9 +70,19 @@ export const useAuthStore = defineStore('auth', {
       this.accessToken = localStorage.getItem('auth.access') || ''
       this.refreshToken = localStorage.getItem('auth.refresh') || ''
       this.user.id = localStorage.getItem('auth.user.id')
-      this.user.first_name = localStorage.getItem('auth.user.first_name') || ''
-      this.user.last_name = localStorage.getItem('auth.user.last_name') || ''
+      this.user.firstName = localStorage.getItem('auth.user.firstName') || ''
+      this.user.lastName = localStorage.getItem('auth.user.lastName') || ''
       this.user.email = localStorage.getItem('auth.user.email') || ''
+      
+      // Load profile from localStorage if available
+      const savedProfile = localStorage.getItem('auth.user.profile')
+      if (savedProfile) {
+        try {
+          this.user.profile = JSON.parse(savedProfile)
+        } catch (e) {
+          console.error('Failed to parse saved profile data', e)
+        }
+      }
 
       this.isAuthenticated = !!this.accessToken && !!this.refreshToken
     },
@@ -35,12 +96,38 @@ export const useAuthStore = defineStore('auth', {
       axios.defaults.headers.common['Authorization'] = `Bearer ${data.access}`
     },
 
-    setUser(user: { id: string | null; first_name: string; last_name: string; email: string }) {
-      this.user = user
-      localStorage.setItem('auth.user.id', user.id || '')
-      localStorage.setItem('auth.user.first_name', user.first_name)
-      localStorage.setItem('auth.user.last_name', user.last_name)
-      localStorage.setItem('auth.user.email', user.email)
+    setUser(backendUser: Record<string, any>) {
+      // The backend now returns camelCase, so we can directly use the data
+      // However, we keep convertKeys for backward compatibility or other APIs
+      const userData = backendUser as User
+      
+      this.user = {
+        id: userData.id,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        profile: {
+          phoneNumber: userData.profile?.phoneNumber || '',
+          country: userData.profile?.country || '',
+          city: userData.profile?.city || '',
+          state: userData.profile?.state || '',
+          postalCode: userData.profile?.postalCode || '',
+          addressLine1: userData.profile?.addressLine1 || '',
+          addressLine2: userData.profile?.addressLine2 || '',
+          latitude: userData.profile?.latitude || null,
+          longitude: userData.profile?.longitude || null,
+        }
+      }
+      
+      localStorage.setItem('auth.user.id', this.user.id || '')
+      localStorage.setItem('auth.user.firstName', this.user.firstName)
+      localStorage.setItem('auth.user.lastName', this.user.lastName)
+      localStorage.setItem('auth.user.email', this.user.email)
+      
+      // Store profile data
+      if (this.user.profile) {
+        localStorage.setItem('auth.user.profile', JSON.stringify(this.user.profile))
+      }
     },
 
     removeToken() {
@@ -49,17 +136,29 @@ export const useAuthStore = defineStore('auth', {
       this.isAuthenticated = false
       this.user = {
         id: null,
-        first_name: '',
-        last_name: '',
+        firstName: '',
+        lastName: '',
         email: '',
+        profile: {
+          phoneNumber: '',
+          country: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          addressLine1: '',
+          addressLine2: '',
+          latitude: null,
+          longitude: null,
+        }
       }
 
       localStorage.removeItem('auth.access')
       localStorage.removeItem('auth.refresh')
       localStorage.removeItem('auth.user.id')
-      localStorage.removeItem('auth.user.first_name')
-      localStorage.removeItem('auth.user.last_name')
+      localStorage.removeItem('auth.user.firstName')
+      localStorage.removeItem('auth.user.lastName')
       localStorage.removeItem('auth.user.email')
+      localStorage.removeItem('auth.user.profile')
     },
 
     refreshTokenAction() {

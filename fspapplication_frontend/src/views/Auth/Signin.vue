@@ -127,6 +127,7 @@ export default {
           password: this.password,
         })
 
+        console.log('Login response:', response.data)
         auth.setToken({
           access: response.data.access,
           refresh: response.data.refresh
@@ -135,8 +136,10 @@ export default {
         axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.access}`
 
         const userResponse = await axios.get(`${this.getBaseApiUrl()}/api/user/`)
-        console.log('User response data:', userResponse.data) 
+        console.log('Raw user response data:', userResponse.data)
+        console.log('User data before conversion:', userResponse.data)
         auth.setUser(userResponse.data)
+        console.log('User data after conversion:', auth.user)
 
         alert('✅ Login successful!')
         this.$router.push('/Dashboard')

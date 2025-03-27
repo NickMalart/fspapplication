@@ -314,6 +314,9 @@ import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import axios from 'axios'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 
 const firstName = ref('')
 const lastName = ref('')
@@ -321,19 +324,28 @@ const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const agreeToTerms = ref(false)
+const auth = useAuthStore()
+const router = useRouter()
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-const handleSubmit = () => {
-  // Implement form submission logic here
-  console.log('Form submitted', {
-    firstName: firstName.value,
-    lastName: lastName.value,
-    email: email.value,
-    password: password.value,
-    agreeToTerms: agreeToTerms.value,
-  })
+const handleSubmit = async () => {
+  try {
+    const response = await axios.post('/api/signup/', {
+      first_name: firstName.value,
+      last_name: lastName.value,
+      email: email.value,
+      password: password.value,
+    })
+    
+    // The response will be automatically converted to camelCase in the auth store
+    auth.setUser(response.data)
+    router.push('/Dashboard')
+  } catch (error) {
+    console.error('Signup error:', error)
+    alert('Failed to sign up. Please try again.')
+  }
 }
 </script>
