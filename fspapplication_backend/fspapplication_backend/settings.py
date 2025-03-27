@@ -58,6 +58,8 @@ SHARED_APPS = (
     'django_tenants',
     'tenant',    
     'account',
+    'organisation',
+    'dashboard',
     'corsheaders',
     'django.contrib.contenttypes',
     'django.contrib.auth',
@@ -72,6 +74,7 @@ SHARED_APPS = (
 
 TENANT_APPS = (
     'account',
+    'organisation',
     'dashboard',
 )
 

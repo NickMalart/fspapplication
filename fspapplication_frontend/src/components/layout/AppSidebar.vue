@@ -224,6 +224,7 @@ import {
   EmployeeIcon,
   AgentIcon,
   ClientIcon,
+  BuildingIcon,
 } from "../../icons";
 import { useSidebar } from "@/composables/useSidebar";
 
@@ -302,6 +303,13 @@ const menuGroups = [
 
             // Client Admin Group
             { name: "Settings", path: "/agent-settings", pro: false },
+          ],
+        },      
+        {
+          name: "Administration",
+          icon: BuildingIcon,
+          subItems: [
+            { name: "Organisation", path: "/organisation", pro: false },
           ],
         },      
     ],

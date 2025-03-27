@@ -49,6 +49,7 @@ import HelpdeskIcon from "./HelpdeskIcon.vue";
 import EmployeeIcon from "./EmployeeIcon.vue";
 import AgentIcon from "./AgentIcon.vue";
 import ClientIcon from "./ClientIcon.vue";
+import BuildingIcon from "./BuildingIcon.vue";
 
 
 
@@ -105,4 +106,5 @@ export {
   EmployeeIcon,
   AgentIcon,
   ClientIcon,
+  BuildingIcon,
 };
