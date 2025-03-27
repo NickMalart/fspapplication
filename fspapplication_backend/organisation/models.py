@@ -9,12 +9,17 @@ class Company(models.Model):
     """
     name = models.CharField(max_length=255, verbose_name="Company Name")
     logo = models.ImageField(upload_to='company', blank=True, null=True, verbose_name="Company Logo")
-    address_line1 = models.CharField(max_length=255, blank=True, null=True, verbose_name="Address Line 1")
-    address_line2 = models.CharField(max_length=255, blank=True, null=True, verbose_name="Address Line 2")
+    
+    # Address fields
+    unit = models.CharField(max_length=20, blank=True, null=True, verbose_name="Unit/Suite Number")
+    number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Street Number")
+    street = models.CharField(max_length=255, blank=True, null=True, verbose_name="Street Name")
     city = models.CharField(max_length=100, blank=True, null=True)
     state = models.CharField(max_length=100, blank=True, null=True)
     postal_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="Postal/Zip Code")
     country = models.CharField(max_length=100, blank=True, null=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     
     phone = models.CharField(max_length=50, blank=True, null=True)
     email = models.EmailField(blank=True, null=True, verbose_name="Contact Email")
