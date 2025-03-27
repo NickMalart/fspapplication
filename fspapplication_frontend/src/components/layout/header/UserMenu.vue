@@ -5,7 +5,7 @@
       @click.prevent="toggleDropdown"
     >
       <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img src="/images/user/owner.jpg" alt="User" />
+        <img :src="`https://ui-avatars.com/api/?name=${auth.user.firstName}+${auth.user.lastName}&background=0D8ABC&color=fff`" alt="User" />
       </span>
 
       <span class="block mr-1 font-medium text-theme-sm">{{ auth.user.firstName }} {{ auth.user.lastName }} </span>
@@ -60,7 +60,7 @@
 <script setup>
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
 import { RouterLink } from 'vue-router'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
 
@@ -86,6 +86,7 @@ const closeDropdown = () => {
 const signOut = () => {
   // Implement sign out logic here
   console.log('Signing out...')
+  auth.removeToken()
   closeDropdown()
 }
 

@@ -2,7 +2,6 @@ from rest_framework import serializers
 from .models import User, UserProfile
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    # Map backend fields to frontend expected fields
     addressLine1 = serializers.SerializerMethodField()
     addressLine2 = serializers.SerializerMethodField()
     postalCode = serializers.CharField(source='postal_code')
@@ -18,7 +17,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
                  'emergencyContact', 'emergencyContactFirstName', 'emergencyContactLastName')
     
     def get_addressLine1(self, obj):
-        # Combine street_number and street_name for addressLine1
         street_parts = []
         if obj.street_number:
             street_parts.append(obj.street_number)
@@ -27,7 +25,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return " ".join(street_parts) if street_parts else ""
     
     def get_addressLine2(self, obj):
-        # Use unit_number as addressLine2
         return obj.unit_number if obj.unit_number else ""
 
 class UserSerializer(serializers.ModelSerializer):

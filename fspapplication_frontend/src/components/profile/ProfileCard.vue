@@ -6,7 +6,7 @@
           <div
             class="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800"
           >
-            <img :src="user.avatar || '/images/user/owner.jpg'" alt="user" />
+            <img :src="`https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=0D8ABC&color=fff&size=100`" alt="user" />
           </div>
           <div class="order-3 xl:order-2">
             <h4
