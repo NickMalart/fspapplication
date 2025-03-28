@@ -10,7 +10,6 @@ class Company(models.Model):
     name = models.CharField(max_length=255, verbose_name="Company Name")
     logo = models.ImageField(upload_to='company', blank=True, null=True, verbose_name="Company Logo")
     
-    # Address fields
     unit = models.CharField(max_length=20, blank=True, null=True, verbose_name="Unit/Suite Number")
     number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Street Number")
     street = models.CharField(max_length=255, blank=True, null=True, verbose_name="Street Name")
@@ -37,7 +36,7 @@ class Company(models.Model):
     
     class Meta:
         verbose_name = "Company"
-        verbose_name_plural = "Company"  # Singular to emphasize there's only one
+        verbose_name_plural = "Company"  
     
     def __str__(self):
         return self.name
@@ -45,7 +44,6 @@ class Company(models.Model):
     def save(self, *args, **kwargs):
         """Override save to ensure only one company instance exists"""
         if not self.pk and Company.objects.exists():
-            # If you're trying to create a new object and one already exists
             raise ValidationError("Only one company can exist. Please edit the existing company.")
         return super().save(*args, **kwargs)
     
