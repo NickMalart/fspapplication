@@ -1,7 +1,7 @@
 <template>
-  <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+  <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
     <!-- Status Filter Section -->
-    <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-gray-100">
+    <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-gray-100 dark:border-gray-700">
       <div class="flex items-center justify-between">
         <h3 class="text-base font-medium text-gray-800 dark:text-white/90">
           User Accounts
@@ -15,7 +15,7 @@
               'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
               statusFilter === 'active' 
                 ? 'bg-green-500 text-white' 
-                : 'bg-green-100 text-green-700 hover:bg-green-200'
+                : 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/70'
             ]"
           >
             Active Users
@@ -26,7 +26,7 @@
               'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
               statusFilter === 'inactive' 
                 ? 'bg-red-500 text-white' 
-                : 'bg-red-100 text-red-700 hover:bg-red-200'
+                : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/70'
             ]"
           >
             Inactive Users
@@ -37,7 +37,7 @@
               'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
               statusFilter === 'all' 
                 ? 'bg-blue-500 text-white' 
-                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/70'
             ]"
           >
             All Users
@@ -47,16 +47,16 @@
     </div>
 
     <div class="border-t border-gray-100 p-5 dark:border-gray-800 sm:p-6">
-      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white pt-4 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-800/50 pt-4">
         <!-- Controls: Show Entries & Search -->
         <div class="mb-4 flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-center gap-3">
             <span class="text-gray-500 dark:text-gray-400">Show</span>
             <select 
               v-model="perPage" 
-              class="form-select rounded-lg border border-gray-300 text-sm"
+              class="form-select rounded-lg border border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white/90"
             >
-              <option v-for="option in pageOptions" :key="option" :value="option">
+              <option v-for="option in pageOptions" :key="option" :value="option" class="dark:bg-gray-800 dark:text-white/90">
                 {{ option }}
               </option>
             </select>
@@ -70,12 +70,12 @@
               v-model="search" 
               type="text" 
               placeholder="Search users..." 
-              class="pl-3 pr-10 py-2 form-input rounded-lg border border-gray-300 w-full transition-all duration-300 ease-in-out"
+              class="pl-3 pr-10 py-2 form-input rounded-lg border border-gray-300 w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white/90 dark:placeholder-gray-400 transition-all duration-300 ease-in-out"
             />
             <button 
               v-if="search" 
               @click="search = ''" 
-              class="absolute right-2 text-gray-500 hover:text-gray-700 cursor-pointer text-sm"
+              class="absolute right-2 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 cursor-pointer text-sm"
             >
               ✕
             </button>
@@ -84,52 +84,52 @@
 
         <!-- User Table -->
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-800/50">
               <tr>
-                <th @click="sortBy('avatar')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-24">
+                <th @click="sortBy('avatar')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-24">
                   Avatar
                   <span v-if="sortColumn === 'avatar'">
                     {{ sortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th @click="sortBy('firstName')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
+                <th @click="sortBy('firstName')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
                   Name
                   <span v-if="sortColumn === 'firstName'">
                     {{ sortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th @click="sortBy('email')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
+                <th @click="sortBy('email')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
                   Email
                   <span v-if="sortColumn === 'email'">
                     {{ sortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th @click="sortBy('employeeDetails.jobTitle')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
+                <th @click="sortBy('employeeDetails.jobTitle')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
                   Job Title
                   <span v-if="sortColumn === 'employeeDetails.jobTitle'">
                     {{ sortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th @click="sortBy('employeeDetails.department')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
+                <th @click="sortBy('employeeDetails.department')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
                   Department
                   <span v-if="sortColumn === 'employeeDetails.department'">
                     {{ sortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th @click="sortBy('is_active')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
+                <th @click="sortBy('is_active')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
                   Status
                   <span v-if="sortColumn === 'is_active'">
                     {{ sortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="user in paginatedUsers" :key="user.id">
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tr v-for="user in paginatedUsers" :key="user.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
                 <td class="px-6 py-4 whitespace-nowrap w-24">
                   <img 
                     class="h-10 w-10 rounded-full object-cover mx-auto" 
@@ -138,20 +138,20 @@
                   />
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-medium text-gray-900">
+                  <div class="text-sm font-medium text-gray-900 dark:text-white/90">
                     {{ user.fullName }}
                   </div>
-                  <div class="text-sm text-gray-500">
+                  <div class="text-sm text-gray-500 dark:text-gray-400">
                     {{ user.userType }}
                   </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {{ user.email }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {{ user.employeeDetails?.jobTitle || 'N/A' }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {{ user.employeeDetails?.department || 'N/A' }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -180,9 +180,9 @@
         </div>
 
         <!-- Pagination -->
-        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+        <div class="bg-white dark:bg-gray-900 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
           <div class="flex flex-col items-center">
-            <div class="text-sm text-gray-700 mb-2">
+            <div class="text-sm text-gray-700 dark:text-gray-300 mb-2">
               Showing {{ startIndex }} to {{ endIndex }} of {{ totalUsers }} entries
             </div>
             
@@ -190,9 +190,9 @@
               <button 
                 @click="prevPage" 
                 :disabled="currentPage === 1"
-                class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
+                class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 dark:text-white/90"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:stroke-white/90">
                   <path d="M15 18l-6-6 6-6"/>
                 </svg>
               </button>
@@ -205,8 +205,8 @@
                   :class="[
                     'w-10 h-10 rounded-lg text-sm font-medium',
                     currentPage === page 
-                      ? 'bg-blue-50 text-blue-600 border border-blue-300' 
-                      : 'text-gray-500 hover:bg-gray-100'
+                      ? 'bg-blue-50 text-blue-600 border border-blue-300 dark:bg-blue-900/50 dark:text-blue-400 dark:border-blue-800' 
+                      : 'text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                   ]"
                 >
                   {{ page }}
@@ -216,9 +216,9 @@
               <button 
                 @click="nextPage" 
                 :disabled="currentPage === totalPages"
-                class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
+                class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 dark:text-white/90"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:stroke-white/90">
                   <path d="M9 18l6-6-6-6"/>
                 </svg>
               </button>
