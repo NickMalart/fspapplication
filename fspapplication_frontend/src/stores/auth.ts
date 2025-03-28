@@ -125,12 +125,14 @@ export const useAuthStore = defineStore('auth', {
     },
 
     setUser(backendUser: Record<string, any>) {
-      const userData = backendUser as User
+      console.log('Raw backend user data:', backendUser)
+      const userData = backendUser as User  // Case conversion is now handled by axios interceptor
+      console.log('User data:', userData)
       
       this.user = {
         id: userData.id,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
+        firstName: userData.firstName || '',
+        lastName: userData.lastName || '',
         email: userData.email,
         profile: {
           phoneNumber: userData.profile?.phoneNumber || '',
@@ -147,6 +149,8 @@ export const useAuthStore = defineStore('auth', {
           emergencyContactLastName: userData.profile?.emergencyContactLastName || '',
         }
       }
+      
+      console.log('Final user state:', this.user)
       
       localStorage.setItem('auth.user.id', this.user.id || '')
       localStorage.setItem('auth.user.firstName', this.user.firstName)

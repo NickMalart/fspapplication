@@ -1,6 +1,26 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
+// Add case conversion utilities
+function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (g) => g[1].toUpperCase())
+}
+
+function convertKeys(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(v => convertKeys(v))
+  } else if (obj !== null && obj.constructor === Object) {
+    return Object.keys(obj).reduce(
+      (result, key) => ({
+        ...result,
+        [toCamelCase(key)]: convertKeys(obj[key])
+      }),
+      {}
+    )
+  }
+  return obj
+}
+
 /**
  * Configures axios with the correct base URL based on the environment
  * 
@@ -41,6 +61,14 @@ export function configureApi() {
     // Use default tenant for development
     axios.defaults.headers.common['X-DTS-TENANT'] = 'dev'
   }
+
+  // Add response interceptor for case conversion
+  axios.interceptors.response.use(response => {
+    if (response.data) {
+      response.data = convertKeys(response.data)
+    }
+    return response
+  })
   
   // Log current axios configuration
   console.log('Axios configuration:', {
@@ -81,6 +109,14 @@ export function createApiClient() {
     }
     
     return config
+  })
+
+  // Add response interceptor for case conversion
+  apiClient.interceptors.response.use(response => {
+    if (response.data) {
+      response.data = convertKeys(response.data)
+    }
+    return response
   })
   
   return apiClient
