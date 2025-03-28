@@ -158,6 +158,42 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    updateUser(backendUser: Record<string, any>) {
+      // Convert backend user data to our store format
+      const userData = convertKeys(backendUser) as User
+      
+      this.user = {
+        id: userData.id || this.user.id,
+        firstName: userData.firstName || this.user.firstName,
+        lastName: userData.lastName || this.user.lastName,
+        email: userData.email || this.user.email,
+        profile: {
+          phoneNumber: userData.profile?.phoneNumber || this.user.profile.phoneNumber,
+          country: userData.profile?.country || this.user.profile.country,
+          city: userData.profile?.city || this.user.profile.city,
+          state: userData.profile?.state || this.user.profile.state,
+          postalCode: userData.profile?.postalCode || this.user.profile.postalCode,
+          addressLine1: userData.profile?.addressLine1 || this.user.profile.addressLine1,
+          addressLine2: userData.profile?.addressLine2 || this.user.profile.addressLine2,
+          latitude: userData.profile?.latitude || this.user.profile.latitude,
+          longitude: userData.profile?.longitude || this.user.profile.longitude,
+          emergencyContact: userData.profile?.emergencyContact || this.user.profile.emergencyContact,
+          emergencyContactFirstName: userData.profile?.emergencyContactFirstName || this.user.profile.emergencyContactFirstName,
+          emergencyContactLastName: userData.profile?.emergencyContactLastName || this.user.profile.emergencyContactLastName,
+        }
+      }
+      
+      // Update localStorage
+      localStorage.setItem('auth.user.id', this.user.id || '')
+      localStorage.setItem('auth.user.firstName', this.user.firstName)
+      localStorage.setItem('auth.user.lastName', this.user.lastName)
+      localStorage.setItem('auth.user.email', this.user.email)
+      
+      if (this.user.profile) {
+        localStorage.setItem('auth.user.profile', JSON.stringify(this.user.profile))
+      }
+    },
+
     removeToken() {
       this.accessToken = ''
       this.refreshToken = ''
