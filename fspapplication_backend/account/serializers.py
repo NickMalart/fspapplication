@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, UserProfile
+from .models import User, UserProfile, EmployeeProfile, FunctionalGroup
 
 class UserProfileSerializer(serializers.ModelSerializer):
     addressLine1 = serializers.SerializerMethodField()
@@ -35,3 +35,44 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'firstName', 'lastName', 'email', 'profile', 'user_type', 'avatar') 
+
+class UserListSerializer(serializers.ModelSerializer):
+    firstName = serializers.CharField(source='first_name')
+    lastName = serializers.CharField(source='last_name')
+    fullName = serializers.SerializerMethodField()
+    userType = serializers.CharField(source='user_type')
+    functionalGroups = serializers.SerializerMethodField()
+    employeeDetails = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = (
+            'id', 
+            'firstName', 
+            'lastName', 
+            'fullName',
+            'email', 
+            'userType', 
+            'avatar', 
+            'functionalGroups',
+            'employeeDetails',
+            'is_active',
+            'date_joined'
+        )
+    
+    def get_fullName(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip()
+    
+    def get_functionalGroups(self, obj):
+        return list(obj.functional_groups.values_list('name', flat=True))
+    
+    def get_employeeDetails(self, obj):
+        if hasattr(obj, 'employee_profile'):
+            profile = obj.employee_profile
+            return {
+                'company': profile.company.name if profile.company else None,
+                'department': profile.department,
+                'jobTitle': profile.job_title,
+                'startDate': profile.start_date
+            }
+        return None 

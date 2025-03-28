@@ -14,7 +14,7 @@
             Below is the list of user accounts currently available.
           </p>
         </div>
-        <DataTable :data="users" />
+        <UserDataTable />
       </div>
     </AdminLayout>
   </template>
@@ -23,7 +23,7 @@
   import { ref, onMounted } from "vue";
   import AdminLayout from "@/components/layout/AdminLayout.vue";
   import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
-  import DataTable from "@/components/common/DataTable.vue";
+  import UserDataTable from "@/components/tables/UserDataTable.vue";
   import axios from "axios";
   
   const currentPageTitle = ref("Accounts Page");
@@ -31,7 +31,7 @@
   
   onMounted(async () => {
     try {
-      const response = await axios.get('/api/users/');
+      const response = await axios.get('/api/account/users/');
       users.value = response.data;
     } catch (error) {
       console.error("Error fetching user data:", error);
