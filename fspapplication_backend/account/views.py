@@ -5,6 +5,7 @@ from .serializers import UserSerializer, UserListSerializer
 from rest_framework import generics, filters
 from .models import User
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.pagination import PageNumberPagination
 
 class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
@@ -13,9 +14,15 @@ class CurrentUserView(APIView):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+    page_size = 10  # Default page size
+
 class UserListView(generics.ListAPIView):
     queryset = User.objects.select_related('employee_profile__company').prefetch_related('functional_groups')
     serializer_class = UserListSerializer
+    pagination_class = CustomPageNumberPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     
     # Comprehensive search across multiple fields
