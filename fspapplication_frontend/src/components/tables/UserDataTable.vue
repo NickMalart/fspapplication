@@ -2,46 +2,61 @@
   <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
     <!-- Status Filter Section -->
     <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-gray-100 dark:border-gray-700">
-      <div class="flex items-center justify-between">
-        <h3 class="text-base font-medium text-gray-800 dark:text-white/90">
+      <div class="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
+        <h3 class="text-base font-medium text-gray-800 dark:text-white/90 mb-3 sm:mb-0">
           User Accounts
         </h3>
         
-        <!-- Status Filter Buttons -->
-        <div class="flex items-center space-x-2">
-          <button 
-            @click="setStatusFilter('active')"
-            :class="[
-              'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
-              statusFilter === 'active' 
-                ? 'bg-green-500 text-white' 
-                : 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/70'
-            ]"
-          >
-            Active Users
-          </button>
-          <button 
-            @click="setStatusFilter('inactive')"
-            :class="[
-              'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
-              statusFilter === 'inactive' 
-                ? 'bg-red-500 text-white' 
-                : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/70'
-            ]"
-          >
-            Inactive Users
-          </button>
-          <button 
-            @click="setStatusFilter('all')"
-            :class="[
-              'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
-              statusFilter === 'all' 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/70'
-            ]"
-          >
-            All Users
-          </button>
+        <!-- Status Filter Buttons/Dropdown -->
+        <div class="w-full sm:w-auto flex flex-col items-center">
+          <!-- Mobile: Dropdown -->
+          <div class="sm:hidden">
+            <select 
+              v-model="statusFilter" 
+              class="form-select w-full rounded-lg border border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white/90"
+            >
+              <option value="active">Active Users</option>
+              <option value="inactive">Inactive Users</option>
+              <option value="all">All Users</option>
+            </select>
+          </div>
+          
+          <!-- Desktop: Button Group -->
+          <div class="hidden sm:flex items-center space-x-2">
+            <button 
+              @click="setStatusFilter('active')"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
+                statusFilter === 'active' 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/70'
+              ]"
+            >
+              Active Users
+            </button>
+            <button 
+              @click="setStatusFilter('inactive')"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
+                statusFilter === 'inactive' 
+                  ? 'bg-red-500 text-white' 
+                  : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/70'
+              ]"
+            >
+              Inactive Users
+            </button>
+            <button 
+              @click="setStatusFilter('all')"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
+                statusFilter === 'all' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/70'
+              ]"
+            >
+              All Users
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -129,7 +144,12 @@
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-for="user in paginatedUsers" :key="user.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
+              <tr v-if="paginatedUsers.length === 0" class="text-center">
+                <td colspan="7" class="px-6 py-4 text-gray-500 dark:text-gray-400">
+                  No users found
+                </td>
+              </tr>
+              <tr v-else v-for="user in paginatedUsers" :key="user.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
                 <td class="px-6 py-4 whitespace-nowrap w-24">
                   <img 
                     class="h-10 w-10 rounded-full object-cover mx-auto" 
@@ -183,7 +203,10 @@
         <div class="bg-white dark:bg-gray-900 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
           <div class="flex flex-col items-center">
             <div class="text-sm text-gray-700 dark:text-gray-300 mb-2">
-              Showing {{ startIndex }} to {{ endIndex }} of {{ totalUsers }} entries
+              {{ totalUsers === 0 
+                ? 'Showing 0 to 0 of 0 entries' 
+                : `Showing ${startIndex} to ${endIndex} of ${totalUsers} entries` 
+              }}
             </div>
             
             <div class="flex items-center space-x-2">
@@ -264,18 +287,26 @@ const fetchUsers = async () => {
       }
     })
     
-    // Handle different response structures
-    users.value = response.data.results || response.data
-    totalUsers.value = response.data.count || response.data.length
+    // Robust handling of different possible response structures
+    const data = response.data
+    users.value = data.results || data.data || data || []
     
-    // Ensure pagination updates
-    if (response.data.total_pages) {
-      totalPages.value = response.data.total_pages
+    // Carefully set totalUsers with fallback
+    totalUsers.value = data.count || data.total || data.length || 0
+    
+    // Set total pages with fallback
+    totalPages.value = data.total_pages || Math.ceil(totalUsers.value / perPage.value) || 1
+    
+    // Ensure currentPage doesn't exceed total pages
+    if (currentPage.value > totalPages.value) {
+      currentPage.value = 1
     }
   } catch (error) {
     console.error('Error fetching users:', error)
     users.value = []
     totalUsers.value = 0
+    totalPages.value = 1
+    currentPage.value = 1
   }
 }
 
@@ -291,10 +322,19 @@ const paginatedUsers = computed(() => {
 const totalUsers = ref(0)
 const totalPages = ref(0)
 
-const startIndex = computed(() => (currentPage.value - 1) * perPage.value + 1)
-const endIndex = computed(() => Math.min(currentPage.value * perPage.value, totalUsers.value))
+const startIndex = computed(() => {
+  if (totalUsers.value === 0) return 0
+  return (currentPage.value - 1) * perPage.value + 1
+})
+
+const endIndex = computed(() => {
+  if (totalUsers.value === 0) return 0
+  return Math.min(currentPage.value * perPage.value, totalUsers.value)
+})
 
 const pageNumbers = computed(() => {
+  if (totalPages.value === 0) return []
+  
   const range = 2
   let pages = []
   for (

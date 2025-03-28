@@ -19,6 +19,15 @@ class CustomPageNumberPagination(PageNumberPagination):
     max_page_size = 100
     page_size = 10  # Default page size
 
+    def get_paginated_response(self, data):
+        # Ensure consistent response even with zero entries
+        return Response({
+            'count': self.page.paginator.count,
+            'total_pages': self.page.paginator.num_pages,
+            'current_page': self.page.number,
+            'results': data
+        })
+
 class UserListView(generics.ListAPIView):
     queryset = User.objects.select_related('employee_profile__company').prefetch_related('functional_groups')
     serializer_class = UserListSerializer
