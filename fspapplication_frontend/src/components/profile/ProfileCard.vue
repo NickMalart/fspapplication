@@ -44,8 +44,16 @@
               <div class="hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block"></div>
               <p class="text-sm text-gray-500 dark:text-gray-400">**Place Holder for Location**</p>
             </div>
+            <div v-if="isEditMode" class="mt-2 text-center xl:text-left">
+              <button 
+                @click="triggerAvatarUpload"
+                class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+              >
+                Change Avatar
+              </button>
+            </div>
           </div>
-          <div class="ml-auto">
+          <div v-if="!isEditMode" class="ml-auto">
             <button 
               @click="$emit('edit')"
               class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
