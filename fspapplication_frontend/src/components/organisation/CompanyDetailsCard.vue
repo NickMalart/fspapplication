@@ -94,11 +94,16 @@
 
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Website</label>
-            <input 
-              type="url" 
-              v-model="formData.website" 
-              class="w-full py-2 px-3 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white"
-            />
+            <div class="relative">
+              <span class="absolute left-3 top-2 text-gray-400">http://</span>
+              <input 
+                type="text" 
+                v-model="formData.website" 
+                @blur="handleWebsiteBlur"
+                placeholder="example.com"
+                class="w-full py-2 pl-[70px] pr-3 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white"
+              />
+            </div>
           </div>
 
           <div class="mb-4">
@@ -217,5 +222,11 @@ const formatDate = (dateString: string): string => {
   
   const date = new Date(dateString)
   return date.toLocaleDateString()
+}
+
+const handleWebsiteBlur = () => {
+  if (formData.website && !formData.website.startsWith('http://') && !formData.website.startsWith('https://')) {
+    formData.website = 'http://' + formData.website
+  }
 }
 </script> 
