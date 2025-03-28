@@ -139,7 +139,7 @@
                   </span>
                 </th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Actions
+                  User Profile
                 </th>
               </tr>
             </thead>
@@ -153,8 +153,8 @@
                 <td class="px-6 py-4 whitespace-nowrap w-24">
                   <img 
                     class="h-10 w-10 rounded-full object-cover mx-auto" 
-                    :src="user.avatar ? user.avatar : '/default-avatar.png'" 
-                    :alt="user.fullName"
+                    :src="user.avatar || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=0D8ABC&color=fff&size=100`" 
+                    :alt="`${user.fullName}'s avatar`"
                   />
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
