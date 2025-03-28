@@ -67,7 +67,7 @@ class UserListSerializer(serializers.ModelSerializer):
         return list(obj.functional_groups.values_list('name', flat=True))
     
     def get_employeeDetails(self, obj):
-        if hasattr(obj, 'employee_profile'):
+        try:
             profile = obj.employee_profile
             return {
                 'company': profile.company.name if profile.company else None,
@@ -75,4 +75,5 @@ class UserListSerializer(serializers.ModelSerializer):
                 'jobTitle': profile.job_title,
                 'startDate': profile.start_date
             }
-        return None 
+        except AttributeError:
+            return None 
