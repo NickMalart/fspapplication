@@ -342,7 +342,7 @@ const handleSubmit = async () => {
     
     // The response will be automatically converted to camelCase in the auth store
     auth.setUser(response.data)
-    router.push('/Dashboard')
+    router.push('/dashboard')
   } catch (error) {
     console.error('Signup error:', error)
     alert('Failed to sign up. Please try again.')

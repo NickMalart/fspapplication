@@ -129,7 +129,7 @@ export default {
         // Setup axios with tenant header
         axios.defaults.headers.common["X-DTS-TENANT"] = tenant
         
-        const response = await axios.post(`${this.getBaseApiUrl()}/api/login/`, {
+        const response = await axios.post(`${this.getBaseApiUrl()}/api/account/login/`, { 
           email: this.email,
           password: this.password,
         })
@@ -145,14 +145,14 @@ export default {
         
         axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.access}`
 
-        const userResponse = await axios.get(`${this.getBaseApiUrl()}/api/user/`)
+        const userResponse = await axios.get(`${this.getBaseApiUrl()}/api/account/user/`)
         console.log('Raw user response data:', userResponse.data)
         console.log('User data before conversion:', userResponse.data)
         auth.setUser(userResponse.data)
         console.log('User data after conversion:', auth.user)
 
         alert('✅ Login successful!')
-        this.$router.push('/Dashboard')
+        this.$router.push('/dashboard')
       } catch (error) {
         if (error.response) {
           this.error = error.response.data.detail || 'Login failed. Please try again.'

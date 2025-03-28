@@ -200,7 +200,7 @@ export const useAuthStore = defineStore('auth', {
 
     refreshTokenAction() {
       axios
-        .post('/api/refresh/', { refresh: this.refreshToken })
+        .post('/api/account/refresh/', { refresh: this.refreshToken })
         .then((res) => {
           this.accessToken = res.data.access
           localStorage.setItem('auth.access', res.data.access)
