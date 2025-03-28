@@ -30,6 +30,15 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: '/accounts',
+    name: 'User Accounts',
+    component: () => import('../views/Pages/AccountsPage.vue'),
+    meta: {
+      title: 'User Accounts',
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/form-elements',
     name: 'Form Elements',
     component: () => import('../views/Forms/FormElements.vue'),

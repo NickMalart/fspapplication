@@ -310,6 +310,7 @@ const menuGroups = [
           icon: BuildingIcon,
           subItems: [
             { name: "Organisation", path: "/organisation", pro: false },
+            { name: "User Accounts", path: "/accounts", pro: false },
           ],
         },      
     ],
