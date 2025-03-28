@@ -7,41 +7,29 @@
             <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
               Personal Information
             </h4>
+            <button 
+              @click="showEditModal = true"
+              class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Edit
+            </button>
           </div>
 
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
             <!-- First Name -->
             <div>
               <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">First Name</p>
-              <template v-if="!isEditMode">
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-                  {{ user.firstName }}
-                </p>
-              </template>
-              <input 
-                v-else 
-                v-model="editedUser.firstName" 
-                type="text" 
-                class="form-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white/90"
-                placeholder="First Name"
-              />
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">
+                {{ user.firstName }}
+              </p>
             </div>
 
             <!-- Last Name -->
             <div>
               <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Last Name</p>
-              <template v-if="!isEditMode">
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-                  {{ user.lastName }}
-                </p>
-              </template>
-              <input 
-                v-else 
-                v-model="editedUser.lastName" 
-                type="text" 
-                class="form-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white/90"
-                placeholder="Last Name"
-              />
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">
+                {{ user.lastName }}
+              </p>
             </div>
 
             <!-- Email -->
@@ -49,35 +37,17 @@
               <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                 Email address
               </p>
-              <template v-if="!isEditMode">
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-                  {{ user.email }}
-                </p>
-              </template>
-              <input 
-                v-else 
-                v-model="editedUser.email" 
-                type="email" 
-                class="form-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white/90"
-                placeholder="Email Address"
-              />
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">
+                {{ user.email }}
+              </p>
             </div>
 
             <!-- Phone Number -->
             <div>
               <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Phone</p>
-              <template v-if="!isEditMode">
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">
-                  {{ user.profile?.phoneNumber || 'Not set' }}
-                </p>
-              </template>
-              <input 
-                v-else 
-                v-model="editedUser.phoneNumber" 
-                type="tel" 
-                class="form-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white/90"
-                placeholder="Phone Number"
-              />
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">
+                {{ user.profile?.phoneNumber || 'Not set' }}
+              </p>
             </div>
 
             <!-- Groups (Placeholder) -->
@@ -91,71 +61,23 @@
         </div>
       </div>
     </div>
+
+    <!-- Edit Personal Info Modal -->
+    <EditPersonalInfoModal 
+      :is-open="showEditModal"
+      @close="showEditModal = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-
-const props = defineProps({
-  isEditMode: {
-    type: Boolean,
-    default: false
-  }
-})
-
-const emit = defineEmits(['update:personalInfo'])
+import EditPersonalInfoModal from './EditPersonalInfoModal.vue'
 
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
-
-// Create a reactive copy of user data for editing
-const editedUser = ref({
-  firstName: user.value.firstName,
-  lastName: user.value.lastName,
-  email: user.value.email,
-  phoneNumber: user.value.profile?.phoneNumber || ''
-})
-
-// Watch for changes in edit mode
-watch(() => props.isEditMode, (newEditMode) => {
-  if (newEditMode) {
-    // Reset edited user to current user data when entering edit mode
-    editedUser.value = {
-      firstName: user.value.firstName,
-      lastName: user.value.lastName,
-      email: user.value.email,
-      phoneNumber: user.value.profile?.phoneNumber || ''
-    }
-  } else {
-    // When exiting edit mode, emit changes
-    const changedFields = {}
-    
-    if (editedUser.value.firstName !== user.value.firstName) {
-      changedFields.firstName = editedUser.value.firstName
-    }
-    
-    if (editedUser.value.lastName !== user.value.lastName) {
-      changedFields.lastName = editedUser.value.lastName
-    }
-    
-    if (editedUser.value.email !== user.value.email) {
-      changedFields.email = editedUser.value.email
-    }
-    
-    if (editedUser.value.phoneNumber !== (user.value.profile?.phoneNumber || '')) {
-      changedFields.profile = {
-        phoneNumber: editedUser.value.phoneNumber
-      }
-    }
-
-    // Only emit if there are changes
-    if (Object.keys(changedFields).length > 0) {
-      emit('update:personalInfo', changedFields)
-    }
-  }
-}, { immediate: false })
+const showEditModal = ref(false)
 </script>
 
 <style scoped>
