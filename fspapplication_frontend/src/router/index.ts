@@ -14,7 +14,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/profile',
     name: 'Profile',
-    component: () => import('../views/Pages/UserProfile.vue'),
+    component: () => import('../views/Pages/UserProfilePage.vue'),
     meta: {
       title: 'Profile',
       requiresAuth: true,
