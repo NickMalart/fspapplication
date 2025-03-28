@@ -30,7 +30,7 @@
               </svg>
             </button>
           </div>
-          <div class="order-3 xl:order-2">
+          <div class="order-3 xl:order-2 flex-grow">
             <h4
               class="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left"
             >
@@ -44,6 +44,14 @@
               <div class="hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block"></div>
               <p class="text-sm text-gray-500 dark:text-gray-400">**Place Holder for Location**</p>
             </div>
+          </div>
+          <div class="ml-auto">
+            <button 
+              @click="$emit('edit')"
+              class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Edit
+            </button>
           </div>
         </div>
       </div>
@@ -63,7 +71,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:avatar'])
+const emit = defineEmits(['update:avatar', 'edit'])
 
 const authStore = useAuthStore()
 const user = authStore.user

@@ -224,7 +224,6 @@ class UserProfile(models.Model):
 
     street_number = models.CharField(max_length=20, blank=True, null=True)
     street_name = models.CharField(max_length=255, blank=True, null=True)
-    unit_number = models.CharField(max_length=20, blank=True, null=True)
     suburb = models.CharField(max_length=100, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
     state = models.CharField(max_length=100, blank=True, null=True)

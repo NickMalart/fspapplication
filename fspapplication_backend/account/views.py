@@ -6,6 +6,8 @@ from rest_framework import generics, filters
 from .models import User
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
+from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 
 class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
@@ -66,3 +68,22 @@ class UserListView(generics.ListAPIView):
             queryset = queryset.filter(is_active=False)
         
         return queryset
+
+class CurrentUserUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def patch(self, request):
+        """
+        Partially update the current user's profile
+        Supports updating user and user profile information
+        Allows file upload for avatar
+        """
+        user = request.user
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

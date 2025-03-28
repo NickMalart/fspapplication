@@ -247,5 +247,20 @@ export const useAuthStore = defineStore('auth', {
           this.removeToken()
         })
     },
+
+    async updateUserProfile(userData: Partial<User>) {
+      try {
+        // Make API call to update user
+        const response = await axios.patch('/api/account/user/update/', userData)
+        
+        // Update store with response
+        this.updateUser(response.data)
+        
+        return response.data
+      } catch (error) {
+        console.error('Failed to update user profile', error)
+        throw error
+      }
+    },
   },
 })
