@@ -9,13 +9,12 @@
           :alt="`${fullName}'s avatar`"
           class="h-full w-full object-cover"
         />
-        <div
+        <img 
           v-else
-          class="h-full w-full bg-primary/20 flex items-center justify-center text-2xl font-bold text-primary"
-          style="background-color: var(--color-primary-light, #e6f7ff);"
-        >
-          {{ avatarInitials }}
-        </div>
+          :src="`https://ui-avatars.com/api/?name=${completeUser?.firstName || ''}+${completeUser?.lastName || ''}&background=0D8ABC&color=fff`" 
+          :alt="`${fullName}'s avatar`"
+          class="h-full w-full object-cover"
+        />
       </div>
     </div>
     
@@ -43,17 +42,5 @@ const { completeUser } = storeToRefs(userStore);
 const fullName = computed(() => {
   if (!completeUser.value) return 'User';
   return `${completeUser.value.firstName} ${completeUser.value.lastName}`.trim() || 'User';
-});
-
-// Generate initials for avatar fallback
-const avatarInitials = computed(() => {
-  if (!completeUser.value) return '?';
-  
-  const firstName = completeUser.value.firstName || '';
-  const lastName = completeUser.value.lastName || '';
-  
-  if (!firstName && !lastName) return '?';
-  
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 });
 </script> 
