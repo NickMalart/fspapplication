@@ -1,44 +1,31 @@
 <template>
-  <admin-layout>
+  <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
-
     <div
-      class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6"
+      class="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12"
     >
-      <h3 class="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">Profile</h3>
-      <profile-card @edit="openEditModal" />
-      <personal-info-card />
-      <address-card />
-      <emergency-contact-card />
-    </div>
+      <div class="mx-auto w-full max-w-[630px] text-center">
+        <h3
+          class="mb-4 font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-2xl"
+        >
+          Card Title Here
+        </h3>
 
-    <edit-profile-modal 
-      :is-open="isEditModalOpen" 
-      @close="closeEditModal" 
-    />
-  </admin-layout>
+        <p class="text-sm text-gray-500 dark:text-gray-400 sm:text-base">
+          Start putting content on grids or panels, you can also use different
+          combinations of grids.Please check out the dashboard and other pages
+        </p>
+      </div>
+    </div>
+  </AdminLayout>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import AdminLayout from '../../components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
-import ProfileCard from '../../components/profile/ProfileCard.vue'
-import PersonalInfoCard from '../../components/profile/PersonalInfoCard.vue'
-import AddressCard from '../../components/profile/AddressCard.vue'
-import EmergencyContactCard from '../../components/profile/EmergencyContactCard.vue'
-import EditProfileModal from '../../components/profile/EditProfileModal.vue'
+import { ref } from "vue";
+import AdminLayout from "@/components/layout/AdminLayout.vue";
+import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 
-const currentPageTitle = ref('User Profile')
-const isEditModalOpen = ref(false)
-
-function openEditModal() {
-  isEditModalOpen.value = true
-  document.body.style.overflow = 'hidden'
-}
-
-function closeEditModal() {
-  isEditModalOpen.value = false
-  document.body.style.overflow = ''
-}
+const currentPageTitle = ref("Blank Page");
 </script>
+
+<style></style>
