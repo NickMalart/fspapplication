@@ -15,20 +15,6 @@
       <!-- Data Display -->
       <div v-else-if="profile" class="space-y-6">
         <div class="border-b pb-4">
-          <h2 class="text-xl font-semibold mb-2">Personal Information</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p class="text-sm text-gray-500">Phone Number</p>
-              <p>{{ profile.phone_number || 'Not provided' }}</p>
-            </div>
-            <div>
-              <p class="text-sm text-gray-500">Date of Birth</p>
-              <p>{{ profile.date_of_birth || 'Not provided' }}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="border-b pb-4">
           <h2 class="text-xl font-semibold mb-2">Address</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

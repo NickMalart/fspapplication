@@ -1,8 +1,10 @@
 <template>
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
-    <UserPersonalInformationCard />
-    <UserProfileDisplay />    
+    <div class="space-y-6">
+      <UserPersonalInformationCard />
+      <UserProfileDisplay />
+    </div>
   </AdminLayout>
 </template>
 
