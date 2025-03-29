@@ -46,7 +46,14 @@ export const useUserStore = defineStore('user', {
       this.loading = true;
       this.error = null;
       try {
-        this.completeUser = await userService.getUserProfile();
+        console.log('Fetching user profile...');
+        const userData = await userService.getUserProfile();
+        console.log('Fetched user profile:', userData);
+        
+        // Ensure we're updating the state properly
+        this.completeUser = { ...userData };
+        
+        console.log('Updated state:', this.completeUser);
         return this.completeUser;
       } catch (error: any) {
         this.error = error.message || 'Failed to fetch user profile';
@@ -61,7 +68,13 @@ export const useUserStore = defineStore('user', {
       this.loading = true;
       this.error = null;
       try {
-        this.completeUser = await userService.updateUserProfile(userData);
+        console.log('Updating user profile with:', userData);
+        const updatedUser = await userService.updateUserProfile(userData);
+        console.log('User profile updated:', updatedUser);
+        
+        // Update the state with the returned data
+        this.completeUser = { ...updatedUser };
+        
         return true;
       } catch (error: any) {
         this.error = error.message || 'Failed to update profile';
@@ -76,7 +89,16 @@ export const useUserStore = defineStore('user', {
       this.loading = true;
       this.error = null;
       try {
-        this.completeUser = await userService.updateProfileData(profileData);
+        console.log('Updating profile data with:', profileData);
+        const updatedUser = await userService.updateProfileData(profileData);
+        console.log('Profile data updated, response:', updatedUser);
+        
+        // Ensure we're updating the state with the correct data
+        if (updatedUser) {
+          this.completeUser = { ...updatedUser };
+          console.log('State updated to:', this.completeUser);
+        }
+        
         return true;
       } catch (error: any) {
         this.error = error.message || 'Failed to update profile data';

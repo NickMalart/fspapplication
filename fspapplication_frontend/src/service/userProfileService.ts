@@ -22,23 +22,23 @@ export interface UserLogin {
 
 export interface ProfileData {
   id: string;
-  phone_number: string | null;
-  emergency_contact: string | null;
-  emergency_contact_first_name: string | null;
-  emergency_contact_last_name: string | null;
-  street_number: string | null;
-  street_name: string | null;
+  phoneNumber: string | null;
+  emergencyContact: string | null;
+  emergencyContactFirstName: string | null;
+  emergencyContactLastName: string | null;
+  streetNumber: string | null;
+  streetName: string | null;
   suburb: string | null;
   city: string | null;
   state: string | null;
-  postal_code: string | null;
+  postalCode: string | null;
   country: string | null;
   latitude: number | null;
   longitude: number | null;
-  google_place_id: string | null;
-  date_of_birth: string | null;
-  created_at: string;
-  updated_at: string;
+  googlePlaceId: string | null;
+  dateOfBirth: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CompleteUser {
@@ -71,7 +71,9 @@ export const userService = {
   async getUserProfile(): Promise<CompleteUser> {
     try {
       const response = await axios.get(`${API_URL}/account/user/profile/`);
-      return response.data;
+      const userData = response.data;
+      console.log('Profile data from API:', userData);
+      return userData;
     } catch (error) {
       console.error('Error getting user profile:', error);
       throw error;
@@ -80,8 +82,11 @@ export const userService = {
   
   async updateUserProfile(userData: Partial<CompleteUser>): Promise<CompleteUser> {
     try {
+      console.log('Sending update data:', userData);
       const response = await axios.put(`${API_URL}/account/user/profile/update/`, userData);
-      return response.data;
+      const updatedData = response.data;
+      console.log('Update response:', updatedData);
+      return updatedData;
     } catch (error) {
       console.error('Error updating profile:', error);
       throw error;
@@ -89,10 +94,33 @@ export const userService = {
   },
   
   async updateProfileData(profileData: Partial<ProfileData>): Promise<CompleteUser> {
+    // Format date_of_birth to YYYY-MM-DD if it exists
+    if (profileData.dateOfBirth) {
+      try {
+        // Ensure the date is in YYYY-MM-DD format
+        const date = new Date(profileData.dateOfBirth);
+        if (!isNaN(date.getTime())) {
+          profileData.dateOfBirth = date.toISOString().split('T')[0];
+        }
+      } catch (e) {
+        console.error('Error formatting date:', e);
+      }
+    }
+    
+    console.log('Updating profile data:', profileData);
+    
+    // Create a properly formatted update object with correct type
     const updateData: Partial<CompleteUser> = {
-      profile: profileData as ProfileData
+      profile: profileData as unknown as ProfileData
     };
     
-    return this.updateUserProfile(updateData);
+    // Call updateUserProfile and return its result directly
+    const result = await this.updateUserProfile(updateData);
+    
+    // Force a refresh of the user profile to ensure we have the latest data
+    const refreshedProfile = await this.getUserProfile();
+    
+    // Return the refreshed profile instead of the update result
+    return refreshedProfile;
   }
 };

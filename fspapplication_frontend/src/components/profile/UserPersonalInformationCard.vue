@@ -1,5 +1,11 @@
 <template>
   <ComponentCard title="Personal Information">
+    <!-- Debug Info (Remove in production) -->
+    <pre v-if="false" class="text-xs bg-gray-100 dark:bg-gray-800 p-2 mb-4 overflow-auto">
+      userProfile: {{ JSON.stringify(userProfile, null, 2) }}
+      completeUser: {{ JSON.stringify(completeUser, null, 2) }}
+    </pre>
+
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
@@ -27,13 +33,13 @@
         <div class="space-y-2">
           <p class="text-sm text-gray-500 dark:text-gray-400">Phone Number</p>
           <p class="font-medium text-black dark:text-white">
-            {{ userProfile.phone_number || 'Not provided' }}
+            {{ userProfile.phoneNumber || 'Not provided' }}
           </p>
         </div>
         <div class="space-y-2">
           <p class="text-sm text-gray-500 dark:text-gray-400">Date of Birth</p>
           <p class="font-medium text-black dark:text-white">
-            {{ formatDate(userProfile.date_of_birth) }}
+            {{ formatDate(userProfile.dateOfBirth) }}
           </p>
         </div>
       </div>
@@ -42,9 +48,10 @@
       </div>
     </div>
 
-    <!-- Edit Modal -->
+    <!-- Edit Modal with key to force re-render -->
     <EditUserPersonalInformationModal
       v-if="isModalOpen && userProfile"
+      :key="modalKey"
       :userData="userProfile"
       :isSaving="isSaving"
       @close="isModalOpen = false"
@@ -54,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useUserStore } from '@/stores/userProfileStore';
 import { storeToRefs } from 'pinia';
 import ComponentCard from '@/components/common/ComponentCard.vue';
@@ -63,9 +70,14 @@ import EditUserPersonalInformationModal from '@/components/profile/EditUserPerso
 const userStore = useUserStore();
 const { completeUser, loading, error } = storeToRefs(userStore);
 
-const userProfile = computed(() => completeUser.value?.profile || null);
+const userProfile = computed(() => {
+  const profile = completeUser.value?.profile || null;
+  console.log('Computing userProfile:', profile);
+  return profile;
+});
 const isModalOpen = ref(false);
 const isSaving = ref(false);
+const modalKey = ref(0); // Used to force modal re-render
 
 // Format date for display
 const formatDate = (dateString: string | null) => {
@@ -73,22 +85,33 @@ const formatDate = (dateString: string | null) => {
   
   try {
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Not provided';
+    
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric', 
       month: 'long', 
       day: 'numeric'
     }).format(date);
   } catch (e) {
-    return dateString || 'Not provided';
+    console.error('Error formatting date:', e);
+    return 'Not provided';
   }
 };
 
 // Handle save from modal
-const handleSave = async (formData: { phone_number: string | null, date_of_birth: string | null }) => {
+const handleSave = async (formData: { phoneNumber: string | null, dateOfBirth: string | null }) => {
   isSaving.value = true;
   
   try {
-    await userStore.updateProfileData(formData);
+    console.log('Sending form data to store:', formData);
+    const result = await userStore.updateProfileData(formData);
+    console.log('Update result:', result);
+    
+    // Increment key to force modal re-render on next open
+    modalKey.value++;
+    
+    // Refresh data after saving
+    await userStore.fetchUserProfile();
     isModalOpen.value = false;
   } catch (error) {
     console.error('Failed to save changes:', error);
@@ -97,7 +120,26 @@ const handleSave = async (formData: { phone_number: string | null, date_of_birth
   }
 };
 
+// Fetch profile data on mount
 onMounted(async () => {
+  console.log('Component mounted, fetching profile data');
   await userStore.fetchUserProfile();
+});
+
+// Debug log when profile data changes
+watch(() => completeUser.value, (newValue) => {
+  console.log('completeUser changed:', newValue);
+}, { deep: true });
+
+watch(userProfile, (newProfile) => {
+  console.log('userProfile computed changed:', newProfile);
+}, { deep: true });
+
+// Force refetch when modal closes
+watch(isModalOpen, (open) => {
+  if (!open) {
+    console.log('Modal closed, refreshing data');
+    userStore.fetchUserProfile();
+  }
 });
 </script>
