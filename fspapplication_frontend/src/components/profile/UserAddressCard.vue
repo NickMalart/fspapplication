@@ -70,7 +70,7 @@
     </div>
 
     <!-- Placeholder for the EditUserAddressModal -->
-    <EditUserAddressModal
+    <EditUserAddressCard
       v-if="isModalOpen && userProfile"
       :key="modalKey"
       :userData="userProfile"
@@ -86,7 +86,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useUserStore } from '@/stores/userProfileStore';
 import { storeToRefs } from 'pinia';
 import ComponentCard from '@/components/common/ComponentCard.vue';
-import EditUserAddressModal from '@/components/profile/EditUserAddressModal.vue';
+import EditUserAddressCard from '@/components/profile/EditUserAddressCard.vue';
 import { ProfileData } from '@/service/userProfileService';
 
 const userStore = useUserStore();
