@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '@/stores/auth';
 
 // Instead of using process.env, use a direct base URL or import from a config file
 const API_URL = import.meta.env.VITE_API_URL || '/api';
