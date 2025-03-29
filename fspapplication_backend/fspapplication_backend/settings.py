@@ -30,16 +30,30 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
+SHARED_APPS = (
+    'django_tenants',  
+    'tenant',
+    'account',     
     'django.contrib.contenttypes',
+    'django.contrib.auth',
     'django.contrib.sessions',
+    'django.contrib.sites',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
-]
+    'django.contrib.admin',
+)
+
+TENANT_APPS = (
+    'account',
+)
+
+INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
+
+TENANT_MODEL = "tenant.Client" 
+
+TENANT_DOMAIN_MODEL = "tenant.Domain"  
 
 MIDDLEWARE = [
+    'django_tenants.middleware.main.TenantMainMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -58,6 +72,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.request',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
@@ -75,10 +90,21 @@ WSGI_APPLICATION = 'fspapplication_backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django_tenants.postgresql_backend',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django_tenants.postgresql_backend',  
+        'NAME': 'neondb',  
+        'USER': 'neondb_owner', 
+        'PASSWORD': 'npg_oZKwX9T3VIsy',  
+        'HOST': 'ep-broad-sun-a7w4swm3-pooler.ap-southeast-2.aws.neon.tech',  
+        'PORT': '5432',  
+        'OPTIONS': {
+            'sslmode': 'require', 
+        }
     }
 }
+
+DATABASE_ROUTERS = (
+    'django_tenants.routers.TenantSyncRouter',
+)
 
 
 # Password validation
