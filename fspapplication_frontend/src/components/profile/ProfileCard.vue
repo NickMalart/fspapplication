@@ -41,18 +41,11 @@
       </div>
     </div>
 
-    <!-- Avatar Edit Modal -->
-    <EditProfileModal 
-      :is-open="showAvatarModal" 
-      @close="showAvatarModal = false"
-    />
-  </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import EditProfileModal from './EditProfileModal.vue'
 
 const authStore = useAuthStore()
 const user = authStore.user
