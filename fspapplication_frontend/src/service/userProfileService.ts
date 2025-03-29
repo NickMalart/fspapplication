@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = process.env.VUE_APP_API_URL || '/api';
+// Instead of using process.env, use a direct base URL or import from a config file
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Add auth token to all requests
 axios.interceptors.request.use(
@@ -87,11 +88,9 @@ export const userService = {
     }
   },
   
-  // Helper method for updating just profile data
   async updateProfileData(profileData: Partial<ProfileData>): Promise<CompleteUser> {
-    // Wrap profile data in the correct format for our API
-    const updateData = {
-      profile: profileData
+    const updateData: Partial<CompleteUser> = {
+      profile: profileData as ProfileData
     };
     
     return this.updateUserProfile(updateData);
