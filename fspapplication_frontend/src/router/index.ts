@@ -171,17 +171,12 @@ const routes: Array<RouteRecordRaw> = [
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes,
-  scrollBehavior(to, from, savedPosition) {
-    return savedPosition || { left: 0, top: 0 }
-  },
+  routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   document.title = `Vue.js ${String(to.meta.title)} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
-  const token = localStorage.getItem('accessToken')
-  if (to.meta.requiresAuth && !token) {
-    console.warn('No token found. Redirecting to Signin.')
+  if (to.meta.requiresAuth && !localStorage.getItem('accessToken')) {
     return next({ name: 'Signin' })
   }
   next()
