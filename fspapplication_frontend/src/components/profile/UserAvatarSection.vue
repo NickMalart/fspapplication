@@ -12,6 +12,7 @@
         <div
           v-else
           class="h-full w-full bg-primary/20 flex items-center justify-center text-2xl font-bold text-primary"
+          style="background-color: var(--color-primary-light, #e6f7ff);"
         >
           {{ avatarInitials }}
         </div>
@@ -20,7 +21,7 @@
     
     <!-- User Name -->
     <h2 class="mt-4 text-xl font-bold text-gray-800 dark:text-white">
-      {{ fullName }}
+      {{ completeUser?.firstName || 'User' }} {{ completeUser?.lastName || '' }}
     </h2>
     
     <!-- User Email -->
@@ -38,20 +39,18 @@ import { storeToRefs } from 'pinia';
 const userStore = useUserStore();
 const { completeUser } = storeToRefs(userStore);
 
-const userProfile = computed(() => completeUser.value?.profile || null);
-
 // Calculate full name
 const fullName = computed(() => {
   if (!completeUser.value) return 'User';
-  return `${completeUser.value.first_name} ${completeUser.value.last_name}`.trim() || 'User';
+  return `${completeUser.value.firstName} ${completeUser.value.lastName}`.trim() || 'User';
 });
 
 // Generate initials for avatar fallback
 const avatarInitials = computed(() => {
   if (!completeUser.value) return '?';
   
-  const firstName = completeUser.value.first_name || '';
-  const lastName = completeUser.value.last_name || '';
+  const firstName = completeUser.value.firstName || '';
+  const lastName = completeUser.value.lastName || '';
   
   if (!firstName && !lastName) return '?';
   

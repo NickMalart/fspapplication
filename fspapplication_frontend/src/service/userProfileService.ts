@@ -32,16 +32,16 @@ export interface ProfileData {
 export interface CompleteUser {
   id: string;
   email: string;
-  first_name: string;
-  last_name: string;
-  user_type: string;
+  firstName: string;
+  lastName: string;
+  userType: string;
   avatar: string | null;
-  is_active: boolean;
-  is_superuser: boolean;
-  is_staff: boolean;
-  date_joined: string;
-  last_login: string | null;
-  functional_groups: any[];
+  isActive: boolean;
+  isSuperuser: boolean;
+  isStaff: boolean;
+  dateJoined: string;
+  lastLogin: string | null;
+  functionalGroups: any[];
   profile: ProfileData;
 }
 

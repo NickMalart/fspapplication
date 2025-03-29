@@ -5,10 +5,20 @@
       @click.prevent="toggleDropdown"
     >
       <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img :src="`https://ui-avatars.com/api/?name=${auth.user.firstName}+${auth.user.lastName}&background=0D8ABC&color=fff`" alt="User" />
+        <img 
+          v-if="completeUser?.avatar"
+          :src="completeUser.avatar"
+          :alt="`${completeUser.firstName} ${completeUser.lastName}`" 
+          class="h-full w-full object-cover"
+        />
+        <img 
+          v-else
+          :src="`https://ui-avatars.com/api/?name=${completeUser?.firstName || ''}+${completeUser?.lastName || ''}&background=0D8ABC&color=fff`" 
+          alt="User" 
+        />
       </span>
 
-      <span class="block mr-1 font-medium text-theme-sm">{{ auth.user.firstName }} {{ auth.user.lastName }} </span>
+      <span class="block mr-1 font-medium text-theme-sm">{{ completeUser?.firstName || '' }} {{ completeUser?.lastName || '' }} </span>
 
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>
@@ -20,10 +30,10 @@
     >
       <div>
         <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-          <span class="font-semibold">{{ auth.user.firstName }} {{ auth.user.lastName }}</span>
+          <span class="font-semibold">{{ completeUser?.firstName || '' }} {{ completeUser?.lastName || '' }}</span>
         </span>
         <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-          {{ auth.user.email }}
+          {{ completeUser?.email || auth.user.email }}
         </span>
       </div>
 
@@ -62,12 +72,14 @@ import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIc
 import { RouterLink } from 'vue-router'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-
+import { useUserStore } from '@/stores/userProfileStore'
+import { storeToRefs } from 'pinia'
 
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 const auth = useAuthStore()
-
+const userStore = useUserStore()
+const { completeUser } = storeToRefs(userStore)
 
 const menuItems = [
   { href: '/profile', icon: UserCircleIcon, text: 'Edit profile' },
@@ -98,6 +110,9 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  if (!completeUser.value) {
+    userStore.fetchUserProfile()
+  }
 })
 
 onUnmounted(() => {

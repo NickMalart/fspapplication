@@ -22,7 +22,7 @@ export const useUserStore = defineStore('user', {
     // Full name getter
     fullName: (state) => {
       if (!state.completeUser) return '';
-      return `${state.completeUser.first_name} ${state.completeUser.last_name}`.trim();
+      return `${state.completeUser.firstName} ${state.completeUser.lastName}`.trim();
     }
   },
   
