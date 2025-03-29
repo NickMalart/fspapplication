@@ -1,23 +1,50 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to, from, savedPosition) {
+    return savedPosition || { left: 0, top: 0 }
+  },
   routes: [
     {
-      path: '/',
-      name: 'home',
-      component: HomeView,
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('../views/Others/UserProfile.vue'),
+      meta: {
+        title: 'Profile',
+      },
+    },
+
+    {
+      path: '/alerts',
+      name: 'Alerts',
+      component: () => import('../views/UiElements/Alerts.vue'),
+      meta: {
+        title: 'Alerts',
+      },
     },
     {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue'),
+      path: '/avatars',
+      name: 'Avatars',
+      component: () => import('../views/UiElements/Avatars.vue'),
+      meta: {
+        title: 'Avatars',
+      },
+    },
+    {
+      path: '/signin',
+      name: 'Signin',
+      component: () => import('../views/Auth/Signin.vue'),
+      meta: {
+        title: 'Signin',
+      },
     },
   ],
 })
 
 export default router
+
+router.beforeEach((to, from, next) => {
+  document.title = `Vue.js ${to.meta.title} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
+  next()
+})
