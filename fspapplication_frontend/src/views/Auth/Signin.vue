@@ -98,6 +98,7 @@
 import axios from 'axios'
 import loginImg from '@/assets/103.png'
 import { useAuthStore } from '@/stores/auth'
+import { mapStores } from 'pinia'
 
 export default {
   name: 'LoginPage',
@@ -109,6 +110,9 @@ export default {
       error: null,
     }
   },
+  computed: {
+    ...mapStores(useAuthStore)
+  },
   methods: {
     getBaseApiUrl() {
       const protocol = window.location.protocol
@@ -119,7 +123,7 @@ export default {
 
     async handleLogin() {
       this.error = null
-      const auth = useAuthStore()  
+      const auth = this.authStore
 
       try {
         // Extract tenant from hostname (dev.localhost)
@@ -145,7 +149,7 @@ export default {
         
         axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.access}`
 
-        const userResponse = await axios.get(`${this.getBaseApiUrl()}/api/account/user/`)
+        const userResponse = await axios.get(`${this.getBaseApiUrl()}/api/account/me/`)
         console.log('Raw user response data:', userResponse.data)
         console.log('User data before conversion:', userResponse.data)
         auth.setUser(userResponse.data)

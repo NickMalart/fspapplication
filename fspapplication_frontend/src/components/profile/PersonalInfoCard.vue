@@ -7,12 +7,6 @@
             <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
               Personal Information
             </h4>
-            <button 
-              @click="showEditModal = true"
-              class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              Edit
-            </button>
           </div>
 
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
@@ -62,92 +56,14 @@
       </div>
     </div>
   </div>
-
-  <!-- Edit Personal Information Modal -->
-  <modal-dialog v-model="showEditModal" title="Edit Personal Information">
-    <form @submit.prevent="handleSubmit" class="space-y-4">
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">First Name</label>
-          <input
-            type="text"
-            v-model="formData.firstName"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
-            required
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Last Name</label>
-          <input
-            type="text"
-            v-model="formData.lastName"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
-            required
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Phone Number</label>
-          <input
-            type="tel"
-            v-model="formData.phoneNumber"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
-          />
-        </div>
-      </div>
-      
-      <div class="mt-4 flex justify-end space-x-3">
-        <button
-          type="button"
-          @click="showEditModal = false"
-          class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          Save Changes
-        </button>
-      </div>
-    </form>
-  </modal-dialog>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import ModalDialog from '@/components/common/ModalDialog.vue'
 
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
-const showEditModal = ref(false)
-
-const formData = ref({
-  firstName: '',
-  lastName: '',
-  phoneNumber: ''
-})
-
-// Initialize form data when modal opens
-watch(showEditModal, (newValue) => {
-  if (newValue) {
-    formData.value = {
-      firstName: user.value.firstName,
-      lastName: user.value.lastName,
-      phoneNumber: user.value.profile?.phoneNumber || ''
-    }
-  }
-})
-
-const handleSubmit = async () => {
-  try {
-    await authStore.updateProfile(formData.value)
-    showEditModal.value = false
-  } catch (error) {
-    console.error('Failed to update profile:', error)
-  }
-}
 </script>
 
 <style scoped>

@@ -21,7 +21,6 @@ app.use(VueApexCharts)
 
 import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
-auth.init() 
 
 // Configure API with base URL and tenant headers
 configureApi()

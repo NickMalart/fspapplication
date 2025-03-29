@@ -5,7 +5,6 @@
         <div class="flex flex-col items-center w-full gap-6 xl:flex-row">
           <div
             class="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 relative group cursor-pointer"
-            @click="showAvatarModal = true"
           >
             <img 
               :src="user.avatar || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=0D8ABC&color=fff&size=100`" 
@@ -40,7 +39,7 @@
         </div>
       </div>
     </div>
-
+  </div>
 </template>
 
 <script setup>
@@ -49,5 +48,4 @@ import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 const user = authStore.user
-const showAvatarModal = ref(false)
 </script>

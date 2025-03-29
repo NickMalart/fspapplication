@@ -142,12 +142,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def get_specific_profile(self):
         """Returns the specific profile based on user_type"""
-        if self.is_agent:
-            return self.agent_profile
-        elif self.is_client:
-            return self.client_profile
-        elif self.is_employee:
-            return self.employee_profile
+        try:
+            if self.is_agent:
+                return self.agent_profile
+            elif self.is_client:
+                return self.client_profile
+            elif self.is_employee:
+                return self.employee_profile
+        except models.ObjectDoesNotExist: # Catch if specific profile doesn't exist
+            # This can happen if the user type is set but the profile wasn't created
+            return None
         return None
     
     def belongs_to_group(self, group_code):
