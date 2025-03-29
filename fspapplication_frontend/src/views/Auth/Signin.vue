@@ -101,6 +101,9 @@
                     >
                   </div>
                 </div>
+                <div v-if="error" class="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
+                  {{ error }}
+                </div>
                 <form @submit.prevent="handleSubmit">
                   <div class="space-y-5">
                     <!-- Email -->
@@ -274,23 +277,32 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
+
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const keepLoggedIn = ref(false)
+const error = ref<string | null>(null)
+
+const authStore = useAuthStore()
+const router = useRouter()
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-const handleSubmit = () => {
-  // Handle form submission
-  console.log('Form submitted', {
-    email: email.value,
-    password: password.value,
-    keepLoggedIn: keepLoggedIn.value,
-  })
+const handleSubmit = async () => {
+  error.value = null
+  try {
+    await authStore.login(email.value, password.value, router)
+    alert('Login successful!')
+  } catch (err: any) {
+    error.value = err.message || 'An unexpected error occurred during login.'
+    console.error('Login failed in component:', err)
+  }
 }
 </script>
