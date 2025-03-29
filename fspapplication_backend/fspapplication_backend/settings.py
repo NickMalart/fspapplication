@@ -235,3 +235,4 @@ DATABASE_ROUTERS = (
     'django_tenants.routers.TenantSyncRouter',
 )
 
+GOOGLE_PLACES_API_KEY = 'AIzaSyDvfOM0JZd18BTt8kijxWo1gAOw6y0qy7U'
