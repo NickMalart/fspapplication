@@ -151,4 +151,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   left: 0;
   cursor: pointer;
 }
+
+/* Override browser default styling */
+input[type="date"] {
+  color-scheme: light dark;
+}
+
+/* Fix date picker text color in dark mode */
+.dark input[type="date"] {
+  color: rgb(229 231 235);
+}
 </style> 
