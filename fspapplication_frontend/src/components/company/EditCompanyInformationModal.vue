@@ -90,8 +90,8 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, defineEmits, defineProps, onMounted, watch, computed } from 'vue';
-import { CompanyProfile } from '@/service/companyProfileService';
+import { reactive, defineEmits, defineProps, onMounted, watch } from 'vue';
+import { CompanyProfile } from '@/service/companyService';
 
 const props = defineProps({
   companyData: {

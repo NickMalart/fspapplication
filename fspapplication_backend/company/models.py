@@ -10,8 +10,9 @@ class Company(models.Model):
     name = models.CharField(max_length=255, verbose_name="Company Name")
     logo = models.CharField(max_length=255, blank=True, null=True, verbose_name="Company Logo", help_text="S3 path to company logo")
     
-    number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Street Number")
-    street = models.CharField(max_length=255, blank=True, null=True, verbose_name="Street Name")
+    street_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Street Number")
+    street_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Street Name")
+    suburb = models.CharField(max_length=100, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
     state = models.CharField(max_length=100, blank=True, null=True)
     postal_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="Postal/Zip Code")

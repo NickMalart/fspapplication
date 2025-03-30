@@ -10,10 +10,10 @@
 import ThemeProvider from './components/layout/ThemeProvider.vue'
 import SidebarProvider from './components/layout/SidebarProvider.vue'
 import { onMounted, watch } from 'vue';
-import { useCompanyProfileStore } from '@/stores/companyProfileStore';
+import { usecompanyStore } from '@/stores/companyStore';
 import { fileService } from '@/service/fileService';
 
-const companyStore = useCompanyProfileStore();
+const companyStore = usecompanyStore();
 
 // Function to update favicon and title
 const updateFaviconAndTitle = () => {

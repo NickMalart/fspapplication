@@ -83,16 +83,16 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useCompanyProfileStore } from '@/stores/companyProfileStore';
+import { usecompanyStore } from '@/stores/companyStore';
 import { fileService } from '@/service/fileService';
-import { CompanyProfile } from '@/service/companyProfileService';
+import { CompanyProfile } from '@/service/companyService';
 
 // Define props for company data
 const props = defineProps<{
   company?: CompanyProfile | null;
 }>();
 
-const companyStore = useCompanyProfileStore();
+const companyStore = usecompanyStore();
 const fileInput = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
 const uploadError = ref('');

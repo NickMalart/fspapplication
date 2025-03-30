@@ -19,10 +19,10 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import { computed } from 'vue';
-import { useCompanyProfileStore } from '@/stores/companyProfileStore';
+import { usecompanyStore } from '@/stores/companyStore';
 import { fileService } from '@/service/fileService';
 
-const companyStore = useCompanyProfileStore();
+const companyStore = usecompanyStore();
 
 // Get the company logo URL or null if not available
 const companyLogoUrl = computed(() => {

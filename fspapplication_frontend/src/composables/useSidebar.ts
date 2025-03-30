@@ -1,6 +1,6 @@
 import { ref, computed, onMounted, onUnmounted, provide, inject } from 'vue'
 import type { Ref } from 'vue' //
-import { useCompanyProfileStore } from '@/stores/companyProfileStore'
+import { usecompanyStore } from '@/stores/companyStore'
 import { fileService } from '@/service/fileService'
 
 interface SidebarContextType {
@@ -69,7 +69,7 @@ export function useSidebarProvider() {
     openSubmenu.value = openSubmenu.value === item ? null : item
   }
 
-  const companyStore = useCompanyProfileStore()
+  const companyStore = usecompanyStore()
 
   const companyLogoUrl = computed(() => {
     if (!companyStore.companyProfile?.logo) return '/images/logo/default-company-logo.png'

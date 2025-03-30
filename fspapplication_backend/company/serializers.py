@@ -7,7 +7,7 @@ class CompanySerializer(serializers.ModelSerializer):
         model = Company
         fields = [
             'id', 'name', 'logo', 
-            'number', 'street', 'city', 'state', 'postal_code', 'country',
+            'street_number', 'street_name', 'suburb', 'city', 'state', 'postal_code', 'country',
             'latitude', 'longitude',
             'phone', 'email', 'website',
             'tax_number', 'abn_number',

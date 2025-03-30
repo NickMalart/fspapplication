@@ -10,6 +10,7 @@
     <div v-else class="space-y-6">
       <CompanyAvatarSection :company="companyProfile" />
       <CompanyInformationCard />
+      <CompanyAddressCard />
     </div>
   </AdminLayout>
 </template>
@@ -20,17 +21,18 @@ import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import CompanyAvatarSection from "@/components/company/CompanyAvatarSection.vue";
 import CompanyInformationCard from "@/components/company/CompanyInformationCard.vue";
-import { useCompanyProfileStore } from "@/stores/companyProfileStore";
-import { CompanyProfile } from "@/service/companyProfileService";
+import CompanyAddressCard from "@/components/company/CompanyAddressCard.vue";
+import { usecompanyStore } from "@/stores/companyStore";
+import { CompanyProfile } from "@/service/companyService";
 
 const currentPageTitle = ref("Company Settings");
-const companyProfileStore = useCompanyProfileStore();
-const loading = computed(() => companyProfileStore.loading);
-const error = computed(() => companyProfileStore.error);
-const companyProfile = computed<CompanyProfile | null>(() => companyProfileStore.companyProfile);
+const companyStore = usecompanyStore();
+const loading = computed(() => companyStore.loading);
+const error = computed(() => companyStore.error);
+const companyProfile = computed<CompanyProfile | null>(() => companyStore.companyProfile);
 
 onMounted(async () => {
-  await companyProfileStore.fetchCompanyProfile();
+  await companyStore.fetchCompanyProfile();
 });
 </script>
 

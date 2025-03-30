@@ -7,8 +7,9 @@ export interface CompanyProfile {
   id: number;
   name: string;
   logo: string | null;
-  number: string | null;
-  street: string | null;
+  streetNumber: string | null;
+  streetName: string | null;
+  suburb: string | null;
   city: string | null;
   state: string | null;
   postalCode: string | null;
@@ -33,7 +34,7 @@ export interface CompanyUpdateResponse {
   error?: string;
 }
 
-export const companyProfileService = {
+export const companyService = {
   /**
    * Fetch the company profile information
    * @returns Promise with company profile data

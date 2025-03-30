@@ -1,11 +1,5 @@
 <template>
-  <ComponentCard title="Company Information">
-    <!-- Debug Info (Remove in production) -->
-    <pre v-if="false" class="text-xs bg-gray-100 dark:bg-gray-800 p-2 mb-4 overflow-auto">
-      companyProfile: {{ JSON.stringify(companyProfile, null, 2) }}
-      company: {{ JSON.stringify(company, null, 2) }}
-    </pre>
-
+  <ComponentCard title="Address Information">
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
@@ -20,7 +14,7 @@
     <div v-else class="relative">
       <!-- Edit Button -->
       <button 
-        v-if="company" 
+        v-if="companyProfile" 
         @click="isModalOpen = true"
         class="absolute top-0 right-0 p-1.5 hover:bg-gray-100 dark:hover:bg-boxdark-2 rounded-full"
       >
@@ -29,50 +23,57 @@
         </svg>
       </button>
 
-      <div v-if="company" class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+      <div v-if="companyProfile" class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+        <!-- Street Address -->
         <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Company Name</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Street Address</p>
           <p class="font-medium text-black dark:text-white">
-            {{ company.name || 'Not provided' }}
+            {{ formatStreetAddress(companyProfile) }}
           </p>
         </div>
+        
+        <!-- Suburb/City -->
         <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Phone</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Suburb/City</p>
           <p class="font-medium text-black dark:text-white">
-            {{ company.phone || 'Not provided' }}
+            {{ companyProfile.suburb || companyProfile.city || 'Not provided' }}
           </p>
         </div>
+        
+        <!-- State/Province -->
         <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Email</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">State/Province</p>
           <p class="font-medium text-black dark:text-white">
-            {{ company.email || 'Not provided' }}
+            {{ companyProfile.state || 'Not provided' }}
           </p>
         </div>
+        
+        <!-- Postal Code -->
         <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Website</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Postal Code</p>
           <p class="font-medium text-black dark:text-white">
-            <a 
-              v-if="company.website" 
-              :href="formatWebsiteUrl(company.website)" 
-              target="_blank" 
-              class="text-brand-500 hover:underline"
-            >
-              {{ company.website }}
-            </a>
-            <span v-else>Not provided</span>
+            {{ companyProfile.postalCode || 'Not provided' }}
+          </p>
+        </div>
+        
+        <!-- Country -->
+        <div class="space-y-2">
+          <p class="text-sm text-gray-500 dark:text-gray-400">Country</p>
+          <p class="font-medium text-black dark:text-white">
+            {{ companyProfile.country || 'Not provided' }}
           </p>
         </div>
       </div>
       <div v-else class="py-4 text-center text-gray-500">
-        No company information available
+        No address information available
       </div>
     </div>
 
-    <!-- Edit Modal with key to force re-render -->
-    <EditCompanyInformationModal
-      v-if="isModalOpen && company"
+    <!-- Edit Modal -->
+    <EditCompanyAddressModal
+      v-if="isModalOpen && companyProfile"
       :key="modalKey"
-      :companyData="company"
+      :companyData="companyProfile"
       :isSaving="isSaving"
       @close="isModalOpen = false"
       @save="handleSave"
@@ -85,38 +86,51 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { usecompanyStore } from '@/stores/companyStore';
 import { storeToRefs } from 'pinia';
 import ComponentCard from '@/components/common/ComponentCard.vue';
-import EditCompanyInformationModal from '@/components/company/EditCompanyInformationModal.vue';
+import EditCompanyAddressModal from '@/components/company/EditCompanyAddressModal.vue';
+import { CompanyProfile } from '@/service/companyService';
+
+// Extend CompanyProfile to include any additional fields we need for Google Place
+interface ExtendedCompanyProfile extends CompanyProfile {
+  googlePlaceId?: string | null;
+}
 
 const companyStore = usecompanyStore();
 const { companyProfile, loading, error } = storeToRefs(companyStore);
 
-const company = computed(() => {
-  console.log('Computing company:', companyProfile.value);
-  return companyProfile.value;
-});
 const isModalOpen = ref(false);
 const isSaving = ref(false);
 const modalKey = ref(0); // Used to force modal re-render
 
-// Format website URL to ensure it has http/https
-const formatWebsiteUrl = (url: string) => {
-  if (!url) return '';
-  return url.startsWith('http') ? url : `https://${url}`;
+// Format street address
+const formatStreetAddress = (profile: any) => {
+  if (!profile.streetNumber && !profile.streetName) return 'Not provided';
+  
+  let address = '';
+  if (profile.streetNumber) address += profile.streetNumber;
+  if (profile.streetNumber && profile.streetName) address += ' ';
+  if (profile.streetName) address += profile.streetName;
+  
+  return address;
 };
 
 // Handle save from modal
-const handleSave = async (formData: { 
-  name: string | undefined, 
-  phone: string | undefined, 
-  email: string | undefined, 
-  website: string | undefined 
-}) => {
+const handleSave = async (formData: Partial<ExtendedCompanyProfile>) => {
   isSaving.value = true;
   
   try {
-    console.log('Sending company data to store:', formData);
-    const success = await companyStore.updateCompanyProfile(formData);
-    console.log('Update result:', success);
+    const addressData: Partial<CompanyProfile> = {
+      streetNumber: formData.streetNumber,
+      streetName: formData.streetName,
+      suburb: formData.suburb,
+      city: formData.city,
+      state: formData.state,
+      postalCode: formData.postalCode,
+      country: formData.country,
+      latitude: formData.latitude,
+      longitude: formData.longitude
+    };
+    
+    await companyStore.updateCompanyProfile(addressData);
     
     // Increment key to force modal re-render on next open
     modalKey.value++;
@@ -125,7 +139,7 @@ const handleSave = async (formData: {
     await companyStore.fetchCompanyProfile();
     isModalOpen.value = false;
   } catch (error) {
-    console.error('Failed to save company changes:', error);
+    console.error('Failed to save address changes:', error);
   } finally {
     isSaving.value = false;
   }
@@ -133,23 +147,12 @@ const handleSave = async (formData: {
 
 // Fetch company data on mount
 onMounted(async () => {
-  console.log('Company card mounted, fetching company data');
   await companyStore.fetchCompanyProfile();
 });
-
-// Debug log when company data changes
-watch(() => companyProfile.value, (newValue) => {
-  console.log('companyProfile changed:', newValue);
-}, { deep: true });
-
-watch(company, (newCompany) => {
-  console.log('company computed changed:', newCompany);
-}, { deep: true });
 
 // Force refetch when modal closes
 watch(isModalOpen, (open) => {
   if (!open) {
-    console.log('Company modal closed, refreshing data');
     companyStore.fetchCompanyProfile();
   }
 });
