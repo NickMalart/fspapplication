@@ -27,8 +27,9 @@ export const usecompanyStore = defineStore('companyProfile', () => {
     if (!companyProfile.value) return '';
     
     const parts = [
-      companyProfile.value.number,
-      companyProfile.value.street,
+      companyProfile.value.streetNumber,
+      companyProfile.value.streetName,
+      companyProfile.value.suburb,
       companyProfile.value.city,
       companyProfile.value.state,
       companyProfile.value.postalCode,

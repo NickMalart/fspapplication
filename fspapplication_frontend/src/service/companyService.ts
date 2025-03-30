@@ -56,7 +56,15 @@ export const companyService = {
    */
   async updateCompanyProfile(companyData: Partial<CompanyProfile>): Promise<CompanyUpdateResponse> {
     try {
-      const response = await apiClient.patch('company/', companyData);
+      // Convert camelCase to snake_case for API
+      const snakeCaseData = Object.entries(companyData).reduce((acc, [key, value]) => {
+        // Convert camelCase to snake_case: streetName -> street_name
+        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        acc[snakeKey] = value;
+        return acc;
+      }, {} as Record<string, any>);
+      
+      const response = await apiClient.patch('company/', snakeCaseData);
       return {
         success: true,
         company: convertObjectKeysToCamel(response.data),
