@@ -10,7 +10,6 @@ class Company(models.Model):
     name = models.CharField(max_length=255, verbose_name="Company Name")
     logo = models.ImageField(upload_to='company', blank=True, null=True, verbose_name="Company Logo")
     
-    unit = models.CharField(max_length=20, blank=True, null=True, verbose_name="Unit/Suite Number")
     number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Street Number")
     street = models.CharField(max_length=255, blank=True, null=True, verbose_name="Street Name")
     city = models.CharField(max_length=100, blank=True, null=True)
