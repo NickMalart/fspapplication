@@ -25,8 +25,6 @@ class GooglePlacesAPIView(APIView):
             params = {
                 'input': input_text,
                 'key': settings.GOOGLE_PLACES_API_KEY,
-                # Add any additional parameters as needed
-                'types': 'address',  # Restrict to address suggestions
             }
             
             # Make request to Google API
