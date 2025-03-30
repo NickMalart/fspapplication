@@ -153,8 +153,9 @@
                 <td class="px-6 py-4 whitespace-nowrap w-24">
                   <img 
                     class="h-10 w-10 rounded-full object-cover mx-auto" 
-                    :src="user.avatar || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=0D8ABC&color=fff&size=100`" 
+                    :src="getAvatarUrl(user)" 
                     :alt="`${user.firstName} ${user.lastName}'s avatar`"
+                    @error="handleAvatarError($event, user)"
                   />
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -262,6 +263,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import debounce from 'lodash/debounce'
 import { useRouter } from 'vue-router'
 import { useUserAccountsStore } from '@/stores/userAccountsStore'
+import { fileService } from '@/service/fileService'
 
 const router = useRouter()
 const userAccountsStore = useUserAccountsStore()
@@ -292,6 +294,23 @@ const loading = computed(() => userAccountsStore.loading)
 
 // Computed properties
 const paginatedUsers = computed(() => users.value)
+
+// Get properly formatted avatar URL
+const getAvatarUrl = (user) => {
+  if (!user.avatar) {
+    return `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=0D8ABC&color=fff&size=100`
+  }
+  
+  const avatarPath = user.avatar
+  
+  // If it's already a CloudFront URL, use it as-is
+  if (avatarPath.startsWith('https://d1elaz1f509qmb.cloudfront.net/')) {
+    return avatarPath
+  }
+  
+  // Otherwise, construct the CloudFront URL
+  return fileService.getCloudFrontUrl(avatarPath)
+}
 
 // Debounced search to prevent excessive API calls
 const debouncedSearch = debounce(() => {
@@ -332,6 +351,12 @@ const performSearch = () => {
 
 // Add to template
 const searchInput = ref(null)
+
+// Handle avatar image loading errors
+const handleAvatarError = (event, user) => {
+  // Fall back to UI Avatars if the custom avatar fails to load
+  event.target.src = `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=0D8ABC&color=fff&size=100`
+}
 
 // Watchers
 watch(search, (newSearch) => {
