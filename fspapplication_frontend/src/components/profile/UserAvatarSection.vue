@@ -46,6 +46,18 @@
       <div v-if="isUploading" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 dark:bg-gray-800 dark:bg-opacity-70 rounded-full">
         <div class="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
+
+      <!-- Remove avatar button - only show if an avatar exists -->
+      <button 
+        v-if="avatarUrl" 
+        @click.stop="removeAvatar"
+        class="absolute -bottom-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+        title="Remove avatar"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
     
     <!-- Change avatar text with subtle styling for hint purposes -->
@@ -112,6 +124,36 @@ const avatarUrl = computed(() => {
 const triggerFileInput = () => {
   if (isUploading.value) return;
   fileInput.value?.click();
+};
+
+// Remove avatar function
+const removeAvatar = async (event: Event) => {
+  // Prevent the click from triggering the file input
+  event.stopPropagation();
+  
+  // Show loading state
+  isUploading.value = true;
+  uploadError.value = '';
+  
+  try {
+    // Update user profile with null avatar path
+    const updateSuccess = await userStore.updateUserProfile({
+      avatar: null // Setting avatar to null will remove it
+    });
+    
+    if (!updateSuccess) {
+      throw new Error("Failed to remove avatar");
+    }
+    
+    // Clear any temporary avatar preview
+    tempAvatarUrl.value = null;
+    
+  } catch (error) {
+    console.error('Error removing avatar:', error);
+    uploadError.value = error instanceof Error ? error.message : 'An error occurred while removing avatar';
+  } finally {
+    isUploading.value = false;
+  }
 };
 
 // Handle file selection
