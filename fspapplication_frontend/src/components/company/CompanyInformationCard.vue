@@ -1,5 +1,11 @@
 <template>
   <ComponentCard title="Company Information">
+    <!-- Debug Info (Remove in production) -->
+    <pre v-if="false" class="text-xs bg-gray-100 dark:bg-gray-800 p-2 mb-4 overflow-auto">
+      companyProfile: {{ JSON.stringify(companyProfile, null, 2) }}
+      company: {{ JSON.stringify(company, null, 2) }}
+    </pre>
+
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
@@ -7,13 +13,7 @@
 
     <!-- Error State -->
     <div v-else-if="error" class="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-900 text-red-700 dark:text-red-300 px-4 py-3 rounded">
-      <p>{{ error }}</p>
-      <button 
-        @click="retryFetch" 
-        class="mt-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-      >
-        Try again
-      </button>
+      {{ error }}
     </div>
 
     <!-- Data Display with Edit Button in Relative Position -->
@@ -90,7 +90,10 @@ import EditCompanyInformationModal from '@/components/company/EditCompanyInforma
 const companyStore = useCompanyProfileStore();
 const { companyProfile, loading, error } = storeToRefs(companyStore);
 
-const company = computed(() => companyProfile.value);
+const company = computed(() => {
+  console.log('Computing company:', companyProfile.value);
+  return companyProfile.value;
+});
 const isModalOpen = ref(false);
 const isSaving = ref(false);
 const modalKey = ref(0); // Used to force modal re-render
@@ -113,12 +116,14 @@ const handleSave = async (formData: {
   try {
     console.log('Sending company data to store:', formData);
     const success = await companyStore.updateCompanyProfile(formData);
+    console.log('Update result:', success);
     
-    if (success) {
-      // Increment key to force modal re-render on next open
-      modalKey.value++;
-      isModalOpen.value = false;
-    }
+    // Increment key to force modal re-render on next open
+    modalKey.value++;
+    
+    // Refresh data after saving
+    await companyStore.fetchCompanyProfile();
+    isModalOpen.value = false;
   } catch (error) {
     console.error('Failed to save company changes:', error);
   } finally {
@@ -126,16 +131,20 @@ const handleSave = async (formData: {
   }
 };
 
-// Retry fetching if there was an error
-const retryFetch = async () => {
-  await companyStore.fetchCompanyProfile();
-};
-
 // Fetch company data on mount
 onMounted(async () => {
   console.log('Company card mounted, fetching company data');
   await companyStore.fetchCompanyProfile();
 });
+
+// Debug log when company data changes
+watch(() => companyProfile.value, (newValue) => {
+  console.log('companyProfile changed:', newValue);
+}, { deep: true });
+
+watch(company, (newCompany) => {
+  console.log('company computed changed:', newCompany);
+}, { deep: true });
 
 // Force refetch when modal closes
 watch(isModalOpen, (open) => {
