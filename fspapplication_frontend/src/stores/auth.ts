@@ -81,7 +81,6 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('auth.user.email')
       localStorage.removeItem('auth.user.profile')
       
-      // Clear headers
       delete axios.defaults.headers.common['Authorization']
       delete axios.defaults.headers.common['X-DTS-TENANT']
     },

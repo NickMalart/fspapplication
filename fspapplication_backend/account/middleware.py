@@ -33,26 +33,21 @@ class TenantUserLimitMiddleware:
             request.method in ['POST']):
             
             # Get current tenant
-            try:
-                tenant = Client.objects.get(schema_name=connection.schema_name)
+            tenant = Client.objects.get(schema_name=connection.schema_name)
+            
+            # Check if subscription is active
+            if not tenant.is_subscription_active:
+                return HttpResponseForbidden(
+                    "Your subscription is inactive. "
+                    "Please update your subscription to add users."
+                )
+            
+            # Check if tenant needs to update their payment
+            if tenant.needs_payment_update():
                 current_count = tenant.get_current_user_count()
-                
-                # Check if subscription is active
-                if not tenant.is_subscription_active:
-                    return HttpResponseForbidden(
-                        "Your subscription is inactive. "
-                        "Please update your subscription to add users."
-                    )
-                
-                # Check if tenant needs to update their payment
-                if tenant.needs_payment_update():
-                    return HttpResponseForbidden(
-                        f"You currently have {current_count} users, but have only paid for {tenant.paid_user_count}. "
-                        "Please update your subscription billing before adding more users."
-                    )
-                    
-            except Client.DoesNotExist:
-                # This shouldn't happen, but just in case
-                pass
+                return HttpResponseForbidden(
+                    f"You currently have {current_count} users, but have only paid for {tenant.paid_user_count}. "
+                    "Please update your subscription billing before adding more users."
+                )
                 
         return None 

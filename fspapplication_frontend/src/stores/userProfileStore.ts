@@ -38,11 +38,7 @@ export const useUserStore = defineStore('user', {
   
   actions: {
     async fetchCurrentUser() {
-      // If we're already loading, don't start another request
-      if (this.loading) {
-        console.log('Already loading user data, skipping duplicate request');
-        return this.currentUser;
-      }
+      if (this.loading) return this.currentUser;
       
       this.loading = true;
       this.error = null;
@@ -51,7 +47,6 @@ export const useUserStore = defineStore('user', {
         return this.currentUser;
       } catch (error: any) {
         this.error = error.message || 'Failed to fetch user data';
-        console.error('Store error:', error);
         return null;
       } finally {
         this.loading = false;
@@ -59,32 +54,18 @@ export const useUserStore = defineStore('user', {
     },
     
     async fetchUserProfile(forceRefresh = false) {
-      // Use cached data if valid and not forcing refresh
-      if (!forceRefresh && this.isCacheValid) {
-        console.log('Using cached profile data');
-        return this.completeUser;
-      }
-      
-      // If we're already loading, don't start another request
-      if (this.loading) {
-        console.log('Already loading profile data, skipping duplicate request');
-        return this.completeUser;
-      }
+      if (!forceRefresh && this.isCacheValid) return this.completeUser;
+      if (this.loading) return this.completeUser;
       
       this.loading = true;
       this.error = null;
       try {
-        console.log('Fetching user profile...');
         const userData = await userService.getUserProfile();
-        
-        // Update state
         this.completeUser = { ...userData };
         this.lastFetchTime = Date.now();
-        
         return this.completeUser;
       } catch (error: any) {
         this.error = error.message || 'Failed to fetch user profile';
-        console.error('Store error:', error);
         return null;
       } finally {
         this.loading = false;
@@ -95,17 +76,12 @@ export const useUserStore = defineStore('user', {
       this.loading = true;
       this.error = null;
       try {
-        console.log('Updating user profile with:', userData);
         const updatedUser = await userService.updateUserProfile(userData);
-        
-        // Update the state with the returned data
         this.completeUser = { ...updatedUser };
         this.lastFetchTime = Date.now();
-        
         return true;
       } catch (error: any) {
         this.error = error.message || 'Failed to update profile';
-        console.error('Store error:', error);
         return false;
       } finally {
         this.loading = false;
@@ -116,19 +92,14 @@ export const useUserStore = defineStore('user', {
       this.loading = true;
       this.error = null;
       try {
-        console.log('Updating profile data with:', profileData);
         const updatedUser = await userService.updateProfileData(profileData);
-        
-        // Update state
         if (updatedUser) {
           this.completeUser = { ...updatedUser };
           this.lastFetchTime = Date.now();
         }
-        
         return true;
       } catch (error: any) {
         this.error = error.message || 'Failed to update profile data';
-        console.error('Store error:', error);
         return false;
       } finally {
         this.loading = false;

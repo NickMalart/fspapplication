@@ -81,7 +81,6 @@ export const fileService = {
 
       return response.data;
     } catch (error: unknown) {
-      console.error('Error uploading file:', error);
       const axiosError = error as { response?: { data?: { error?: string } }, message?: string };
       return {
         success: false,
@@ -112,7 +111,6 @@ export const fileService = {
       
       return convertObjectKeysToCamel(response.data.files || []);
     } catch (error) {
-      console.error('Error listing files:', error);
       return [];
     }
   },
@@ -125,13 +123,12 @@ export const fileService = {
    */
   async deleteFile(filePath: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await apiClient.delete('/files/delete/', {
+      await apiClient.delete('/files/delete/', {
         data: { path: filePath }
       });
       
       return { success: true };
     } catch (error) {
-      console.error('Error deleting file:', error);
       if (apiClient.isAxiosError(error) && error.response) {
         return {
           success: false,
@@ -162,7 +159,6 @@ export const fileService = {
       }
       return null;
     } catch (error) {
-      console.error('Error getting download URL:', error);
       return null;
     }
   },

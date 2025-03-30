@@ -10,8 +10,6 @@ from organisation.models import Company
 
 class CustomUserManager(UserManager):
     def _create_user(self, email, password, **extra_fields):
-        if not email:
-            raise ValueError("Email must be set")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
@@ -29,13 +27,11 @@ class CustomUserManager(UserManager):
         return self._create_user(email, password, **extra_fields)
 
 
-# Custom functional group model
 class FunctionalGroup(models.Model):
     """
     Predefined functional groups with specific access rights.
     Each group controls access to particular pages or features in the system.
     """
-    # Predefined group types
     GROUP_ADMINISTRATION = 'administration'
     GROUP_HELPDESK = 'helpdesk'
     GROUP_TECHNICIAN = 'technician'
@@ -197,7 +193,6 @@ class User(AbstractBaseUser, PermissionsMixin):
                 self.is_superuser)
 
 
-# Convenience model to track when users were added to groups and by whom
 class UserGroupMembership(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='group_memberships')
     group = models.ForeignKey(FunctionalGroup, on_delete=models.CASCADE, related_name='user_memberships')

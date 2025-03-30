@@ -45,25 +45,19 @@ export interface CompleteUser {
   profile: ProfileData;
 }
 
-// Create a flag to track if we're already refreshing tokens to prevent multiple attempts
 let isRefreshingToken = false;
 let tokenRefreshPromise: Promise<any> | null = null;
 
 export const userService = {
   async handleAuthError(error: any): Promise<never> {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-      // If we're not already refreshing the token
       if (!isRefreshingToken) {
         isRefreshingToken = true;
         tokenRefreshPromise = axios.post(`${API_URL}/account/token/refresh/`)
           .then(response => {
-            // Token refreshed successfully, save new tokens
-            console.log('Token refreshed successfully');
             return response.data;
           })
           .catch(refreshError => {
-            console.error('Token refresh failed, redirecting to login');
-            // Redirect to login page
             window.location.href = '/login';
             return Promise.reject(refreshError);
           })
@@ -73,17 +67,14 @@ export const userService = {
           });
       }
       
-      // Wait for the token refresh to complete
       if (tokenRefreshPromise) {
         await tokenRefreshPromise;
-        // Throw a custom error to indicate we should retry the original request
         const retryError = new Error('Token refreshed, retry request');
         retryError.name = 'RetryAfterRefresh';
         throw retryError;
       }
     }
     
-    // For non-auth errors or if token refresh is not possible, just throw the original error
     throw error;
   },
   
@@ -101,7 +92,6 @@ export const userService = {
       const response = await axios.get(`${API_URL}/account/user/profile/`);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
-      // Special case for RetryAfterRefresh - retry the original request
       if (error.name === 'RetryAfterRefresh') {
         return this.getUserProfile();
       }
@@ -111,35 +101,24 @@ export const userService = {
   
   async updateUserProfile(userData: Partial<CompleteUser>): Promise<CompleteUser> {
     try {
-      // Create a simplified version of the data with only the fields we're updating
       const simplifiedData: any = {};
       
-      // Extract only the fields that are present in userData
       if (userData.avatar !== undefined) simplifiedData.avatar = userData.avatar;
       if (userData.firstName !== undefined) simplifiedData.first_name = userData.firstName;
       if (userData.lastName !== undefined) simplifiedData.last_name = userData.lastName;
       if (userData.email !== undefined) simplifiedData.email = userData.email;
       
-      // Handle profile data separately
       if (userData.profile) {
         simplifiedData.profile = convertObjectKeysToSnake(userData.profile);
       }
       
-      console.log('Sending data to API:', simplifiedData);
-      
       const response = await axios.put(`${API_URL}/account/user/profile/update/`, simplifiedData);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
-      // Special case for RetryAfterRefresh - retry the original request
       if (error.name === 'RetryAfterRefresh') {
         return this.updateUserProfile(userData);
       }
       
-      console.error('Error updating profile:', error);
-      if (axios.isAxiosError(error) && error.response) {
-        console.error('API Error Status:', error.response.status);
-        console.error('API Error Response Data:', error.response.data);
-      }
       return this.handleAuthError(error);
     }
   },

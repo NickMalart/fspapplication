@@ -83,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useUserStore } from '@/stores/userProfileStore';
 import { fileService } from '@/service/fileService';
 import { CompleteUser } from '@/service/userProfileService';
@@ -137,19 +137,14 @@ const removeAvatar = async (event: Event) => {
   
   try {
     // Update user profile with null avatar path
-    const updateSuccess = await userStore.updateUserProfile({
+    await userStore.updateUserProfile({
       avatar: null // Setting avatar to null will remove it
     });
-    
-    if (!updateSuccess) {
-      throw new Error("Failed to remove avatar");
-    }
     
     // Clear any temporary avatar preview
     tempAvatarUrl.value = null;
     
   } catch (error) {
-    console.error('Error removing avatar:', error);
     uploadError.value = error instanceof Error ? error.message : 'An error occurred while removing avatar';
   } finally {
     isUploading.value = false;
@@ -191,7 +186,6 @@ const handleFileChange = async (event: Event) => {
   isUploading.value = true;
   try {
     // First upload the file to S3
-    console.log("Uploading file to S3...");
     const uploadResult = await fileService.uploadFile(
       file,
       'images',
@@ -202,25 +196,12 @@ const handleFileChange = async (event: Event) => {
       throw new Error(uploadResult.error || 'Failed to upload avatar to S3');
     }
     
-    console.log("File uploaded successfully to S3:", uploadResult);
-    
     // Then update the user profile with the S3 path
-    console.log("Updating user profile with avatar path:", uploadResult.path);
-    const updateSuccess = await userStore.updateUserProfile({
+    await userStore.updateUserProfile({
       avatar: uploadResult.path // Store the path in the database
     });
     
-    if (!updateSuccess) {
-      throw new Error("Failed to update user profile with avatar path");
-    }
-    
-    console.log("Profile updated successfully");
-    
-    // The avatar URL will update automatically through the computed property
-    // when userProfile is updated
-    
   } catch (error) {
-    console.error('Error in avatar update process:', error);
     uploadError.value = error instanceof Error ? error.message : 'An error occurred while updating avatar';
     
     // Clear temporary avatar
