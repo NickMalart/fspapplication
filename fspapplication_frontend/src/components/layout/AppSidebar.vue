@@ -19,30 +19,25 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/">
+      <router-link to="/" class="flex items-center">
         <img
           v-if="isExpanded || isHovered || isMobileOpen"
-          class="dark:hidden"
-          src="/images/logo/logo.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="hidden dark:block"
-          src="/images/logo/logo-dark.svg"
-          alt="Logo"
-          width="150"
-          height="40"
+          :src="companyLogoUrl"
+          alt="Company Logo"
+          class="max-h-10 mr-3"
         />
         <img
           v-else
-          src="/images/logo/logo-icon.svg"
-          alt="Logo"
-          width="32"
-          height="32"
+          :src="companyLogoUrl"
+          alt="Company Logo"
+          class="w-8 h-8 object-contain"
         />
+        <span 
+          v-if="isExpanded || isHovered || isMobileOpen" 
+          class="font-semibold text-lg text-gray-800 dark:text-white truncate"
+        >
+          {{ companyName }}
+        </span>
       </router-link>
     </div>
     <div
@@ -230,7 +225,7 @@ import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
 
-const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
+const { isExpanded, isMobileOpen, isHovered, openSubmenu, companyLogoUrl, companyName } = useSidebar();
 
 const menuGroups = [
   {

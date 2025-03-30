@@ -18,12 +18,12 @@
           :alt="`${companyName}'s logo`"
           class="h-full w-full object-cover transition-opacity group-hover:opacity-80"
         />
-        <div 
+        <img
           v-else
-          class="h-full w-full bg-primary flex items-center justify-center text-white text-2xl font-bold"
-        >
-          {{ companyInitial }}
-        </div>
+          src="/images/logo/default-company-logo.png"
+          alt="Default Company Logo"
+          class="h-full w-full object-cover transition-opacity group-hover:opacity-80"
+        />
         <!-- Subtle glow effect on hover -->
         <div class="absolute inset-0 bg-primary bg-opacity-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -148,10 +148,27 @@ const removeLogo = async (event: Event) => {
     // Clear any temporary logo preview
     tempLogoUrl.value = null;
     
+    // Update favicon to default
+    updateFavicon(null);
+    
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : 'An error occurred while removing logo';
   } finally {
     isUploading.value = false;
+  }
+};
+
+// Function to update favicon
+const updateFavicon = (logoPath: string | null) => {
+  const favicon = document.getElementById('favicon') as HTMLLinkElement;
+  if (favicon) {
+    if (logoPath) {
+      // Use the company logo
+      favicon.href = fileService.getCloudFrontUrl(logoPath);
+    } else {
+      // Reset to default logo
+      favicon.href = '/images/logo/default-company-logo.png';
+    }
   }
 };
 
@@ -204,6 +221,9 @@ const handleFileChange = async (event: Event) => {
     await companyStore.updateCompanyProfile({
       logo: uploadResult.path // Store the path in the database
     });
+    
+    // Update favicon immediately
+    updateFavicon(uploadResult.path);
     
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : 'An error occurred while updating logo';

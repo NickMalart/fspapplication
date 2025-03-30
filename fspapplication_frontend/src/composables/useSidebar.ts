@@ -1,27 +1,7 @@
-// import { ref } from 'vue'
-
-// export function useSidebar() {
-//   const isMobileOpen = ref(false)
-//   const isDesktopOpen = ref(true)
-
-//   const toggleSidebar = () => {
-//     isDesktopOpen.value = !isDesktopOpen.value
-//   }
-
-//   const toggleMobileSidebar = () => {
-//     isMobileOpen.value = !isMobileOpen.value
-//   }
-
-//   return {
-//     isMobileOpen,
-//     isDesktopOpen,
-//     toggleSidebar,
-//     toggleMobileSidebar,
-//   }
-// }
-
 import { ref, computed, onMounted, onUnmounted, provide, inject } from 'vue'
 import type { Ref } from 'vue' //
+import { useCompanyProfileStore } from '@/stores/companyProfileStore'
+import { fileService } from '@/service/fileService'
 
 interface SidebarContextType {
   isExpanded: Ref<boolean>
@@ -34,6 +14,8 @@ interface SidebarContextType {
   setIsHovered: (isHovered: boolean) => void
   setActiveItem: (item: string | null) => void
   toggleSubmenu: (item: string) => void
+  companyLogoUrl: Ref<string | null>
+  companyName: Ref<string>
 }
 
 const SidebarSymbol = Symbol()
@@ -87,6 +69,17 @@ export function useSidebarProvider() {
     openSubmenu.value = openSubmenu.value === item ? null : item
   }
 
+  const companyStore = useCompanyProfileStore()
+
+  const companyLogoUrl = computed(() => {
+    if (!companyStore.companyProfile?.logo) return '/images/logo/default-company-logo.png'
+    return fileService.getCloudFrontUrl(companyStore.companyProfile.logo)
+  })
+
+  const companyName = computed(() => {
+    return companyStore.companyProfile?.name || 'Company Name'
+  })
+
   const context: SidebarContextType = {
     isExpanded: computed(() => (isMobile.value ? false : isExpanded.value)),
     isMobileOpen,
@@ -98,6 +91,8 @@ export function useSidebarProvider() {
     setIsHovered,
     setActiveItem,
     toggleSubmenu,
+    companyLogoUrl,
+    companyName,
   }
 
   provide(SidebarSymbol, context)
