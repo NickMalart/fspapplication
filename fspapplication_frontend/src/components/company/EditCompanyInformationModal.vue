@@ -66,6 +66,26 @@
           </div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Enter domain without https:// - it will be added automatically</p>
         </div>
+        
+        <div class="space-y-2">
+          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Tax Number</label>
+          <input
+            v-model="editForm.taxNumber"
+            type="text"
+            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+            placeholder="Enter tax number"
+          />
+        </div>
+        
+        <div class="space-y-2">
+          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Business Registration Number</label>
+          <input
+            v-model="editForm.abnNumber"
+            type="text"
+            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+            placeholder="Enter ABN/business registration number"
+          />
+        </div>
 
         <div class="flex items-center justify-end gap-3 mt-6">
           <button 
@@ -112,6 +132,8 @@ const editForm = reactive({
   phone: '',
   email: '',
   websiteInput: '',
+  taxNumber: '',
+  abnNumber: '',
   get website() {
     if (!this.websiteInput) return '';
     return this.websiteInput.startsWith('http') ? this.websiteInput : `https://${this.websiteInput}`;
@@ -132,6 +154,9 @@ const initForm = () => {
       editForm.websiteInput = '';
     }
     
+    editForm.taxNumber = props.companyData.taxNumber || '';
+    editForm.abnNumber = props.companyData.abnNumber || '';
+    
     console.log('Initialized company form data:', editForm);
   }
 };
@@ -142,7 +167,9 @@ const saveChanges = () => {
     name: editForm.name || undefined,
     phone: editForm.phone || undefined,
     email: editForm.email || undefined,
-    website: editForm.website || undefined
+    website: editForm.website || undefined,
+    taxNumber: editForm.taxNumber || undefined,
+    abnNumber: editForm.abnNumber || undefined
   };
   
   console.log('Saving company form data:', formData);

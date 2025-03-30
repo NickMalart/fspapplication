@@ -62,6 +62,18 @@
             <span v-else>Not provided</span>
           </p>
         </div>
+        <div class="space-y-2">
+          <p class="text-sm text-gray-500 dark:text-gray-400">Tax Number</p>
+          <p class="font-medium text-black dark:text-white">
+            {{ company.taxNumber || 'Not provided' }}
+          </p>
+        </div>
+        <div class="space-y-2">
+          <p class="text-sm text-gray-500 dark:text-gray-400">Business Registration Number</p>
+          <p class="font-medium text-black dark:text-white">
+            {{ company.abnNumber || 'Not provided' }}
+          </p>
+        </div>
       </div>
       <div v-else class="py-4 text-center text-gray-500">
         No company information available
