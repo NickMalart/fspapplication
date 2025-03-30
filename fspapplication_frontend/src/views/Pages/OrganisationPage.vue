@@ -1,31 +1,36 @@
 <template>
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
-    <div
-      class="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12"
-    >
-      <div class="mx-auto w-full max-w-[630px] text-center">
-        <h3
-          class="mb-4 font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-2xl"
-        >
-          Card Title Here
-        </h3>
-
-        <p class="text-sm text-gray-500 dark:text-gray-400 sm:text-base">
-          Start putting content on grids or panels, you can also use different
-          combinations of grids.Please check out the dashboard and other pages
-        </p>
-      </div>
+    <div v-if="loading" class="flex justify-center py-8">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+    </div>
+    <div v-else-if="error" class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+      {{ error }}
+    </div>
+    <div v-else class="space-y-6">
+      <CompanyAvatarSection :company="company" />
+      <!-- Future company information cards can be added here -->
     </div>
   </AdminLayout>
 </template>
 
-<script setup>
-import { ref } from "vue";
+<script setup lang="ts">
+import { ref, onMounted, computed } from "vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
+import CompanyAvatarSection from "@/components/organisation/CompanyAvatarSection.vue";
+import { useCompanyStore } from "@/stores/companyStore";
+import { Company } from "@/service/companyService";
 
-const currentPageTitle = ref("Blank Page");
+const currentPageTitle = ref("Company Settings");
+const companyStore = useCompanyStore();
+const loading = computed(() => companyStore.loading);
+const error = computed(() => companyStore.error);
+const company = computed<Company | null>(() => companyStore.company);
+
+onMounted(async () => {
+  await companyStore.fetchCompany();
+});
 </script>
 
 <style></style>
