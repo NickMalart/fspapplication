@@ -73,6 +73,7 @@ SHARED_APPS = (
     'account',
     'organisation',
     'dashboard',
+    'common_utils',
     'corsheaders',
     'django.contrib.contenttypes',
     'django.contrib.auth',
@@ -89,6 +90,7 @@ TENANT_APPS = (
     'account',
     'organisation',
     'dashboard',
+    'common_utils',
 )
 
 INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]

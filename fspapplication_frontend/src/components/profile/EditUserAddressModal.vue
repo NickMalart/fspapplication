@@ -21,6 +21,16 @@
       </h4>
       
       <form @submit.prevent="saveChanges" class="space-y-6">
+        <!-- Address Autocomplete -->
+        <div class="space-y-2 mb-2 relative">
+          <AddressAutocomplete
+            v-model="addressData"
+            label="Search Address"
+            placeholder="Type to search for an address"
+            @update:modelValue="populateAddressFields"
+          />
+        </div>
+      
         <!-- Street Number & Name -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="md:col-span-1 space-y-2">
@@ -129,6 +139,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { ProfileData } from '@/service/userProfileService';
+import AddressAutocomplete from '@/components/common/AddressAutocomplete.vue';
 
 const props = defineProps<{
   userData: ProfileData;
@@ -154,6 +165,140 @@ const formData = ref<Partial<ProfileData>>({
   googlePlaceId: props.userData.googlePlaceId
 });
 
+// Address autocomplete data
+const addressData = ref<any>({});
+
+// Function to populate form fields from selected address
+const populateAddressFields = (data: any) => {
+  if (!data) {
+    console.error('No address data received');
+    return;
+  }
+  
+  console.log('Address data received:', data);
+  
+  // Copy the existing form data to avoid losing current values
+  const newFormData = { ...formData.value };
+  
+  // Handle street components
+  if (data.street && typeof data.street === 'string' && data.street.trim() !== '') {
+    const street = data.street.trim();
+    const streetParts = street.split(' ');
+    
+    // If the street has a number, use it as street number and the rest as street name
+    if (streetParts.length > 1 && !isNaN(parseInt(streetParts[0]))) {
+      newFormData.streetNumber = streetParts[0];
+      newFormData.streetName = streetParts.slice(1).join(' ');
+    } else {
+      newFormData.streetName = street;
+    }
+  } else if (data.components) {
+    // Use components directly if available
+    newFormData.streetNumber = data.components.street_number || '';
+    newFormData.streetName = data.components.route || '';
+  } else if (data.formatted_address) {
+    // Try to parse from formatted address as last resort
+    const parts = data.formatted_address.split(',');
+    if (parts.length > 0) {
+      const streetPart = parts[0].trim();
+      const streetParts = streetPart.split(' ');
+      
+      if (streetParts.length > 1 && !isNaN(parseInt(streetParts[0]))) {
+        newFormData.streetNumber = streetParts[0];
+        newFormData.streetName = streetParts.slice(1).join(' ');
+      } else {
+        newFormData.streetName = streetPart;
+      }
+    }
+  }
+  
+  // Handle city/suburb, state and postal code
+  if (data.city) {
+    // Sometimes city contains city + state + postal code (e.g. "Nirimba QLD 4551")
+    const cityParts = data.city.split(' ');
+    
+    if (cityParts.length > 1) {
+      // Check for postal code (usually a number at the end)
+      const lastPart = cityParts[cityParts.length - 1];
+      if (/^\d+$/.test(lastPart)) {
+        newFormData.postalCode = lastPart;
+        cityParts.pop(); // Remove postal code from city parts
+      }
+      
+      // Check for state (usually 2-3 uppercase letters)
+      const possibleState = cityParts[cityParts.length - 1];
+      if (possibleState.length <= 3 && possibleState === possibleState.toUpperCase()) {
+        newFormData.state = possibleState;
+        cityParts.pop(); // Remove state from city parts
+      }
+      
+      // For Australian addresses, use locality as suburb only, not city
+      const isAustralianAddress = 
+        (data.country && data.country.toLowerCase().includes('australia')) || 
+        (newFormData.state && ['nsw', 'qld', 'sa', 'tas', 'vic', 'wa', 'act', 'nt'].includes(newFormData.state.toLowerCase()));
+      
+      // Remaining parts should be the suburb
+      newFormData.suburb = cityParts.join(' ');
+      
+      // Only set city if it's not an Australian address
+      if (!isAustralianAddress) {
+        newFormData.city = cityParts.join(' ');
+      } else {
+        newFormData.city = ''; // Leave city blank for Australian addresses
+      }
+    } else {
+      // For single word localities
+      newFormData.suburb = data.city;
+      
+      // Check if Australian address
+      const isAustralianAddress = 
+        (data.country && data.country.toLowerCase().includes('australia')) || 
+        (newFormData.state && ['nsw', 'qld', 'sa', 'tas', 'vic', 'wa', 'act', 'nt'].includes(newFormData.state.toLowerCase()));
+      
+      // Only set city if not Australian
+      if (!isAustralianAddress) {
+        newFormData.city = data.city;
+      } else {
+        newFormData.city = ''; // Leave city blank for Australian addresses
+      }
+    }
+  }
+  
+  // If we have separate state data, use it
+  if (data.state) {
+    newFormData.state = data.state;
+  }
+  
+  // If we have separate postal code data, use it
+  if (data.postal_code) {
+    newFormData.postalCode = data.postal_code;
+  }
+  
+  // Set country if available
+  if (data.country) {
+    newFormData.country = data.country;
+  }
+  
+  // Store coordinates if available
+  if (data.lat !== undefined && data.lat !== null) {
+    newFormData.latitude = data.lat;
+  }
+  
+  if (data.lng !== undefined && data.lng !== null) {
+    newFormData.longitude = data.lng;
+  }
+  
+  // Store Google Place ID if available
+  if (data.place_id) {
+    newFormData.googlePlaceId = data.place_id;
+  }
+  
+  // Update form data
+  formData.value = newFormData;
+  
+  console.log('Address fields populated:', formData.value);
+};
+
 // Initialize form data when props change
 const initForm = () => {
   if (props.userData) {
@@ -176,8 +321,47 @@ const initForm = () => {
 
 // Handle form submission
 const saveChanges = () => {
-  console.log('Saving address changes:', formData.value);
-  emit('save', formData.value);
+  // Copy the form data to avoid mutating the original
+  const dataToSave = { ...formData.value } as any; // Use any type temporarily to allow null assignments
+  
+  // Convert all empty strings to null (Django expects null, not empty strings)
+  Object.keys(dataToSave).forEach(key => {
+    if (dataToSave[key] === '') {
+      dataToSave[key] = null;
+    }
+  });
+  
+  // Format coordinates as numbers with correct decimal precision
+  if (dataToSave.latitude !== null && dataToSave.latitude !== undefined) {
+    // Ensure it's a number and has at most 6 decimal places (as per Django model)
+    if (typeof dataToSave.latitude === 'string') {
+      dataToSave.latitude = parseFloat(dataToSave.latitude);
+    }
+    // If it's a valid number, ensure it has correct precision
+    if (!isNaN(dataToSave.latitude)) {
+      // Limit to 9 total digits with 6 decimal places as per Django model
+      dataToSave.latitude = parseFloat(dataToSave.latitude.toFixed(6));
+    } else {
+      dataToSave.latitude = null;
+    }
+  }
+  
+  if (dataToSave.longitude !== null && dataToSave.longitude !== undefined) {
+    // Ensure it's a number and has at most 6 decimal places (as per Django model)
+    if (typeof dataToSave.longitude === 'string') {
+      dataToSave.longitude = parseFloat(dataToSave.longitude);
+    }
+    // If it's a valid number, ensure it has correct precision
+    if (!isNaN(dataToSave.longitude)) {
+      // Limit to 9 total digits with 6 decimal places as per Django model
+      dataToSave.longitude = parseFloat(dataToSave.longitude.toFixed(6));
+    } else {
+      dataToSave.longitude = null;
+    }
+  }
+  
+  console.log('Saving address changes (fixed formatting):', dataToSave);
+  emit('save', dataToSave);
 };
 
 // Add keyboard event listener for Escape key

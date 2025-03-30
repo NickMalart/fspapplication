@@ -69,10 +69,14 @@ export const userService = {
   async updateUserProfile(userData: Partial<CompleteUser>): Promise<CompleteUser> {
     try {
       const transformedData = convertObjectKeysToSnake(userData);
+      console.log('Sending data to API:', transformedData);
       const response = await axios.put(`${API_URL}/account/user/profile/update/`, transformedData);
       return convertObjectKeysToCamel(response.data);
     } catch (error) {
       console.error('Error updating profile:', error);
+      if (axios.isAxiosError(error) && error.response) {
+        console.error('API Error Response:', error.response.data);
+      }
       throw error;
     }
   },
