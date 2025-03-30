@@ -8,7 +8,6 @@
       {{ error }}
     </div>
     <div v-else class="space-y-6">
-      <CompanyAvatarSection :company="company" />
       <!-- Future company information cards can be added here -->
     </div>
   </AdminLayout>
@@ -18,7 +17,6 @@
 import { ref, onMounted, computed } from "vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
-import CompanyAvatarSection from "@/components/organisation/CompanyAvatarSection.vue";
 import { useCompanyStore } from "@/stores/companyStore";
 import { Company } from "@/service/companyService";
 

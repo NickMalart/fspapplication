@@ -309,7 +309,7 @@ const menuGroups = [
           name: "Administration",
           icon: BuildingIcon,
           subItems: [
-            { name: "Organisation", path: "/organisation", pro: false },
+            { name: "Company Details", path: "/company", pro: false },
             { name: "User Accounts", path: "/accounts", pro: false },
           ],
         },      

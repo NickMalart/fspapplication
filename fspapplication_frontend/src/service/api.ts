@@ -17,10 +17,17 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Get token from localStorage if available
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth.access');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Add tenant header for Django Tenants
+    const tenant = localStorage.getItem('auth.tenant');
+    if (tenant) {
+      config.headers['X-DTS-TENANT'] = tenant;
+    }
+    
     return config;
   },
   (error) => Promise.reject(error)
@@ -33,7 +40,8 @@ apiClient.interceptors.response.use(
     // Handle 401 Unauthorized responses
     if (error.response && error.response.status === 401) {
       // Clear token and redirect to login if needed
-      localStorage.removeItem('token');
+      localStorage.removeItem('auth.access');
+      localStorage.removeItem('auth.refresh');
       // Optional: Redirect to login page
       // window.location.href = '/login';
     }

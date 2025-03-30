@@ -21,11 +21,11 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: '/organisation',
-    name: 'Organisation',
-    component: () => import('../views/Pages/OrganisationPage.vue'),
+    path: '/company',
+    name: 'Company',
+    component: () => import('../views/Pages/CompanyPage.vue'),
     meta: {
-      title: 'Organisation',
+      title: 'Company',
       requiresAuth: true,
     },
   },

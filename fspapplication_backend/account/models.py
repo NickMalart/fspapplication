@@ -5,8 +5,6 @@ from django.db import models
 from django.utils import timezone
 from django.apps import apps
 
-from organisation.models import Company
-
 
 class CustomUserManager(UserManager):
     def _create_user(self, email, password, **extra_fields):
@@ -248,7 +246,7 @@ class AgentProfile(models.Model):
         related_name='agent_profile',
         limit_choices_to={'user_type': User.USER_TYPE_AGENT}
     )
-    company_name = models.CharField(max_length=255)
+    company_name = models.ForeignKey('company.Company', on_delete=models.CASCADE, related_name='agents')
     license_number = models.CharField(max_length=100, blank=True, null=True)
     years_of_experience = models.PositiveIntegerField(default=0)
     
@@ -286,7 +284,7 @@ class EmployeeProfile(models.Model):
         related_name='employee_profile',
         limit_choices_to={'user_type': User.USER_TYPE_EMPLOYEE}
     )
-    company = models.ForeignKey('organisation.Company', on_delete=models.CASCADE, related_name='employees')
+    company_name = models.ForeignKey('company.Company', on_delete=models.CASCADE, related_name='employees')
     department = models.CharField(max_length=100)
     employee_id = models.CharField(max_length=50, blank=True, null=True)
     job_title = models.CharField(max_length=100, blank=True, null=True)
@@ -300,7 +298,7 @@ class EmployeeProfile(models.Model):
     )
     
     def __str__(self):
-        return f"{self.user.first_name} {self.user.last_name} - {self.company.name}"
+        return f"{self.user.first_name} {self.user.last_name} - {self.company_name.name}"
     
     class Meta:
         verbose_name = 'Employee Profile'
@@ -308,4 +306,4 @@ class EmployeeProfile(models.Model):
 
 
 def get_company_model():
-    return apps.get_model('organisation', 'Company')
+    return apps.get_model('company', 'Company')

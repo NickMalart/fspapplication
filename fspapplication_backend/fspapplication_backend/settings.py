@@ -76,7 +76,7 @@ SHARED_APPS = (
     'django_tenants',
     'tenant',    
     'account',
-    'organisation',
+    'company',
     'dashboard',
     'common_utils',
     'files',
@@ -94,7 +94,7 @@ SHARED_APPS = (
 
 TENANT_APPS = (
     'account',
-    'organisation',
+    'company',
     'dashboard',
     'common_utils',
     'files',
