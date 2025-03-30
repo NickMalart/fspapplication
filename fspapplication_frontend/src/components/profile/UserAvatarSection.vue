@@ -21,7 +21,7 @@
         />
         <img 
           v-else
-          :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(completeUser?.firstName || '')}-${encodeURIComponent(completeUser?.lastName || '')}&background=0D8ABC&color=fff&size=128`" 
+          :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.firstName || '')}-${encodeURIComponent(user?.lastName || '')}&background=0D8ABC&color=fff&size=128`" 
           :alt="`${fullName}'s avatar`"
           class="h-full w-full object-cover transition-opacity group-hover:opacity-80"
         />
@@ -60,24 +60,28 @@
     
     <!-- User Name -->
     <h2 class="mt-2 text-xl font-bold text-gray-800 dark:text-white">
-      {{ completeUser?.firstName || 'User' }} {{ completeUser?.lastName || '' }}
+      {{ user?.firstName || 'User' }} {{ user?.lastName || '' }}
     </h2>
     
     <!-- User Email -->
     <p class="text-sm text-gray-500 dark:text-gray-400">
-      {{ completeUser?.email || 'No email available' }}
+      {{ user?.email || 'No email available' }}
     </p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useUserStore } from '@/stores/userProfileStore';
-import { storeToRefs } from 'pinia';
 import { fileService } from '@/service/fileService';
+import { CompleteUser } from '@/service/userProfileService';
+
+// Define props for user data
+const props = defineProps<{
+  user?: CompleteUser | null;
+}>();
 
 const userStore = useUserStore();
-const { completeUser } = storeToRefs(userStore);
 const fileInput = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
 const uploadError = ref('');
@@ -85,15 +89,15 @@ const tempAvatarUrl = ref<string | null>(null);
 
 // Calculate full name
 const fullName = computed(() => {
-  if (!completeUser.value) return 'User';
-  return `${completeUser.value.firstName} ${completeUser.value.lastName}`.trim() || 'User';
+  if (!props.user) return 'User';
+  return `${props.user.firstName} ${props.user.lastName}`.trim() || 'User';
 });
 
 // Create a computed property for the avatar URL
 const avatarUrl = computed(() => {
-  if (!completeUser.value?.avatar) return null;
+  if (!props.user?.avatar) return null;
   
-  const avatarPath = completeUser.value.avatar;
+  const avatarPath = props.user.avatar;
   
   // If it's already a CloudFront URL, use it as-is
   if (avatarPath.startsWith('https://d1elaz1f509qmb.cloudfront.net/')) {
@@ -171,17 +175,14 @@ const handleFileChange = async (event: Event) => {
     console.log("Profile updated successfully");
     
     // The avatar URL will update automatically through the computed property
-    // when completeUser is updated
+    // when userProfile is updated
     
   } catch (error) {
     console.error('Error in avatar update process:', error);
     uploadError.value = error instanceof Error ? error.message : 'An error occurred while updating avatar';
     
-    // Revert to original avatar
-    if (completeUser.value) {
-      await userStore.fetchUserProfile(); // Refresh user data
-      tempAvatarUrl.value = null; // Clear temporary avatar
-    }
+    // Clear temporary avatar
+    tempAvatarUrl.value = null;
   } finally {
     isUploading.value = false;
   }

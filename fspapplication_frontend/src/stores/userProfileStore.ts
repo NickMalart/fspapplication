@@ -6,14 +6,19 @@ interface UserState {
   completeUser: CompleteUser | null;
   loading: boolean;
   error: string | null;
+  lastFetchTime: number | null;
 }
+
+// Cache expiration time in ms (5 minutes)
+const CACHE_EXPIRATION = 5 * 60 * 1000;
 
 export const useUserStore = defineStore('user', {
   state: (): UserState => ({
     currentUser: null,
     completeUser: null,
     loading: false,
-    error: null
+    error: null,
+    lastFetchTime: null
   }),
   
   getters: {
@@ -23,11 +28,22 @@ export const useUserStore = defineStore('user', {
     fullName: (state) => {
       if (!state.completeUser) return '';
       return `${state.completeUser.firstName} ${state.completeUser.lastName}`.trim();
+    },
+    // Check if cache is still valid
+    isCacheValid: (state): boolean => {
+      if (!state.lastFetchTime || !state.completeUser) return false;
+      return Date.now() - state.lastFetchTime < CACHE_EXPIRATION;
     }
   },
   
   actions: {
     async fetchCurrentUser() {
+      // If we're already loading, don't start another request
+      if (this.loading) {
+        console.log('Already loading user data, skipping duplicate request');
+        return this.currentUser;
+      }
+      
       this.loading = true;
       this.error = null;
       try {
@@ -42,18 +58,29 @@ export const useUserStore = defineStore('user', {
       }
     },
     
-    async fetchUserProfile() {
+    async fetchUserProfile(forceRefresh = false) {
+      // Use cached data if valid and not forcing refresh
+      if (!forceRefresh && this.isCacheValid) {
+        console.log('Using cached profile data');
+        return this.completeUser;
+      }
+      
+      // If we're already loading, don't start another request
+      if (this.loading) {
+        console.log('Already loading profile data, skipping duplicate request');
+        return this.completeUser;
+      }
+      
       this.loading = true;
       this.error = null;
       try {
         console.log('Fetching user profile...');
         const userData = await userService.getUserProfile();
-        console.log('Fetched user profile:', userData);
         
-        // Ensure we're updating the state properly
+        // Update state
         this.completeUser = { ...userData };
+        this.lastFetchTime = Date.now();
         
-        console.log('Updated state:', this.completeUser);
         return this.completeUser;
       } catch (error: any) {
         this.error = error.message || 'Failed to fetch user profile';
@@ -70,10 +97,10 @@ export const useUserStore = defineStore('user', {
       try {
         console.log('Updating user profile with:', userData);
         const updatedUser = await userService.updateUserProfile(userData);
-        console.log('User profile updated:', updatedUser);
         
         // Update the state with the returned data
         this.completeUser = { ...updatedUser };
+        this.lastFetchTime = Date.now();
         
         return true;
       } catch (error: any) {
@@ -91,12 +118,11 @@ export const useUserStore = defineStore('user', {
       try {
         console.log('Updating profile data with:', profileData);
         const updatedUser = await userService.updateProfileData(profileData);
-        console.log('Profile data updated, response:', updatedUser);
         
-        // Ensure we're updating the state with the correct data
+        // Update state
         if (updatedUser) {
           this.completeUser = { ...updatedUser };
-          console.log('State updated to:', this.completeUser);
+          this.lastFetchTime = Date.now();
         }
         
         return true;

@@ -6,10 +6,11 @@
     >
       <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
         <img 
-          v-if="completeUser?.avatar"
-          :src="completeUser.avatar"
-          :alt="`${completeUser.firstName} ${completeUser.lastName}`" 
+          v-if="avatarUrl"
+          :src="avatarUrl"
+          :alt="`${completeUser?.firstName || ''} ${completeUser?.lastName || ''}`" 
           class="h-full w-full object-cover"
+          referrerpolicy="no-referrer"
         />
         <img 
           v-else
@@ -74,12 +75,28 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/userProfileStore'
 import { storeToRefs } from 'pinia'
+import { fileService } from '@/service/fileService'
 
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 const auth = useAuthStore()
 const userStore = useUserStore()
 const { completeUser } = storeToRefs(userStore)
+
+// Create a computed property for the avatar URL
+const avatarUrl = computed(() => {
+  if (!completeUser.value?.avatar) return null;
+  
+  const avatarPath = completeUser.value.avatar;
+  
+  // If it's already a CloudFront URL, use it as-is
+  if (avatarPath.startsWith('https://d1elaz1f509qmb.cloudfront.net/')) {
+    return avatarPath;
+  }
+  
+  // Otherwise, construct the CloudFront URL directly
+  return fileService.getCloudFrontUrl(avatarPath);
+});
 
 const menuItems = [
   { href: '/profile', icon: UserCircleIcon, text: 'Edit profile' },
