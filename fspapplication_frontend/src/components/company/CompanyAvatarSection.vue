@@ -78,6 +78,58 @@
     <p v-if="company?.website" class="text-sm text-gray-500 dark:text-gray-400">
       {{ company.website }}
     </p>
+    
+    <!-- Brand Colors Section -->
+    <div class="mt-4 flex flex-col items-center gap-3">
+      <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Brand Colors</h3>
+      
+      <div class="flex items-center gap-4">
+        <!-- Primary Color -->
+        <div class="flex flex-col items-center">
+          <label class="mb-1 text-xs text-gray-500 dark:text-gray-400">Primary</label>
+          <div class="relative group">
+            <div 
+              class="h-8 w-8 rounded-full border border-gray-300 dark:border-gray-600 shadow cursor-pointer"
+              :style="{ backgroundColor: company?.primaryColor || '#3B82F6' }"
+              @click="primaryColorInput?.click()"
+            ></div>
+            <input 
+              ref="primaryColorInput"
+              type="color" 
+              class="sr-only"
+              :value="company?.primaryColor || '#3B82F6'"
+              @change="updatePrimaryColor"
+            />
+          </div>
+          <span class="mt-1 text-xs">{{ company?.primaryColor || '#3B82F6' }}</span>
+        </div>
+        
+        <!-- Secondary Color -->
+        <div class="flex flex-col items-center">
+          <label class="mb-1 text-xs text-gray-500 dark:text-gray-400">Secondary</label>
+          <div class="relative group">
+            <div 
+              class="h-8 w-8 rounded-full border border-gray-300 dark:border-gray-600 shadow cursor-pointer"
+              :style="{ backgroundColor: company?.secondaryColor || '#1E40AF' }"
+              @click="secondaryColorInput?.click()"
+            ></div>
+            <input 
+              ref="secondaryColorInput"
+              type="color" 
+              class="sr-only"
+              :value="company?.secondaryColor || '#1E40AF'"
+              @change="updateSecondaryColor"
+            />
+          </div>
+          <span class="mt-1 text-xs">{{ company?.secondaryColor || '#1E40AF' }}</span>
+        </div>
+      </div>
+      
+      <!-- Color update feedback -->
+      <p v-if="colorUpdateStatus" class="mt-1 text-xs" :class="colorUpdateStatus === 'success' ? 'text-green-500' : 'text-red-500'">
+        {{ colorUpdateStatus === 'success' ? 'Colors updated successfully' : 'Failed to update colors' }}
+      </p>
+    </div>
   </div>
 </template>
 
@@ -94,9 +146,12 @@ const props = defineProps<{
 
 const companyStore = usecompanyStore();
 const fileInput = ref<HTMLInputElement | null>(null);
+const primaryColorInput = ref<HTMLInputElement | null>(null);
+const secondaryColorInput = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
 const uploadError = ref('');
 const tempLogoUrl = ref<string | null>(null);
+const colorUpdateStatus = ref<'success' | 'error' | null>(null);
 
 // Calculate company name
 const companyName = computed(() => {
@@ -236,5 +291,55 @@ const handleFileChange = async (event: Event) => {
   
   // Reset input value to allow selecting the same file again
   if (fileInput.value) fileInput.value.value = '';
+};
+
+// Update primary color
+const updatePrimaryColor = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (!target.value) return;
+  
+  colorUpdateStatus.value = null;
+  
+  try {
+    const success = await companyStore.updateCompanyProfile({
+      primaryColor: target.value
+    });
+    
+    colorUpdateStatus.value = success ? 'success' : 'error';
+    
+    // Clear status after 3 seconds
+    setTimeout(() => {
+      colorUpdateStatus.value = null;
+    }, 3000);
+    
+  } catch (error) {
+    colorUpdateStatus.value = 'error';
+    uploadError.value = error instanceof Error ? error.message : 'An error occurred while updating primary color';
+  }
+};
+
+// Update secondary color
+const updateSecondaryColor = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (!target.value) return;
+  
+  colorUpdateStatus.value = null;
+  
+  try {
+    const success = await companyStore.updateCompanyProfile({
+      secondaryColor: target.value
+    });
+    
+    colorUpdateStatus.value = success ? 'success' : 'error';
+    
+    // Clear status after 3 seconds
+    setTimeout(() => {
+      colorUpdateStatus.value = null;
+    }, 3000);
+    
+  } catch (error) {
+    colorUpdateStatus.value = 'error';
+    uploadError.value = error instanceof Error ? error.message : 'An error occurred while updating secondary color';
+  }
 };
 </script> 
