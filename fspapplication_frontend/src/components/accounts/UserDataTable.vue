@@ -120,21 +120,21 @@
                     {{ sortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th @click="sortBy('employeeDetails.jobTitle')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                <th @click="sortBy('employeeProfile.jobTitle')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
                   Job Title
-                  <span v-if="sortColumn === 'employeeDetails.jobTitle'">
+                  <span v-if="sortColumn === 'employeeProfile.jobTitle'">
                     {{ sortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th @click="sortBy('employeeDetails.department')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                <th @click="sortBy('employeeProfile.department')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
                   Department
-                  <span v-if="sortColumn === 'employeeDetails.department'">
+                  <span v-if="sortColumn === 'employeeProfile.department'">
                     {{ sortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
-                <th @click="sortBy('is_active')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                <th @click="sortBy('isActive')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
                   Status
-                  <span v-if="sortColumn === 'is_active'">
+                  <span v-if="sortColumn === 'isActive'">
                     {{ sortDirection === 'asc' ? '▲' : '▼' }}
                   </span>
                 </th>
@@ -154,12 +154,12 @@
                   <img 
                     class="h-10 w-10 rounded-full object-cover mx-auto" 
                     :src="user.avatar || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=0D8ABC&color=fff&size=100`" 
-                    :alt="`${user.fullName}'s avatar`"
+                    :alt="`${user.firstName} ${user.lastName}'s avatar`"
                   />
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="text-sm font-medium text-gray-900 dark:text-white/90">
-                    {{ user.fullName }}
+                    {{ user.firstName }} {{ user.lastName }}
                   </div>
                   <div class="text-sm text-gray-500 dark:text-gray-400">
                     {{ user.userType }}
@@ -169,21 +169,21 @@
                   {{ user.email }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {{ user.employeeDetails?.jobTitle || 'N/A' }}
+                  {{ getUserJobTitle(user) }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {{ user.employeeDetails?.department || 'N/A' }}
+                  {{ getUserDepartment(user) }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span 
                     :class="[
                       'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                      user.is_active 
+                      user.isActive 
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-red-100 text-red-800'
                     ]"
                   >
-                    {{ user.is_active ? 'Active' : 'Inactive' }}
+                    {{ user.isActive ? 'Active' : 'Inactive' }}
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -259,128 +259,60 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import axios from 'axios'
 import debounce from 'lodash/debounce'
 import { useRouter } from 'vue-router'
+import { useUserAccountsStore } from '@/stores/userAccountsStore'
 
 const router = useRouter()
+const userAccountsStore = useUserAccountsStore()
+
 // Reactive state
-const users = ref([])
 const search = ref('')
-const sortColumn = ref('firstName')
-const sortDirection = ref('asc')
-const currentPage = ref(1)
-const perPage = ref(10)
-const pageOptions = [5, 10, 25, 50]
 const statusFilter = ref('active') // Default to active users
+const pageOptions = [5, 10, 25, 50]
+
+// Use values from the store with computed properties for reactivity
+const users = computed(() => userAccountsStore.users)
+const currentPage = computed({
+  get: () => userAccountsStore.currentPage,
+  set: (value) => userAccountsStore.currentPage = value
+})
+const perPage = computed({
+  get: () => userAccountsStore.perPage,
+  set: (value) => userAccountsStore.setPerPage(value)
+})
+const totalUsers = computed(() => userAccountsStore.totalUsers)
+const totalPages = computed(() => userAccountsStore.totalPages)
+const sortColumn = computed(() => userAccountsStore.sortColumn)
+const sortDirection = computed(() => userAccountsStore.sortDirection)
+const startIndex = computed(() => userAccountsStore.startIndex)
+const endIndex = computed(() => userAccountsStore.endIndex)
+const pageNumbers = computed(() => userAccountsStore.pageNumbers)
+const loading = computed(() => userAccountsStore.loading)
+
+// Computed properties
+const paginatedUsers = computed(() => users.value)
 
 // Debounced search to prevent excessive API calls
 const debouncedSearch = debounce(() => {
-  currentPage.value = 1
-  fetchUsers()
+  userAccountsStore.setSearch(search.value)
 }, 500) // 500ms delay
-
-// Fetch users with improved search and filtering
-const fetchUsers = async () => {
-  try {
-    const response = await axios.get('/api/account/users/', {
-      params: {
-        search: search.value, // Full-text search
-        status: statusFilter.value, // Status filter
-        ordering: `${sortDirection.value === 'desc' ? '-' : ''}${sortColumn.value}`,
-        page: currentPage.value,
-        page_size: perPage.value
-      }
-    })
-    
-    // Robust handling of different possible response structures
-    const data = response.data
-    users.value = data.results || data.data || data || []
-    
-    // Carefully set totalUsers with fallback
-    totalUsers.value = data.count || data.total || data.length || 0
-    
-    // Set total pages with fallback
-    totalPages.value = data.total_pages || Math.ceil(totalUsers.value / perPage.value) || 1
-    
-    // Ensure currentPage doesn't exceed total pages
-    if (currentPage.value > totalPages.value) {
-      currentPage.value = 1
-    }
-  } catch (error) {
-    console.error('Error fetching users:', error)
-    users.value = []
-    totalUsers.value = 0
-    totalPages.value = 1
-    currentPage.value = 1
-  }
-}
-
-// Computed properties
-const filteredUsers = computed(() => {
-  return users.value
-})
-
-const paginatedUsers = computed(() => {
-  return filteredUsers.value
-})
-
-const totalUsers = ref(0)
-const totalPages = ref(0)
-
-const startIndex = computed(() => {
-  if (totalUsers.value === 0) return 0
-  return (currentPage.value - 1) * perPage.value + 1
-})
-
-const endIndex = computed(() => {
-  if (totalUsers.value === 0) return 0
-  return Math.min(currentPage.value * perPage.value, totalUsers.value)
-})
-
-const pageNumbers = computed(() => {
-  if (totalPages.value === 0) return []
-  
-  const range = 2
-  let pages = []
-  for (
-    let i = Math.max(1, currentPage.value - range);
-    i <= Math.min(totalPages.value, currentPage.value + range);
-    i++
-  ) {
-    pages.push(i)
-  }
-  return pages
-})
 
 // Methods
 const sortBy = (column) => {
-  if (sortColumn.value === column) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortColumn.value = column
-    sortDirection.value = 'asc'
-  }
-  fetchUsers()
+  userAccountsStore.setSorting(column)
 }
 
 const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
-    fetchUsers()
-  }
+  userAccountsStore.prevPage()
 }
 
 const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
-    fetchUsers()
-  }
+  userAccountsStore.nextPage()
 }
 
 const goToPage = (page) => {
-  currentPage.value = page
-  fetchUsers()
+  userAccountsStore.goToPage(page)
 }
 
 const viewUserDetails = (user) => {
@@ -390,14 +322,12 @@ const viewUserDetails = (user) => {
 // Method to set status filter
 const setStatusFilter = (status) => {
   statusFilter.value = status
-  currentPage.value = 1 // Reset to first page
-  fetchUsers()
+  userAccountsStore.setStatusFilter(status)
 }
 
 // Enhanced search method
 const performSearch = () => {
-  currentPage.value = 1
-  fetchUsers()
+  userAccountsStore.setSearch(search.value)
 }
 
 // Add to template
@@ -409,14 +339,30 @@ watch(search, (newSearch) => {
 })
 
 watch(perPage, () => {
-  currentPage.value = 1
-  fetchUsers()
+  userAccountsStore.setPerPage(perPage.value)
 })
 
 watch(statusFilter, () => {
-  fetchUsers()
+  userAccountsStore.setStatusFilter(statusFilter.value)
 })
 
+// Helper methods for user profile data
+const getUserJobTitle = (user) => {
+  if (user.userType === 'employee' && user.employeeProfile) {
+    return user.employeeProfile.jobTitle || 'N/A'
+  }
+  return 'N/A'
+}
+
+const getUserDepartment = (user) => {
+  if (user.userType === 'employee' && user.employeeProfile) {
+    return user.employeeProfile.department || 'N/A'
+  }
+  return 'N/A'
+}
+
 // Initial fetch
-onMounted(fetchUsers)
+onMounted(() => {
+  userAccountsStore.fetchUsers()
+})
 </script> 

@@ -20,23 +20,12 @@
   </template>
   
   <script setup>
-  import { ref, onMounted } from "vue";
+  import { ref } from "vue";
   import AdminLayout from "@/components/layout/AdminLayout.vue";
   import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
-  import UserDataTable from "@/components/tables/UserDataTable.vue";
-  import axios from "axios";
+  import UserDataTable from "@/components/accounts/UserDataTable.vue";
   
   const currentPageTitle = ref("Accounts Page");
-  const users = ref([]);
-  
-  onMounted(async () => {
-    try {
-      const response = await axios.get('/api/account/users/');
-      users.value = response.data;
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    }
-  });
   </script>
   
   <style></style>
