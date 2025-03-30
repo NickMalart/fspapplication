@@ -7,7 +7,13 @@
 
     <!-- Error State -->
     <div v-else-if="error" class="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-900 text-red-700 dark:text-red-300 px-4 py-3 rounded">
-      {{ error }}
+      <p>{{ error }}</p>
+      <button 
+        @click="retryFetch" 
+        class="mt-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+      >
+        Try again
+      </button>
     </div>
 
     <!-- Data Display with Edit Button in Relative Position -->
@@ -106,19 +112,23 @@ const handleSave = async (formData: {
   
   try {
     console.log('Sending company data to store:', formData);
-    await companyStore.updateCompanyProfile(formData);
+    const success = await companyStore.updateCompanyProfile(formData);
     
-    // Increment key to force modal re-render on next open
-    modalKey.value++;
-    
-    // Refresh data after saving
-    await companyStore.fetchCompanyProfile();
-    isModalOpen.value = false;
+    if (success) {
+      // Increment key to force modal re-render on next open
+      modalKey.value++;
+      isModalOpen.value = false;
+    }
   } catch (error) {
     console.error('Failed to save company changes:', error);
   } finally {
     isSaving.value = false;
   }
+};
+
+// Retry fetching if there was an error
+const retryFetch = async () => {
+  await companyStore.fetchCompanyProfile();
 };
 
 // Fetch company data on mount
