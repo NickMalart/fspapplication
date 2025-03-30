@@ -7,14 +7,21 @@
         @click="triggerFileInput"
       >
         <img
-          v-if="completeUser?.avatar"
-          :src="completeUser.avatar"
+          v-if="tempAvatarUrl"
+          :src="tempAvatarUrl"
           :alt="`${fullName}'s avatar`"
           class="h-full w-full object-cover transition-opacity group-hover:opacity-80"
         />
+        <img
+          v-else-if="avatarUrl"
+          :src="avatarUrl"
+          :alt="`${fullName}'s avatar`"
+          class="h-full w-full object-cover transition-opacity group-hover:opacity-80"
+          referrerpolicy="no-referrer"
+        />
         <img 
           v-else
-          :src="`https://ui-avatars.com/api/?name=${completeUser?.firstName || ''}+${completeUser?.lastName || ''}&background=0D8ABC&color=fff`" 
+          :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(completeUser?.firstName || '')}-${encodeURIComponent(completeUser?.lastName || '')}&background=0D8ABC&color=fff&size=128`" 
           :alt="`${fullName}'s avatar`"
           class="h-full w-full object-cover transition-opacity group-hover:opacity-80"
         />
@@ -34,11 +41,21 @@
         accept="image/*" 
         @change="handleFileChange"
       />
+      
+      <!-- Loading indicator -->
+      <div v-if="isUploading" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 dark:bg-gray-800 dark:bg-opacity-70 rounded-full">
+        <div class="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
     </div>
     
     <!-- Change avatar text with subtle styling for hint purposes -->
     <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
       Click Avatar to change
+    </p>
+    
+    <!-- Error message if upload fails -->
+    <p v-if="uploadError" class="mt-1 text-xs text-red-500">
+      {{ uploadError }}
     </p>
     
     <!-- User Name -->
@@ -54,13 +71,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useUserStore } from '@/stores/userProfileStore';
 import { storeToRefs } from 'pinia';
+import { fileService } from '@/service/fileService';
 
 const userStore = useUserStore();
 const { completeUser } = storeToRefs(userStore);
 const fileInput = ref<HTMLInputElement | null>(null);
+const isUploading = ref(false);
+const uploadError = ref('');
+const tempAvatarUrl = ref<string | null>(null);
 
 // Calculate full name
 const fullName = computed(() => {
@@ -68,29 +89,104 @@ const fullName = computed(() => {
   return `${completeUser.value.firstName} ${completeUser.value.lastName}`.trim() || 'User';
 });
 
+// Create a computed property for the avatar URL
+const avatarUrl = computed(() => {
+  if (!completeUser.value?.avatar) return null;
+  
+  const avatarPath = completeUser.value.avatar;
+  
+  // If it's already a CloudFront URL, use it as-is
+  if (avatarPath.startsWith('https://d1elaz1f509qmb.cloudfront.net/')) {
+    return avatarPath;
+  }
+  
+  // Otherwise, construct the CloudFront URL directly
+  return fileService.getCloudFrontUrl(avatarPath);
+});
+
 // Trigger file input click
 const triggerFileInput = () => {
+  if (isUploading.value) return;
   fileInput.value?.click();
 };
 
 // Handle file selection
-const handleFileChange = (event: Event) => {
+const handleFileChange = async (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (!target.files?.length) return;
   
   const file = target.files[0];
-  const reader = new FileReader();
   
+  // Basic validation
+  if (!file.type.startsWith('image/')) {
+    uploadError.value = 'Please select an image file';
+    return;
+  }
+  
+  if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    uploadError.value = 'Image size must be less than 5MB';
+    return;
+  }
+  
+  // Clear any previous errors
+  uploadError.value = '';
+  
+  // Create a temporary preview
+  const reader = new FileReader();
   reader.onload = (e) => {
-    // Update the avatar preview
-    if (completeUser.value && e.target?.result) {
-      completeUser.value.avatar = e.target.result as string;
-      
-      // In a real implementation, you would upload the file to a server here
-      console.log('Avatar file selected:', file.name);
+    if (e.target?.result) {
+      // Preview is temporary, no need to update Pinia yet
+      tempAvatarUrl.value = e.target.result as string;
     }
   };
-  
   reader.readAsDataURL(file);
+  
+  // Upload to S3
+  isUploading.value = true;
+  try {
+    // First upload the file to S3
+    console.log("Uploading file to S3...");
+    const uploadResult = await fileService.uploadFile(
+      file,
+      'images',
+      'profiles'
+    );
+    
+    if (!uploadResult.success || !uploadResult.path) {
+      throw new Error(uploadResult.error || 'Failed to upload avatar to S3');
+    }
+    
+    console.log("File uploaded successfully to S3:", uploadResult);
+    
+    // Then update the user profile with the S3 path
+    console.log("Updating user profile with avatar path:", uploadResult.path);
+    const updateSuccess = await userStore.updateUserProfile({
+      avatar: uploadResult.path // Store the path in the database
+    });
+    
+    if (!updateSuccess) {
+      throw new Error("Failed to update user profile with avatar path");
+    }
+    
+    console.log("Profile updated successfully");
+    
+    // The avatar URL will update automatically through the computed property
+    // when completeUser is updated
+    
+  } catch (error) {
+    console.error('Error in avatar update process:', error);
+    uploadError.value = error instanceof Error ? error.message : 'An error occurred while updating avatar';
+    
+    // Revert to original avatar
+    if (completeUser.value) {
+      await userStore.fetchUserProfile(); // Refresh user data
+      tempAvatarUrl.value = null; // Clear temporary avatar
+    }
+  } finally {
+    isUploading.value = false;
+  }
+  
+  // Reset input value to allow selecting the same file again
+  if (fileInput.value) fileInput.value.value = '';
 };
 </script> 

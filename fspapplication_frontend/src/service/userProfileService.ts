@@ -68,14 +68,41 @@ export const userService = {
   
   async updateUserProfile(userData: Partial<CompleteUser>): Promise<CompleteUser> {
     try {
-      const transformedData = convertObjectKeysToSnake(userData);
-      console.log('Sending data to API:', transformedData);
-      const response = await axios.put(`${API_URL}/account/user/profile/update/`, transformedData);
+      // Create a simplified version of the data with only the fields we're updating
+      const simplifiedData: any = {};
+      
+      // Extract only the fields that are present in userData
+      if (userData.avatar !== undefined) simplifiedData.avatar = userData.avatar;
+      if (userData.firstName !== undefined) simplifiedData.first_name = userData.firstName;
+      if (userData.lastName !== undefined) simplifiedData.last_name = userData.lastName;
+      if (userData.email !== undefined) simplifiedData.email = userData.email;
+      
+      // Handle profile data separately
+      if (userData.profile) {
+        simplifiedData.profile = convertObjectKeysToSnake(userData.profile);
+      }
+      
+      console.log('Sending data to API:', simplifiedData);
+      
+      // Log request before sending
+      console.log('API Request URL:', `${API_URL}/account/user/profile/update/`);
+      console.log('API Request Method: PUT');
+      console.log('API Request Headers:', 'Content-Type: application/json');
+      console.log('API Request Data:', JSON.stringify(simplifiedData, null, 2));
+      
+      const response = await axios.put(`${API_URL}/account/user/profile/update/`, simplifiedData);
+      console.log('API Response:', response.data);
       return convertObjectKeysToCamel(response.data);
     } catch (error) {
       console.error('Error updating profile:', error);
       if (axios.isAxiosError(error) && error.response) {
-        console.error('API Error Response:', error.response.data);
+        console.error('API Error Status:', error.response.status);
+        console.error('API Error Headers:', error.response.headers);
+        console.error('API Error Response Data:', error.response.data);
+        
+        if (error.request) {
+          console.error('API Error Request:', error.request);
+        }
       }
       throw error;
     }

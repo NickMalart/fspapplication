@@ -102,7 +102,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=150, blank=True, default='')
     last_name = models.CharField(max_length=150, blank=True, default='')
-    avatar = models.ImageField(upload_to='avatars', blank=True, null=True)
+    avatar = models.CharField(max_length=255, blank=True, null=True, help_text="S3 path to user avatar")
 
     # Functional groups (custom implementation)
     functional_groups = models.ManyToManyField(
