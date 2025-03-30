@@ -295,63 +295,146 @@ const loading = computed(() => userAccountsStore.loading)
 // Computed properties
 const paginatedUsers = computed(() => users.value)
 
-// Get properly formatted avatar URL
-const getAvatarUrl = (user) => {
-  if (!user.avatar) {
-    // Generate a consistent avatar URL that won't change per session to help with caching
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}+${encodeURIComponent(user.lastName)}&background=0D8ABC&color=fff&size=100`
-  }
-  
-  const avatarPath = user.avatar
-  
-  // If it's already a CloudFront URL, use it as-is
-  if (avatarPath.startsWith('https://d1elaz1f509qmb.cloudfront.net/')) {
-    return avatarPath
-  }
-  
-  // Otherwise, construct the CloudFront URL
-  return fileService.getCloudFrontUrl(avatarPath)
-}
-
-// Cache for UI avatar images to prevent multiple requests
+// Cache for locally generated avatars and loaded custom avatars
 const avatarCache = ref(new Map())
 
-// Preload avatars for visible users to prevent multiple individual requests
-const preloadAvatars = (usersToPreload) => {
-  if (!usersToPreload || usersToPreload.length === 0) return
+// Preload custom avatars in the background
+const preloadCustomAvatars = (usersWithAvatars) => {
+  if (!usersWithAvatars || usersWithAvatars.length === 0) return
   
-  // Process in batches to avoid too many simultaneous requests
-  usersToPreload.forEach(user => {
-    if (!user.avatar) {
-      const cacheKey = `${user.firstName}-${user.lastName}`
-      if (!avatarCache.value.has(cacheKey)) {
-        // Create URL
-        const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}+${encodeURIComponent(user.lastName)}&background=0D8ABC&color=fff&size=100`
-        
-        // Set in cache immediately with placeholder and update when loaded
-        avatarCache.value.set(cacheKey, avatarUrl)
+  // Use a single image element for sequential loading to avoid flooding the network
+  const preloadImage = new Image()
+  let currentIndex = 0
+  
+  const loadNextAvatar = () => {
+    if (currentIndex >= usersWithAvatars.length) return
+    
+    const user = usersWithAvatars[currentIndex]
+    const avatarPath = user.avatar
+    
+    // Generate a cache key for this avatar
+    const cacheKey = `custom-${user.id}`
+    
+    // Skip if already cached
+    if (avatarCache.value.has(cacheKey)) {
+      currentIndex++
+      loadNextAvatar()
+      return
+    }
+    
+    // Get proper URL
+    let avatarUrl
+    if (avatarPath.startsWith('https://d1elaz1f509qmb.cloudfront.net/')) {
+      avatarUrl = avatarPath
+    } else {
+      avatarUrl = fileService.getCloudFrontUrl(avatarPath)
+    }
+    
+    // Initialize with the URL even before loading completes
+    avatarCache.value.set(cacheKey, avatarUrl)
+    
+    // Move to next image once this one loads or errors
+    preloadImage.onload = preloadImage.onerror = () => {
+      currentIndex++
+      if (currentIndex < usersWithAvatars.length) {
+        loadNextAvatar()
       }
     }
-  })
-}
-
-// Get avatar URL with caching
-const getCachedAvatarUrl = (user) => {
-  // If user has a custom avatar, use the regular method
-  if (user.avatar) {
-    return getAvatarUrl(user)
+    
+    // Start loading
+    preloadImage.src = avatarUrl
   }
   
-  // Otherwise, check cache
-  const cacheKey = `${user.firstName}-${user.lastName}`
+  // Begin loading process
+  loadNextAvatar()
+}
+
+// Get properly formatted avatar URL with improved caching
+const getAvatarUrl = (user) => {
+  if (!user.avatar) {
+    // Use local SVG generation for default avatars
+    return generateAvatarSvg(user.firstName, user.lastName)
+  }
+  
+  // For custom avatars, check if we've already processed this one
+  const cacheKey = `custom-${user.id}`
   if (avatarCache.value.has(cacheKey)) {
     return avatarCache.value.get(cacheKey)
   }
   
-  // If not in cache, generate and store
-  const avatarUrl = getAvatarUrl(user)
+  // Otherwise process and cache it
+  const avatarPath = user.avatar
+  let avatarUrl
+  
+  // If it's already a CloudFront URL, use it as-is
+  if (avatarPath.startsWith('https://d1elaz1f509qmb.cloudfront.net/')) {
+    avatarUrl = avatarPath
+  } else {
+    // Otherwise, construct the CloudFront URL
+    avatarUrl = fileService.getCloudFrontUrl(avatarPath)
+  }
+  
+  // Cache for future use
   avatarCache.value.set(cacheKey, avatarUrl)
   return avatarUrl
+}
+
+// Generate inline SVG avatar
+const generateAvatarSvg = (firstName = '', lastName = '') => {
+  const cacheKey = `${firstName}-${lastName}`
+  
+  // Check cache first
+  if (avatarCache.value.has(cacheKey)) {
+    return avatarCache.value.get(cacheKey)
+  }
+  
+  // Generate a color based on the name (consistent for same name)
+  const getInitialsColor = (name) => {
+    const colors = [
+      '#1E88E5', '#43A047', '#E53935', '#5E35B1', '#FB8C00', 
+      '#00897B', '#3949AB', '#8E24AA', '#D81B60', '#039BE5'
+    ]
+    
+    // Simple hash function for name
+    let hash = 0
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    
+    // Use hash to pick a color
+    return colors[Math.abs(hash) % colors.length]
+  }
+  
+  // Get initials (maximum 2 characters)
+  const firstInitial = firstName ? firstName.charAt(0).toUpperCase() : ''
+  const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : ''
+  const initials = firstInitial + lastInitial
+  const bgColor = getInitialsColor(`${firstName}${lastName}`)
+  
+  // Generate SVG with proper XML escaping 
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+    <rect width="100%" height="100%" fill="${bgColor}"/>
+    <text x="50" y="55" font-size="35" text-anchor="middle" fill="white" font-family="Arial, sans-serif" dominant-baseline="middle">${initials}</text>
+  </svg>`
+  
+  // Convert to data URL
+  const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+  
+  // Store in cache
+  avatarCache.value.set(cacheKey, svgUrl)
+  
+  return svgUrl
+}
+
+// Get cached avatar URL - now simplified to just use local SVGs for default avatars
+const getCachedAvatarUrl = (user) => {
+  // If user has a custom avatar, use it
+  if (user.avatar) {
+    return getAvatarUrl(user)
+  }
+  
+  // Otherwise, use our locally generated SVG
+  return generateAvatarSvg(user.firstName, user.lastName)
 }
 
 // Debounced search to prevent excessive API calls
@@ -396,8 +479,8 @@ const searchInput = ref(null)
 
 // Handle avatar image loading errors
 const handleAvatarError = (event, user) => {
-  // Fall back to UI Avatars if the custom avatar fails to load
-  event.target.src = getCachedAvatarUrl(user)
+  // Fall back to locally generated SVG avatar
+  event.target.src = generateAvatarSvg(user.firstName, user.lastName)
 }
 
 // Watchers
@@ -414,9 +497,14 @@ watch(statusFilter, () => {
 })
 
 watch(users, (newUsers) => {
-  // Preload avatars when user list changes
-  if (newUsers && newUsers.length > 0) {
-    preloadAvatars(newUsers)
+  if (!newUsers || newUsers.length === 0) return
+  
+  // Split users into those with and without custom avatars
+  const usersWithCustomAvatars = newUsers.filter(user => user.avatar)
+  
+  // Only preload if there are custom avatars
+  if (usersWithCustomAvatars.length > 0) {
+    preloadCustomAvatars(usersWithCustomAvatars)
   }
 }, { immediate: true })
 
