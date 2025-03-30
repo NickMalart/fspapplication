@@ -10,8 +10,11 @@
     <div v-else class="space-y-6">
       <div class="bg-white dark:bg-boxdark rounded-lg shadow-sm p-6">
         <CompanyAvatarSection :company="companyProfile" />
-        
-        <!-- Additional company information sections can be added here -->
+      </div>
+      
+      <!-- Company Information Card -->
+      <div class="bg-white dark:bg-boxdark rounded-lg shadow-sm p-6">
+        <CompanyInformationCard />
       </div>
     </div>
   </AdminLayout>
@@ -22,6 +25,7 @@ import { ref, onMounted, computed } from "vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import CompanyAvatarSection from "@/components/company/CompanyAvatarSection.vue";
+import CompanyInformationCard from "@/components/company/CompanyInformationCard.vue";
 import { useCompanyProfileStore } from "@/stores/companyProfileStore";
 import { CompanyProfile } from "@/service/companyProfileService";
 
