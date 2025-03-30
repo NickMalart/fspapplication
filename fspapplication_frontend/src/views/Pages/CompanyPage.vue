@@ -8,7 +8,11 @@
       {{ error }}
     </div>
     <div v-else class="space-y-6">
-      <!-- Future company information cards can be added here -->
+      <div class="bg-white dark:bg-boxdark rounded-lg shadow-sm p-6">
+        <CompanyAvatarSection :company="companyProfile" />
+        
+        <!-- Additional company information sections can be added here -->
+      </div>
     </div>
   </AdminLayout>
 </template>
@@ -17,17 +21,18 @@
 import { ref, onMounted, computed } from "vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
-import { useCompanyStore } from "@/stores/companyStore";
-import { Company } from "@/service/companyService";
+import CompanyAvatarSection from "@/components/company/CompanyAvatarSection.vue";
+import { useCompanyProfileStore } from "@/stores/companyProfileStore";
+import { CompanyProfile } from "@/service/companyProfileService";
 
 const currentPageTitle = ref("Company Settings");
-const companyStore = useCompanyStore();
-const loading = computed(() => companyStore.loading);
-const error = computed(() => companyStore.error);
-const company = computed<Company | null>(() => companyStore.company);
+const companyProfileStore = useCompanyProfileStore();
+const loading = computed(() => companyProfileStore.loading);
+const error = computed(() => companyProfileStore.error);
+const companyProfile = computed<CompanyProfile | null>(() => companyProfileStore.companyProfile);
 
 onMounted(async () => {
-  await companyStore.fetchCompany();
+  await companyProfileStore.fetchCompanyProfile();
 });
 </script>
 
