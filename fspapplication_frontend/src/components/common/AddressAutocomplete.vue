@@ -30,7 +30,7 @@
   </template>
   
   <script lang="ts">
-  import { defineComponent, ref, onMounted, watch } from 'vue';
+  import { defineComponent, ref, watch } from 'vue';
   import axios from 'axios';
   import { debounce } from 'lodash';
   
