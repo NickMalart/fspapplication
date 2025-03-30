@@ -1,8 +1,7 @@
 import apiClient from './api';
 import { convertObjectKeysToCamel } from '@/utils/caseConverter';
 
-// Remove or adjust the API_URL to avoid duplication
-// const API_URL = import.meta.env.VITE_API_URL || '/api';
+// We don't need to add any prefix here since apiClient already has the baseURL set
 
 export interface CompanyProfile {
   id: number;
@@ -41,7 +40,7 @@ export const companyProfileService = {
    */
   async getCompanyProfile(): Promise<CompanyProfile | null> {
     try {
-      const response = await apiClient.get('/company/');
+      const response = await apiClient.get('company/');
       return convertObjectKeysToCamel(response.data);
     } catch (error) {
       console.error('Failed to fetch company profile:', error);
@@ -56,7 +55,7 @@ export const companyProfileService = {
    */
   async updateCompanyProfile(companyData: Partial<CompanyProfile>): Promise<CompanyUpdateResponse> {
     try {
-      const response = await apiClient.patch('/company/', companyData);
+      const response = await apiClient.patch('company/', companyData);
       return {
         success: true,
         company: convertObjectKeysToCamel(response.data),
