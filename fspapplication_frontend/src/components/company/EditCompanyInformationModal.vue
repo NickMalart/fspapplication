@@ -53,12 +53,18 @@
         
         <div class="space-y-2">
           <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Website</label>
-          <input
-            v-model="editForm.website"
-            type="url"
-            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-            placeholder="Enter website URL"
-          />
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <span class="text-sm text-gray-500 dark:text-gray-400">https://</span>
+            </div>
+            <input
+              v-model="editForm.websiteInput"
+              type="text"
+              class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent pl-16 pr-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+              placeholder="example.com"
+            />
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Enter domain without https:// - it will be added automatically</p>
         </div>
 
         <div class="flex items-center justify-end gap-3 mt-6">
@@ -84,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, defineEmits, defineProps, onMounted, watch } from 'vue';
+import { reactive, defineEmits, defineProps, onMounted, watch, computed } from 'vue';
 import { CompanyProfile } from '@/service/companyProfileService';
 
 const props = defineProps({
@@ -105,7 +111,11 @@ const editForm = reactive({
   name: '',
   phone: '',
   email: '',
-  website: ''
+  websiteInput: '',
+  get website() {
+    if (!this.websiteInput) return '';
+    return this.websiteInput.startsWith('http') ? this.websiteInput : `https://${this.websiteInput}`;
+  }
 });
 
 // Initialize form data when props change
@@ -114,7 +124,13 @@ const initForm = () => {
     editForm.name = props.companyData.name || '';
     editForm.phone = props.companyData.phone || '';
     editForm.email = props.companyData.email || '';
-    editForm.website = props.companyData.website || '';
+    
+    // Strip https:// from website for display in input
+    if (props.companyData.website) {
+      editForm.websiteInput = props.companyData.website.replace(/^https?:\/\//, '');
+    } else {
+      editForm.websiteInput = '';
+    }
     
     console.log('Initialized company form data:', editForm);
   }
