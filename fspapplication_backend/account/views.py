@@ -5,7 +5,7 @@ from rest_framework import generics, filters
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
-from .serializers import LoginUserSerializer, CompleteUserSerializer
+from .serializers import LoginUserSerializer, CompleteUserSerializer, UserListSerializer
 from .models import UserProfile, User
 
 # Add pagination class
@@ -41,7 +41,7 @@ class CurrentUserProfileView(APIView):
 
 class UserListView(generics.ListAPIView):
     """API view to list all users with filtering, sorting and pagination"""
-    serializer_class = CompleteUserSerializer
+    serializer_class = UserListSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -50,12 +50,10 @@ class UserListView(generics.ListAPIView):
         'first_name', 'last_name', 'email', 'is_active', 'user_type',
         'employee_profile__job_title', 'employee_profile__department'
     ]
-    ordering = ['first_name']  # Default sorting
+    ordering = ['first_name']
     
     def get_queryset(self):
-        queryset = User.objects.all().select_related(
-            'profile', 'employee_profile', 'agent_profile', 'client_profile'
-        )
+        queryset = User.objects.all().select_related('employee_profile')
         
         # Status filter (active, inactive, all)
         status = self.request.query_params.get('status')

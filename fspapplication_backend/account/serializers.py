@@ -46,3 +46,16 @@ class CompleteUserSerializer(serializers.ModelSerializer):
         
         return instance
 
+class UserListSerializer(serializers.ModelSerializer):
+    """Optimized serializer for user listing table view"""
+    department = serializers.CharField(source='employee_profile.department', read_only=True, default='N/A')
+    jobTitle = serializers.CharField(source='employee_profile.job_title', read_only=True, default='N/A')
+    
+    class Meta:
+        model = User
+        fields = (
+            'id', 'first_name', 'last_name', 'email', 
+            'avatar', 'is_active', 'user_type',
+            'department', 'jobTitle'
+        )
+

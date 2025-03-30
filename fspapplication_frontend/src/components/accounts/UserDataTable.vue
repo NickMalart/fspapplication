@@ -153,7 +153,7 @@
                 <td class="px-6 py-4 whitespace-nowrap w-24">
                   <img 
                     class="h-10 w-10 rounded-full object-cover mx-auto" 
-                    :src="getAvatarUrl(user)" 
+                    :src="getCachedAvatarUrl(user)" 
                     :alt="`${user.firstName} ${user.lastName}'s avatar`"
                     @error="handleAvatarError($event, user)"
                   />
@@ -298,7 +298,8 @@ const paginatedUsers = computed(() => users.value)
 // Get properly formatted avatar URL
 const getAvatarUrl = (user) => {
   if (!user.avatar) {
-    return `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=0D8ABC&color=fff&size=100`
+    // Generate a consistent avatar URL that won't change per session to help with caching
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}+${encodeURIComponent(user.lastName)}&background=0D8ABC&color=fff&size=100`
   }
   
   const avatarPath = user.avatar
@@ -310,6 +311,47 @@ const getAvatarUrl = (user) => {
   
   // Otherwise, construct the CloudFront URL
   return fileService.getCloudFrontUrl(avatarPath)
+}
+
+// Cache for UI avatar images to prevent multiple requests
+const avatarCache = ref(new Map())
+
+// Preload avatars for visible users to prevent multiple individual requests
+const preloadAvatars = (usersToPreload) => {
+  if (!usersToPreload || usersToPreload.length === 0) return
+  
+  // Process in batches to avoid too many simultaneous requests
+  usersToPreload.forEach(user => {
+    if (!user.avatar) {
+      const cacheKey = `${user.firstName}-${user.lastName}`
+      if (!avatarCache.value.has(cacheKey)) {
+        // Create URL
+        const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}+${encodeURIComponent(user.lastName)}&background=0D8ABC&color=fff&size=100`
+        
+        // Set in cache immediately with placeholder and update when loaded
+        avatarCache.value.set(cacheKey, avatarUrl)
+      }
+    }
+  })
+}
+
+// Get avatar URL with caching
+const getCachedAvatarUrl = (user) => {
+  // If user has a custom avatar, use the regular method
+  if (user.avatar) {
+    return getAvatarUrl(user)
+  }
+  
+  // Otherwise, check cache
+  const cacheKey = `${user.firstName}-${user.lastName}`
+  if (avatarCache.value.has(cacheKey)) {
+    return avatarCache.value.get(cacheKey)
+  }
+  
+  // If not in cache, generate and store
+  const avatarUrl = getAvatarUrl(user)
+  avatarCache.value.set(cacheKey, avatarUrl)
+  return avatarUrl
 }
 
 // Debounced search to prevent excessive API calls
@@ -355,7 +397,7 @@ const searchInput = ref(null)
 // Handle avatar image loading errors
 const handleAvatarError = (event, user) => {
   // Fall back to UI Avatars if the custom avatar fails to load
-  event.target.src = `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=0D8ABC&color=fff&size=100`
+  event.target.src = getCachedAvatarUrl(user)
 }
 
 // Watchers
@@ -370,6 +412,13 @@ watch(perPage, () => {
 watch(statusFilter, () => {
   userAccountsStore.setStatusFilter(statusFilter.value)
 })
+
+watch(users, (newUsers) => {
+  // Preload avatars when user list changes
+  if (newUsers && newUsers.length > 0) {
+    preloadAvatars(newUsers)
+  }
+}, { immediate: true })
 
 // Helper methods for user profile data
 const getUserJobTitle = (user) => {
