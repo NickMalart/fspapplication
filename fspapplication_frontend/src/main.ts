@@ -65,7 +65,7 @@ axios.interceptors.response.use(
         return axios(originalRequest)
       } catch (refreshError) {
         auth.removeToken()
-        router.push('/login')
+        router.push('/')
         return Promise.reject(refreshError)
       }
     }

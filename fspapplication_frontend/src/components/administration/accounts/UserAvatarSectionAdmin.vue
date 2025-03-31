@@ -135,7 +135,7 @@
           @click="resetPassword"
           class="px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium transition-colors dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800"
         >
-          Reset Password
+          Reset Password (Placeholder)
         </button>
       </div>
     </template>
