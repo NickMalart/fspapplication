@@ -34,6 +34,12 @@
         :error="error || ''"
         @update:user="handleUserUpdate"
       />
+      <UserTypeProfileAdminCard
+        :userData="userProfile"
+        :loading="loading"
+        :error="error || ''"
+        @update:user="handleUserUpdate"
+      />
     </div>
   </AdminLayout>
 </template>
@@ -49,6 +55,7 @@ import UserAvatarSectionAdmin from '@/components/administration/accounts/UserAva
 import UserPersonalInformationAdminCard from '@/components/administration/accounts/UserPersonalInformationAdminCard.vue';
 import UserAddressAdminCard from '@/components/administration/accounts/UserAddressAdminCard.vue';
 import UserEmergencyContactAdminCard from "@/components/administration/accounts/UserEmergencyContactAdminCard.vue";
+import UserTypeProfileAdminCard from "@/components/administration/accounts/UserTypeProfileAdminCard.vue";
 
 
 const route = useRoute();
