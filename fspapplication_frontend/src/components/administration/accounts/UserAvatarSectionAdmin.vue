@@ -104,6 +104,14 @@
         {{ currentUser?.userType || 'User' }}
       </div>
       
+      <!-- Account Owner Badge (if applicable) -->
+      <div v-if="currentUser?.isTenantOwner" class="mt-1 px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 text-xs rounded-full flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 5z" />
+        </svg>
+        Account Owner
+      </div>
+      
       <!-- User Email -->
       <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
         {{ currentUser?.email || 'No email available' }}
@@ -148,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { fileService } from '@/service/fileService';
 import { userProfileAdminService } from '@/service/userProfileAdminService';
 import { useUserProfileAdminStore } from '@/stores/userProfileAdminStore';
@@ -158,6 +166,8 @@ import type { UserProfileAdmin } from '@/stores/userProfileAdminStore';
 const props = defineProps<{
   userId?: string; // Accept userId to fetch data
   user?: UserProfileAdmin | null; // Or accept user directly if already fetched
+  // Add a refreshTrigger prop to manually trigger refreshes
+  refreshTrigger?: number | boolean;
 }>();
 
 const emit = defineEmits<{
@@ -174,38 +184,96 @@ const tempAvatarUrl = ref<string | null>(null);
 const loadingUser = ref(false);
 const userError = ref<string | null>(null);
 const localUser = ref<UserProfileAdmin | null>(null);
+const previousUserId = ref<string | undefined>(props.userId);
+
+// Add a flag to track forced refreshes
+const isForcedRefresh = ref(false);
 
 // Computed property to use either passed user or locally fetched user
 const currentUser = computed(() => props.user || localUser.value);
 
+// Prevent window focus events from triggering unwanted refreshes
+const handleVisibilityChange = () => {
+  console.log(`[UserAvatarSectionAdmin] Visibility changed: ${document.visibilityState} at ${new Date().toISOString()}`);
+};
+
 // Watch for userId changes to fetch user data
-watch(() => props.userId, fetchUserData, { immediate: true });
+watch(() => props.userId, (newUserId, oldUserId) => {
+  console.log(`[UserAvatarSectionAdmin] userId changed: ${oldUserId} -> ${newUserId}`);
+  // Only fetch if userId actually changed
+  if (newUserId !== oldUserId && newUserId) {
+    previousUserId.value = newUserId;
+    console.log(`[UserAvatarSectionAdmin] Fetching data due to userId change`);
+    fetchUserData();
+  }
+}, { immediate: true });
+
+// Watch refreshTrigger to explicitly refresh data when needed
+watch(() => props.refreshTrigger, (newVal, oldVal) => {
+  console.log(`[UserAvatarSectionAdmin] refreshTrigger changed: ${oldVal} -> ${newVal}`);
+  if (props.userId) {
+    isForcedRefresh.value = true;
+    console.log(`[UserAvatarSectionAdmin] Fetching data due to explicit refreshTrigger`);
+    fetchUserData();
+  }
+});
 
 // Fetch user data if userId is provided
 async function fetchUserData() {
-  if (!props.userId) return;
+  console.log(`[UserAvatarSectionAdmin] fetchUserData called. userId: ${props.userId}, isForcedRefresh: ${isForcedRefresh.value}`);
+  
+  if (!props.userId) {
+    console.log(`[UserAvatarSectionAdmin] No userId, skipping fetch`);
+    return;
+  }
   
   // Skip if we already have the user data passed as prop
-  if (props.user) return;
+  if (props.user) {
+    console.log(`[UserAvatarSectionAdmin] User data passed as prop, skipping fetch`);
+    return;
+  }
   
+  // Skip if we already have data for this user and it's not a forced refresh
+  if (localUser.value?.id === props.userId && !isForcedRefresh.value) {
+    console.log(`[UserAvatarSectionAdmin] Already have data for user ${props.userId} and not forced refresh, skipping fetch`);
+    isForcedRefresh.value = false;
+    return;
+  }
+  
+  console.log(`[UserAvatarSectionAdmin] Fetching user data for ${props.userId}`);
   loadingUser.value = true;
   userError.value = null;
   
   try {
     localUser.value = await userProfileAdminService.getUserProfile(props.userId);
+    console.log(`[UserAvatarSectionAdmin] Successfully fetched data for ${props.userId}`);
   } catch (error) {
     userError.value = error instanceof Error ? error.message : 'Failed to load user data';
-    console.error('Error fetching user:', error);
+    console.error(`[UserAvatarSectionAdmin] Error fetching user:`, error);
   } finally {
     loadingUser.value = false;
+    isForcedRefresh.value = false;
   }
 }
 
-// Fetch user data on mount if userId is provided
+// Fetch user data on mount if userId is provided and has changed
 onMounted(() => {
-  if (props.userId && !props.user) {
+  console.log(`[UserAvatarSectionAdmin] Component mounted. userId: ${props.userId}, previousUserId: ${previousUserId.value}`);
+  
+  if (props.userId && !props.user && props.userId !== previousUserId.value) {
+    previousUserId.value = props.userId;
+    console.log(`[UserAvatarSectionAdmin] Fetching data on mount`);
     fetchUserData();
   }
+  
+  // Add visibility change listener to intercept potential browser focus events
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  console.log(`[UserAvatarSectionAdmin] Added visibilitychange listener`);
+});
+
+onUnmounted(() => {
+  // Clean up event listener
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
 
 // Calculate full name

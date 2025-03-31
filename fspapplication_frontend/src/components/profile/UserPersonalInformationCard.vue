@@ -123,7 +123,10 @@ const handleSave = async (formData: { phoneNumber: string | null, dateOfBirth: s
 // Fetch profile data on mount
 onMounted(async () => {
   console.log('Component mounted, fetching profile data');
-  await userStore.fetchUserProfile();
+  // Only fetch if we don't already have the data
+  if (!completeUser.value) {
+    await userStore.fetchUserProfile();
+  }
 });
 
 // Debug log when profile data changes

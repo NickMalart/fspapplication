@@ -40,6 +40,7 @@ export interface UserProfileAdmin {
   avatar: string | null;
   isActive: boolean;
   isStaff: boolean;
+  isTenantOwner: boolean;
   dateJoined: string;
   lastLogin: string | null;
   profile: {

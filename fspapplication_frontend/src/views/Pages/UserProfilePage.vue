@@ -53,29 +53,11 @@ onMounted(() => {
   
   // Expose forceRefresh globally so it can be called from sidebar
   window.forceProfileRefresh = forceRefresh;
-  
-  // Setup visibility/focus handlers
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  window.addEventListener('focus', handleWindowFocus);
 });
 
 // Clean up handlers on unmount
 onBeforeUnmount(() => {
-  document.removeEventListener('visibilitychange', handleVisibilityChange);
-  window.removeEventListener('focus', handleWindowFocus);
   // Remove global function
   delete window.forceProfileRefresh;
 });
-
-// Handle tab visibility changes
-const handleVisibilityChange = () => {
-  if (document.visibilityState === 'visible') {
-    forceRefresh();
-  }
-};
-
-// Handle window focus events
-const handleWindowFocus = () => {
-  forceRefresh();
-};
 </script>

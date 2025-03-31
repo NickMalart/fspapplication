@@ -109,7 +109,7 @@ class UserProfileAdminSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'id', 'email', 'first_name', 'last_name', 'avatar', 
-            'user_type', 'is_active', 'is_staff', 'date_joined', 'last_login',
+            'user_type', 'is_active', 'is_tenant_owner', 'date_joined', 'last_login',
             'profile', 'functional_groups', 'functional_group_ids',
             'agent_profile', 'client_profile', 'employee_profile'
         )

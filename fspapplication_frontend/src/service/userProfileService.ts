@@ -39,6 +39,7 @@ export interface CompleteUser {
   isActive: boolean;
   isSuperuser: boolean;
   isStaff: boolean;
+  isTenantOwner: boolean;
   dateJoined: string;
   lastLogin: string | null;
   functionalGroups: any[];

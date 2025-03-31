@@ -79,11 +79,19 @@
     <p class="text-sm text-gray-500 dark:text-gray-400">
       {{ user?.email || 'No email available' }}
     </p>
+    
+    <!-- Account Owner Badge (if applicable) -->
+    <div v-if="user?.isTenantOwner" class="mt-2 px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 text-xs rounded-full flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 5z" />
+      </svg>
+      Account Owner
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useUserStore } from '@/stores/userProfileStore';
 import { fileService } from '@/service/fileService';
 import { CompleteUser } from '@/service/userProfileService';
@@ -91,6 +99,8 @@ import { CompleteUser } from '@/service/userProfileService';
 // Define props for user data
 const props = defineProps<{
   user?: CompleteUser | null;
+  // Add a refreshTrigger prop to manually trigger refreshes
+  refreshTrigger?: number | boolean;
 }>();
 
 const userStore = useUserStore();
@@ -98,6 +108,54 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
 const uploadError = ref('');
 const tempAvatarUrl = ref<string | null>(null);
+const previousUserId = ref<string | undefined>(props.user?.id);
+const isForcedRefresh = ref(false);
+
+// Store initial user data to prevent unnecessary refreshes
+const initialUserData = ref(props.user ? JSON.stringify(props.user) : null);
+
+// Watch for user changes to avoid refreshing unnecessarily
+watch(() => props.user?.id, (newUserId, oldUserId) => {
+  // Only update the previousUserId if it actually changed
+  if (newUserId !== oldUserId && newUserId) {
+    previousUserId.value = newUserId;
+    // Update our snapshot of initial data
+    if (props.user) {
+      initialUserData.value = JSON.stringify(props.user);
+    }
+  }
+});
+
+// Watch refreshTrigger to explicitly refresh data when needed
+watch(() => props.refreshTrigger, () => {
+  if (props.user?.id) {
+    isForcedRefresh.value = true;
+    // Update our snapshot of initial data if this is a forced refresh
+    if (props.user) {
+      initialUserData.value = JSON.stringify(props.user);
+    }
+  }
+});
+
+// Prevent window focus events from triggering unwanted refreshes
+const handleVisibilityChange = () => {
+  // Do nothing - just having this handler prevents some browsers from refreshing content
+};
+
+onMounted(() => {
+  // Store initial user data
+  if (props.user) {
+    initialUserData.value = JSON.stringify(props.user);
+  }
+  
+  // Add visibility change listener to intercept potential browser focus events
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+});
+
+onUnmounted(() => {
+  // Clean up event listener
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+});
 
 // Calculate full name
 const fullName = computed(() => {

@@ -137,8 +137,7 @@ def create_dev_users(tenant):
         last_name='Admin',
         user_type=User.USER_TYPE_CLIENT,
         is_active=True,
-        is_staff=True,
-        is_superuser=True
+        is_tenant_owner=True
     )
     admin_user.set_password('devadmin123')
     admin_user.save()

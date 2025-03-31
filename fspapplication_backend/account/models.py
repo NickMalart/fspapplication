@@ -15,13 +15,11 @@ class CustomUserManager(UserManager):
         return user
 
     def create_user(self, email=None, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', False)
-        extra_fields.setdefault('is_superuser', False)
+        extra_fields.setdefault('is_tenant_owner', False)
         return self._create_user(email, password, **extra_fields)
 
     def create_superuser(self, email=None, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_tenant_owner', True)
         return self._create_user(email, password, **extra_fields)
 
 
@@ -107,8 +105,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
 
     is_active = models.BooleanField(default=True)
-    is_superuser = models.BooleanField(default=False)
-    is_staff = models.BooleanField(default=False)
+    is_tenant_owner = models.BooleanField(default=False, help_text="Designates whether this user is the owner of the tenant")
 
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(blank=True, null=True)
@@ -174,21 +171,21 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Check if user can access the helpdesk page"""
         return (self.is_helpdesk or 
                 self.is_admin or 
-                self.is_superuser)
+                self.is_tenant_owner)
     
     @property
     def can_access_warehouse(self):
         """Check if user can access the warehouse management page"""
         return (self.is_warehouse or 
                 self.is_admin or 
-                self.is_superuser)
+                self.is_tenant_owner)
     
     @property
     def can_access_technician_tools(self):
         """Check if user can access technician tools"""
         return (self.is_technician or 
                 self.is_admin or 
-                self.is_superuser)
+                self.is_tenant_owner)
 
 
 class UserGroupMembership(models.Model):

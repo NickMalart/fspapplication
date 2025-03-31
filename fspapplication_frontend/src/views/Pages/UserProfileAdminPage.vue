@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onActivated, onBeforeUnmount, watch } from "vue";
+import { ref, onMounted, computed, onActivated, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useUserProfileAdminStore } from "@/stores/userProfileAdminStore";
 import type { UserProfileAdmin } from "@/stores/userProfileAdminStore";
@@ -99,32 +99,6 @@ watch(
     }
   }
 );
-
-// Setup event listeners for page visibility changes
-onMounted(() => {
-  // Refresh data when tab becomes visible again
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  // Setup focus event listener
-  window.addEventListener('focus', handleWindowFocus);
-});
-
-// Cleanup event listeners
-onBeforeUnmount(() => {
-  document.removeEventListener('visibilitychange', handleVisibilityChange);
-  window.removeEventListener('focus', handleWindowFocus);
-});
-
-// Handle tab visibility changes
-const handleVisibilityChange = () => {
-  if (document.visibilityState === 'visible') {
-    fetchUserData();
-  }
-};
-
-// Handle window focus events
-const handleWindowFocus = () => {
-  fetchUserData();
-};
 
 // For Vue 3 kept-alive components
 onActivated(fetchUserData);
