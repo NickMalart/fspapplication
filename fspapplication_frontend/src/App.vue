@@ -12,8 +12,10 @@ import SidebarProvider from './components/layout/SidebarProvider.vue'
 import { onMounted, watch } from 'vue';
 import { usecompanyStore } from '@/stores/companyStore';
 import { fileService } from '@/service/fileService';
+import { useAuthStore } from '@/stores/auth';
 
 const companyStore = usecompanyStore();
+const authStore = useAuthStore();
 
 // Function to update favicon and title
 const updateFaviconAndTitle = () => {
@@ -33,14 +35,22 @@ const updateFaviconAndTitle = () => {
   }
 };
 
-// Fetch company data and update favicon/title when mounted
+// Fetch company data and update favicon/title when mounted, but only if user is authenticated
 onMounted(async () => {
-  if (!companyStore.companyProfile) {
+  if (authStore.isAuthenticated && !companyStore.companyProfile) {
     await companyStore.fetchCompanyProfile();
+    updateFaviconAndTitle();
   }
-  updateFaviconAndTitle();
 });
 
 // Watch for changes to company profile
 watch(() => companyStore.companyProfile, updateFaviconAndTitle);
+
+// Also watch for authentication state changes
+watch(() => authStore.isAuthenticated, async (isAuthenticated) => {
+  if (isAuthenticated && !companyStore.companyProfile) {
+    await companyStore.fetchCompanyProfile();
+    updateFaviconAndTitle();
+  }
+});
 </script>
