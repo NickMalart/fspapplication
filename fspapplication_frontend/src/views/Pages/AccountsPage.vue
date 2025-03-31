@@ -23,7 +23,7 @@
   import { ref } from "vue";
   import AdminLayout from "@/components/layout/AdminLayout.vue";
   import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
-  import UserDataTable from "@/components/accounts/UserDataTable.vue";
+  import UserDataTable from "@/components/administration/accounts/UserDataTable.vue";
   
   const currentPageTitle = ref("Accounts Page");
   </script>
