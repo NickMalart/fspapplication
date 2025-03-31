@@ -19,9 +19,9 @@
 import { ref, onMounted, computed } from "vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
-import CompanyAvatarSection from "@/components/company/CompanyAvatarSection.vue";
-import CompanyInformationCard from "@/components/company/CompanyInformationCard.vue";
-import CompanyAddressCard from "@/components/company/CompanyAddressCard.vue";
+import CompanyAvatarSection from "@/components/administration/company/CompanyAvatarSection.vue";
+import CompanyInformationCard from "@/components/administration/company/CompanyInformationCard.vue";
+import CompanyAddressCard from "@/components/administration/company/CompanyAddressCard.vue";
 import { usecompanyStore } from "@/stores/companyStore";
 import { CompanyProfile } from "@/service/companyService";
 

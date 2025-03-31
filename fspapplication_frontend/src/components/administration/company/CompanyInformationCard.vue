@@ -97,7 +97,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { usecompanyStore } from '@/stores/companyStore';
 import { storeToRefs } from 'pinia';
 import ComponentCard from '@/components/common/ComponentCard.vue';
-import EditCompanyInformationModal from '@/components/company/EditCompanyInformationModal.vue';
+import EditCompanyInformationModal from '@/components/administration/company/EditCompanyInformationModal.vue';
 
 const companyStore = usecompanyStore();
 const { companyProfile, loading, error } = storeToRefs(companyStore);
