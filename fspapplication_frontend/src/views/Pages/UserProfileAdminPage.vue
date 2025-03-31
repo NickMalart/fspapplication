@@ -16,6 +16,12 @@
         :user="userProfile" 
         @update:user="handleUserUpdate"
       />
+      <UserPersonalInformationAdminCard
+        :userData="userProfile"
+        :loading="loading"
+        :error="error || ''"
+        @update:user="handleUserUpdate"
+      />
     </div>
   </AdminLayout>
 </template>
@@ -28,6 +34,7 @@ import type { UserProfileAdmin } from "@/stores/userProfileAdminStore";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import UserAvatarSectionAdmin from '@/components/administration/accounts/UserAvatarSectionAdmin.vue';
+import UserPersonalInformationAdminCard from '@/components/administration/accounts/UserPersonalInformationAdminCard.vue';
 
 const route = useRoute();
 const userId = computed(() => route.params.id as string);
