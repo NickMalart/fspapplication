@@ -97,7 +97,7 @@ class UserProfileAdminView(APIView):
     API view for admin users to view and update detailed user profile information.
     Requires admin permissions.
     """
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
     
     def get(self, request, pk=None):
         """Get a specific user's detailed profile"""
