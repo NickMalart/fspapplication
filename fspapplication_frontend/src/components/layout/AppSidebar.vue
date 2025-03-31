@@ -104,6 +104,7 @@
                 </button>
                 <router-link
                   v-else-if="item.path"
+                  @click="item.onClick ? item.onClick() : null"
                   :to="item.path"
                   :class="[
                     'menu-item group',
@@ -317,6 +318,12 @@ const menuGroups = [
         icon: UserCircleIcon,
         name: "User Profile",
         path: "/profile",
+        onClick: () => {
+          if (route.path === '/profile' && window.forceProfileRefresh) {
+            console.log('Profile link clicked while on profile page, forcing refresh');
+            window.forceProfileRefresh();
+          }
+        }
       },      
     ],
   },

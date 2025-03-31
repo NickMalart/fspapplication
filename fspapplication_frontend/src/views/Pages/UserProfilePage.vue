@@ -17,7 +17,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, onBeforeUnmount } from "vue";
 import { useUserStore } from "@/stores/userProfileStore";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
@@ -32,7 +32,50 @@ const loading = computed(() => userStore.loading);
 const error = computed(() => userStore.error);
 const userProfile = computed(() => userStore.completeUser);
 
-onMounted(async () => {
+// Function to fetch user profile data
+const fetchUserData = async () => {
   await userStore.fetchUserProfile();
+};
+
+// Function to force refresh data
+const forceRefresh = async () => {
+  console.log('Forcing profile data refresh');
+  // Clear existing data first to ensure UI shows loading state
+  userStore.$patch({ completeUser: null });
+  // Then fetch fresh data
+  await fetchUserData();
+};
+
+// Initial data fetch on component mount
+onMounted(() => {
+  // Perform initial data fetch
+  forceRefresh();
+  
+  // Expose forceRefresh globally so it can be called from sidebar
+  window.forceProfileRefresh = forceRefresh;
+  
+  // Setup visibility/focus handlers
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('focus', handleWindowFocus);
 });
+
+// Clean up handlers on unmount
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  window.removeEventListener('focus', handleWindowFocus);
+  // Remove global function
+  delete window.forceProfileRefresh;
+});
+
+// Handle tab visibility changes
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    forceRefresh();
+  }
+};
+
+// Handle window focus events
+const handleWindowFocus = () => {
+  forceRefresh();
+};
 </script>
