@@ -39,7 +39,10 @@ const userProfile = computed(() => userProfileAdminStore.currentUser);
 
 // Handle updates from the avatar component
 const handleUserUpdate = (updatedUser: UserProfileAdmin) => {
-  // The store should already be updated by the service
+  // Update the store's currentUser directly without a full refresh
+  if (updatedUser) {
+    userProfileAdminStore.$patch({ currentUser: updatedUser });
+  }
 };
 
 onMounted(async () => {
