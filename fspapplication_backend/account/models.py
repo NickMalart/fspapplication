@@ -1,6 +1,6 @@
 import uuid
 
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager, Group
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.db import models
 from django.utils import timezone
 from django.apps import apps
@@ -15,11 +15,13 @@ class CustomUserManager(UserManager):
         return user
 
     def create_user(self, email=None, password=None, **extra_fields):
-        extra_fields.setdefault('is_tenant_owner', False)
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
         return self._create_user(email, password, **extra_fields)
 
     def create_superuser(self, email=None, password=None, **extra_fields):
-        extra_fields.setdefault('is_tenant_owner', True)
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
         return self._create_user(email, password, **extra_fields)
 
 
@@ -103,7 +105,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True,
         verbose_name='Functional Groups'
     )
-
+    is_superuser = models.BooleanField(default=False, help_text="Designates whether this user has all permissions without explicitly assigning them.")
     is_active = models.BooleanField(default=True)
     is_tenant_owner = models.BooleanField(default=False, help_text="Designates whether this user is the owner of the tenant")
 
@@ -165,27 +167,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_admin(self):
         return self.belongs_to_group(FunctionalGroup.GROUP_ADMIN)
-
-    @property
-    def can_access_helpdesk(self):
-        """Check if user can access the helpdesk page"""
-        return (self.is_helpdesk or 
-                self.is_admin or 
-                self.is_tenant_owner)
-    
-    @property
-    def can_access_warehouse(self):
-        """Check if user can access the warehouse management page"""
-        return (self.is_warehouse or 
-                self.is_admin or 
-                self.is_tenant_owner)
-    
-    @property
-    def can_access_technician_tools(self):
-        """Check if user can access technician tools"""
-        return (self.is_technician or 
-                self.is_admin or 
-                self.is_tenant_owner)
 
 
 class UserGroupMembership(models.Model):
