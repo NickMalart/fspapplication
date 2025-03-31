@@ -23,14 +23,6 @@
         </svg>
       </button>
 
-      <!-- Debugging info for development -->
-      <div v-if="isDevelopment" class="mb-4 p-3 bg-gray-100 dark:bg-gray-800 rounded text-xs">
-        <p>Debug - User Type: {{ userTypeDebug }}</p>
-        <p>Is Agent: {{ isAgent }}</p>
-        <p>Is Client: {{ isClient }}</p>
-        <p>Is Employee: {{ isEmployee }}</p>
-      </div>
-
       <!-- Agent Profile Display -->
       <div v-if="isAgent && userData" class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
         <div class="space-y-2">
