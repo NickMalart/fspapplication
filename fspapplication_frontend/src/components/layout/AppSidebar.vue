@@ -315,15 +315,11 @@ const menuGroups = [
     title: "Others",
     items: [
       {
-        icon: UserCircleIcon,
-        name: "User Profile",
-        path: "/profile",
-        onClick: () => {
-          if (route.path === '/profile' && window.forceProfileRefresh) {
-            console.log('Profile link clicked while on profile page, forcing refresh');
-            window.forceProfileRefresh();
-          }
-        }
+        name: "User Settings",
+        icon: UserCircleIcon,        
+        subItems: [
+            { name: "User Profile", path: "/profile", pro: false },
+          ],
       },      
     ],
   },
