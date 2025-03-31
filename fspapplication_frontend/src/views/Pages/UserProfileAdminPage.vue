@@ -28,6 +28,12 @@
         :error="error || ''"
         @update:user="handleUserUpdate"
       />
+      <UserEmergencyContactAdminCard
+        :userData="userProfile"
+        :loading="loading"
+        :error="error || ''"
+        @update:user="handleUserUpdate"
+      />
     </div>
   </AdminLayout>
 </template>
@@ -42,6 +48,8 @@ import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import UserAvatarSectionAdmin from '@/components/administration/accounts/UserAvatarSectionAdmin.vue';
 import UserPersonalInformationAdminCard from '@/components/administration/accounts/UserPersonalInformationAdminCard.vue';
 import UserAddressAdminCard from '@/components/administration/accounts/UserAddressAdminCard.vue';
+import UserEmergencyContactAdminCard from "@/components/administration/accounts/UserEmergencyContactAdminCard.vue";
+
 
 const route = useRoute();
 const userId = computed(() => route.params.id as string);
