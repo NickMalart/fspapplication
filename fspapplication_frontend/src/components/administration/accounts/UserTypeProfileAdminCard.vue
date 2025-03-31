@@ -125,11 +125,11 @@
           <div class="flex items-center space-x-3">
             <select 
               v-model="selectedUserType" 
-              class="rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-form-input dark:text-white/90 dark:focus:border-brand-800"
+              class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-brand-800"
             >
-              <option value="agent">Agent</option>
-              <option value="client">Client</option>
-              <option value="employee">Employee</option>
+              <option value="agent" class="py-1 bg-white text-gray-800 dark:bg-gray-800 dark:text-white">Agent</option>
+              <option value="client" class="py-1 bg-white text-gray-800 dark:bg-gray-800 dark:text-white">Client</option>
+              <option value="employee" class="py-1 bg-white text-gray-800 dark:bg-gray-800 dark:text-white">Employee</option>
             </select>
             <button 
               @click="showChangeTypeConfirm = true"
