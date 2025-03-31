@@ -1,11 +1,11 @@
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework import generics, filters
+from rest_framework import generics, filters, status
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
-from .serializers import LoginUserSerializer, CompleteUserSerializer, UserListSerializer
+from .serializers import LoginUserSerializer, CompleteUserSerializer, UserListSerializer, UserProfileAdminSerializer
 from .models import UserProfile, User
 
 # Add pagination class
@@ -91,4 +91,43 @@ class UserListView(generics.ListAPIView):
             return f"{desc_prefix}{ordering}"
         
         return super().get_ordering()
+
+class UserProfileAdminView(APIView):
+    """
+    API view for admin users to view and update detailed user profile information.
+    Requires admin permissions.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+    def get(self, request, pk=None):
+        """Get a specific user's detailed profile"""
+        try:
+            user = User.objects.get(pk=pk)
+            serializer = UserProfileAdminSerializer(user)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "User not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    def put(self, request, pk=None):
+        """Update a specific user's profile"""
+        try:
+            user = User.objects.get(pk=pk)
+            serializer = UserProfileAdminSerializer(user, data=request.data, partial=True)
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "User not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    def patch(self, request, pk=None):
+        """Partial update of a specific user's profile"""
+        return self.put(request, pk)
 

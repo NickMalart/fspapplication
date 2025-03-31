@@ -39,6 +39,15 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: '/user-profile-admin/:id',
+    name: 'User Profile Admin',
+    component: () => import('../views/Pages/UserProfileAdminPage.vue'),
+    meta: {
+      title: 'User Profile Admin',
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/form-elements',
     name: 'Form Elements',
     component: () => import('../views/Forms/FormElements.vue'),

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, UserProfile
+from .models import User, UserProfile, FunctionalGroup, AgentProfile, ClientProfile, EmployeeProfile
 
 class LoginUserSerializer(serializers.ModelSerializer):
     """Serializer for basic user login information"""
@@ -58,4 +58,80 @@ class UserListSerializer(serializers.ModelSerializer):
             'avatar', 'is_active', 'user_type',
             'department', 'jobTitle'
         )
+
+class FunctionalGroupSerializer(serializers.ModelSerializer):
+    """Serializer for functional groups"""
+    class Meta:
+        model = FunctionalGroup
+        fields = ('id', 'code', 'name', 'color')
+
+class AgentProfileSerializer(serializers.ModelSerializer):
+    """Serializer for agent-specific profile data"""
+    company_name = serializers.StringRelatedField()
+    
+    class Meta:
+        model = AgentProfile
+        exclude = ('user',)
+
+class ClientProfileSerializer(serializers.ModelSerializer):
+    """Serializer for client-specific profile data"""
+    class Meta:
+        model = ClientProfile
+        exclude = ('user',)
+
+class EmployeeProfileSerializer(serializers.ModelSerializer):
+    """Serializer for employee-specific profile data"""
+    company_name = serializers.StringRelatedField()
+    reports_to = serializers.StringRelatedField()
+    
+    class Meta:
+        model = EmployeeProfile
+        exclude = ('user',)
+
+class UserProfileAdminSerializer(serializers.ModelSerializer):
+    """Comprehensive serializer for admin user profile management"""
+    profile = ProfileDataSerializer(required=False)
+    functional_groups = FunctionalGroupSerializer(many=True, read_only=True)
+    agent_profile = AgentProfileSerializer(read_only=True, required=False)
+    client_profile = ClientProfileSerializer(read_only=True, required=False)
+    employee_profile = EmployeeProfileSerializer(read_only=True, required=False)
+    
+    # IDs for managing functional groups (write operations)
+    functional_group_ids = serializers.PrimaryKeyRelatedField(
+        source='functional_groups',
+        queryset=FunctionalGroup.objects.all(),
+        many=True,
+        required=False,
+        write_only=True
+    )
+    
+    class Meta:
+        model = User
+        fields = (
+            'id', 'email', 'first_name', 'last_name', 'avatar', 
+            'user_type', 'is_active', 'is_staff', 'date_joined', 'last_login',
+            'profile', 'functional_groups', 'functional_group_ids',
+            'agent_profile', 'client_profile', 'employee_profile'
+        )
+    
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop('profile', {})
+        
+        # Handle functional groups if present
+        if 'functional_groups' in validated_data:
+            instance.functional_groups.set(validated_data.pop('functional_groups'))
+        
+        # Update User fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Update or create UserProfile fields
+        if profile_data:
+            profile, created = UserProfile.objects.get_or_create(user=instance)
+            for attr, value in profile_data.items():
+                setattr(profile, attr, value)
+            profile.save()
+        
+        return instance
 
