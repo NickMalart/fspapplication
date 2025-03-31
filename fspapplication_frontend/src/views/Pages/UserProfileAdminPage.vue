@@ -56,6 +56,7 @@ import UserPersonalInformationAdminCard from '@/components/administration/accoun
 import UserAddressAdminCard from '@/components/administration/accounts/UserAddressAdminCard.vue';
 import UserEmergencyContactAdminCard from "@/components/administration/accounts/UserEmergencyContactAdminCard.vue";
 import UserTypeProfileAdminCard from "@/components/administration/accounts/UserTypeProfileAdminCard.vue";
+import { convertObjectKeysToCamel } from "@/utils/caseConverter";
 
 
 const route = useRoute();

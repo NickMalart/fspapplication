@@ -39,7 +39,7 @@
               <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Company Name</label>
               <input
                 type="text"
-                v-model="localAgentData.company_name"
+                v-model="localAgentData.companyName"
                 class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                 disabled
               />
@@ -48,7 +48,7 @@
               <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">License Number</label>
               <input
                 type="text"
-                v-model="localAgentData.license_number"
+                v-model="localAgentData.licenseNumber"
                 class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
               />
             </div>
@@ -56,7 +56,7 @@
               <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Years of Experience</label>
               <input
                 type="number"
-                v-model="localAgentData.years_of_experience"
+                v-model="localAgentData.yearsOfExperience"
                 class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
               />
             </div>
@@ -90,7 +90,7 @@
               <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Company Name</label>
               <input
                 type="text"
-                v-model="localClientData.company_name"
+                v-model="localClientData.companyName"
                 class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
               />
             </div>
@@ -106,7 +106,7 @@
               <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Client Since</label>
               <input
                 type="date"
-                v-model="localClientData.client_since"
+                v-model="localClientData.clientSince"
                 class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
               />
             </div>
@@ -140,7 +140,7 @@
               <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Company Name</label>
               <input
                 type="text"
-                v-model="localEmployeeData.company_name"
+                v-model="localEmployeeData.companyName"
                 class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                 disabled
               />
@@ -157,7 +157,7 @@
               <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Employee ID</label>
               <input
                 type="text"
-                v-model="localEmployeeData.employee_id"
+                v-model="localEmployeeData.employeeId"
                 class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
               />
             </div>
@@ -165,7 +165,7 @@
               <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Job Title</label>
               <input
                 type="text"
-                v-model="localEmployeeData.job_title"
+                v-model="localEmployeeData.jobTitle"
                 class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
               />
             </div>
@@ -173,7 +173,7 @@
               <label class="mb-2.5 block text-sm font-medium text-black dark:text-white">Start Date</label>
               <input
                 type="date"
-                v-model="localEmployeeData.start_date"
+                v-model="localEmployeeData.startDate"
                 class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
               />
             </div>
@@ -208,26 +208,28 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { convertObjectKeysToCamel } from '@/utils/caseConverter';
 
 // Define interfaces for the different profile types
 interface AgentProfileData {
-  company_name?: string;
-  license_number?: string;
-  years_of_experience?: number;
+  companyName?: string;
+  licenseNumber?: string | null;
+  yearsOfExperience?: number;
 }
 
 interface ClientProfileData {
-  company_name?: string;
-  industry?: string;
-  client_since?: string; // Date as string in YYYY-MM-DD format
+  companyName?: string;
+  industry?: string | null;
+  clientSince?: string; // Date as string in YYYY-MM-DD format
 }
 
 interface EmployeeProfileData {
-  company_name?: string;
+  companyName?: string;
   department?: string;
-  employee_id?: string;
-  job_title?: string;
-  start_date?: string; // Date as string in YYYY-MM-DD format
+  employeeId?: string | null;
+  jobTitle?: string | null;
+  startDate?: string;
+  reportsTo?: string | null;
 }
 
 const props = defineProps({

@@ -36,19 +36,19 @@
         <div class="space-y-2">
           <p class="text-sm text-gray-500 dark:text-gray-400">Company Name</p>
           <p class="font-medium text-gray-800 dark:text-white/90">
-            {{ agentProfileData.company_name || 'Not provided' }}
+            {{ agentProfileData.companyName || 'Not provided' }}
           </p>
         </div>
         <div class="space-y-2">
           <p class="text-sm text-gray-500 dark:text-gray-400">License Number</p>
           <p class="font-medium text-gray-800 dark:text-white/90">
-            {{ agentProfileData.license_number || 'Not provided' }}
+            {{ agentProfileData.licenseNumber || 'Not provided' }}
           </p>
         </div>
         <div class="space-y-2">
           <p class="text-sm text-gray-500 dark:text-gray-400">Years of Experience</p>
           <p class="font-medium text-gray-800 dark:text-white/90">
-            {{ agentProfileData.years_of_experience || 'Not provided' }}
+            {{ agentProfileData.yearsOfExperience || 'Not provided' }}
           </p>
         </div>
       </div>
@@ -58,7 +58,7 @@
         <div class="space-y-2">
           <p class="text-sm text-gray-500 dark:text-gray-400">Company Name</p>
           <p class="font-medium text-gray-800 dark:text-white/90">
-            {{ clientProfileData.company_name || 'Not provided' }}
+            {{ clientProfileData.companyName || 'Not provided' }}
           </p>
         </div>
         <div class="space-y-2">
@@ -70,7 +70,7 @@
         <div class="space-y-2">
           <p class="text-sm text-gray-500 dark:text-gray-400">Client Since</p>
           <p class="font-medium text-gray-800 dark:text-white/90">
-            {{ formatDate(clientProfileData.client_since) }}
+            {{ formatDate(clientProfileData.clientSince) }}
           </p>
         </div>
       </div>
@@ -80,7 +80,7 @@
         <div class="space-y-2">
           <p class="text-sm text-gray-500 dark:text-gray-400">Company Name</p>
           <p class="font-medium text-gray-800 dark:text-white/90">
-            {{ employeeProfileData.company_name || 'Not provided' }}
+            {{ employeeProfileData.companyName || 'Not provided' }}
           </p>
         </div>
         <div class="space-y-2">
@@ -92,19 +92,19 @@
         <div class="space-y-2">
           <p class="text-sm text-gray-500 dark:text-gray-400">Employee ID</p>
           <p class="font-medium text-gray-800 dark:text-white/90">
-            {{ employeeProfileData.employee_id || 'Not provided' }}
+            {{ employeeProfileData.employeeId || 'Not provided' }}
           </p>
         </div>
         <div class="space-y-2">
           <p class="text-sm text-gray-500 dark:text-gray-400">Job Title</p>
           <p class="font-medium text-gray-800 dark:text-white/90">
-            {{ employeeProfileData.job_title || 'Not provided' }}
+            {{ employeeProfileData.jobTitle || 'Not provided' }}
           </p>
         </div>
         <div class="space-y-2">
           <p class="text-sm text-gray-500 dark:text-gray-400">Start Date</p>
           <p class="font-medium text-gray-800 dark:text-white/90">
-            {{ formatDate(employeeProfileData.start_date) }}
+            {{ formatDate(employeeProfileData.startDate) }}
           </p>
         </div>
       </div>
@@ -232,26 +232,28 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useToast } from '@/composables/useToast';
 import ComponentCard from '@/components/common/ComponentCard.vue';
 import UserTypeProfileEditModal from './UserTypeProfileEditModal.vue';
+import { convertObjectKeysToCamel } from '@/utils/caseConverter';
 
 // Define interfaces for the different profile types
 interface AgentProfileData {
-  company_name?: string;
-  license_number?: string;
-  years_of_experience?: number;
+  companyName?: string;
+  licenseNumber?: string | null;
+  yearsOfExperience?: number;
 }
 
 interface ClientProfileData {
-  company_name?: string;
-  industry?: string;
-  client_since?: string; // Date as string in YYYY-MM-DD format
+  companyName?: string;
+  industry?: string | null;
+  clientSince?: string; // Date as string in YYYY-MM-DD format
 }
 
 interface EmployeeProfileData {
-  company_name?: string;
+  companyName?: string;
   department?: string;
-  employee_id?: string;
-  job_title?: string;
-  start_date?: string; // Date as string in YYYY-MM-DD format
+  employeeId?: string | null;
+  jobTitle?: string | null;
+  startDate?: string;
+  reportsTo?: string | null;
 }
 
 // Define user data interface
@@ -260,6 +262,15 @@ interface UserData {
   userType?: string;
   username?: string;
   email?: string;
+  firstName?: string;
+  lastName?: string;
+  isActive?: boolean;
+  isStaff?: boolean;
+  isTenantOwner?: boolean;
+  dateJoined?: string;
+  lastLogin?: string | null;
+  profile?: any;
+  functionalGroups?: any[];
   agentProfile?: AgentProfileData;
   clientProfile?: ClientProfileData;
   employeeProfile?: EmployeeProfileData;
@@ -378,26 +389,33 @@ const initializeProfileData = () => {
   
   if (isAgent.value && props.userData.agentProfile) {
     console.log('Agent profile found:', props.userData.agentProfile);
+    // Convert any snake_case keys to camelCase
+    const profile = convertObjectKeysToCamel(props.userData.agentProfile);
     agentProfileData.value = { 
-      company_name: props.userData.agentProfile.company_name || '',
-      license_number: props.userData.agentProfile.license_number || '',
-      years_of_experience: props.userData.agentProfile.years_of_experience || 0
+      companyName: profile.companyName || '',
+      licenseNumber: profile.licenseNumber || null,
+      yearsOfExperience: profile.yearsOfExperience || 0
     };
   } else if (isClient.value && props.userData.clientProfile) {
     console.log('Client profile found:', props.userData.clientProfile);
+    // Convert any snake_case keys to camelCase
+    const profile = convertObjectKeysToCamel(props.userData.clientProfile);
     clientProfileData.value = { 
-      company_name: props.userData.clientProfile.company_name || '',
-      industry: props.userData.clientProfile.industry || '',
-      client_since: props.userData.clientProfile.client_since || ''
+      companyName: profile.companyName || '',
+      industry: profile.industry || null,
+      clientSince: profile.clientSince || ''
     };
   } else if (isEmployee.value && props.userData.employeeProfile) {
     console.log('Employee profile found:', props.userData.employeeProfile);
+    // Convert any snake_case keys to camelCase
+    const profile = convertObjectKeysToCamel(props.userData.employeeProfile);
     employeeProfileData.value = { 
-      company_name: props.userData.employeeProfile.company_name || '',
-      department: props.userData.employeeProfile.department || '',
-      employee_id: props.userData.employeeProfile.employee_id || '',
-      job_title: props.userData.employeeProfile.job_title || '',
-      start_date: props.userData.employeeProfile.start_date || ''
+      companyName: profile.companyName || '',
+      department: profile.department || '',
+      employeeId: profile.employeeId || null,
+      jobTitle: profile.jobTitle || null,
+      startDate: profile.startDate || '',
+      reportsTo: profile.reportsTo || null
     };
   } else {
     console.log('No matching profile type found');
