@@ -22,12 +22,18 @@
         :error="error || ''"
         @update:user="handleUserUpdate"
       />
+      <UserAddressAdminCard
+        :userData="userProfile"
+        :loading="loading"
+        :error="error || ''"
+        @update:user="handleUserUpdate"
+      />
     </div>
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, onActivated, onBeforeUnmount, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useUserProfileAdminStore } from "@/stores/userProfileAdminStore";
 import type { UserProfileAdmin } from "@/stores/userProfileAdminStore";
@@ -35,6 +41,7 @@ import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import UserAvatarSectionAdmin from '@/components/administration/accounts/UserAvatarSectionAdmin.vue';
 import UserPersonalInformationAdminCard from '@/components/administration/accounts/UserPersonalInformationAdminCard.vue';
+import UserAddressAdminCard from '@/components/administration/accounts/UserAddressAdminCard.vue';
 
 const route = useRoute();
 const userId = computed(() => route.params.id as string);
@@ -52,9 +59,65 @@ const handleUserUpdate = (updatedUser: UserProfileAdmin) => {
   }
 };
 
-onMounted(async () => {
+// Function to fetch user profile data
+const fetchUserData = async () => {
   if (userId.value) {
     await userProfileAdminStore.fetchUserProfile(userId.value);
   }
+};
+
+// Initial data fetch on component mount
+onMounted(fetchUserData);
+
+// Watch for route changes to refresh data when navigating to this page
+watch(
+  () => route.fullPath,
+  (newPath) => {
+    // Check if the new path is for the admin user profile page
+    if (newPath.includes('/admin/users/') && newPath.includes('/profile')) {
+      console.log('Route changed to admin profile page, refreshing data');
+      fetchUserData();
+    }
+  }
+);
+
+// Also watch for userId changes (in case of switching between different user profiles)
+watch(
+  () => userId.value,
+  (newUserId, oldUserId) => {
+    if (newUserId && newUserId !== oldUserId) {
+      console.log('User ID changed, refreshing admin profile data');
+      fetchUserData();
+    }
+  }
+);
+
+// Setup event listeners for page visibility changes
+onMounted(() => {
+  // Refresh data when tab becomes visible again
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  // Setup focus event listener
+  window.addEventListener('focus', handleWindowFocus);
 });
+
+// Cleanup event listeners
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  window.removeEventListener('focus', handleWindowFocus);
+});
+
+// Handle tab visibility changes
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    fetchUserData();
+  }
+};
+
+// Handle window focus events
+const handleWindowFocus = () => {
+  fetchUserData();
+};
+
+// For Vue 3 kept-alive components
+onActivated(fetchUserData);
 </script> 

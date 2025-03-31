@@ -1,0 +1,389 @@
+<template>
+  <div class="fixed inset-0 flex items-center justify-center p-5 overflow-y-auto modal z-99999">
+    <div
+      class="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
+      aria-hidden="true"
+      @click="$emit('close')"
+    ></div>
+    <div class="relative w-full max-w-[584px] rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-10">
+      <!-- close btn -->
+      <button 
+        @click="$emit('close')" 
+        class="absolute right-3 top-3 z-999 flex h-9.5 w-9.5 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white sm:right-6 sm:top-6 sm:h-11 sm:w-11"
+      >
+        <svg class="fill-current" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M6.04289 16.5413C5.65237 16.9318 5.65237 17.565 6.04289 17.9555C6.43342 18.346 7.06658 18.346 7.45711 17.9555L11.9987 13.4139L16.5408 17.956C16.9313 18.3466 17.5645 18.3466 17.955 17.956C18.3455 17.5655 18.3455 16.9323 17.955 16.5418L13.4129 11.9997L17.955 7.4576C18.3455 7.06707 18.3455 6.43391 17.955 6.04338C17.5645 5.65286 16.9313 5.65286 16.5408 6.04338L11.9987 10.5855L7.45711 6.0439C7.06658 5.65338 6.43342 5.65338 6.04289 6.0439C5.65237 6.43442 5.65237 7.06759 6.04289 7.45811L10.5845 11.9997L6.04289 16.5413Z" fill=""></path>
+        </svg>
+      </button>
+      
+      <h4 class="mb-6 text-lg font-medium text-gray-800 dark:text-white/90">
+        Edit Address Information
+      </h4>
+      
+      <form @submit.prevent="saveChanges" class="space-y-6">
+        <!-- Address Autocomplete -->
+        <div class="space-y-2 mb-2 relative">
+          <AddressAutocomplete
+            v-model="addressData"
+            label="Search Address"
+            placeholder="Type to search for an address"
+            @update:modelValue="populateAddressFields"
+          />
+        </div>
+      
+        <!-- Street Number & Name -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="md:col-span-1 space-y-2">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Street Number</label>
+            <input 
+              v-model="formData.streetNumber"
+              type="text" 
+              class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+              placeholder="Enter street number"
+            />
+          </div>
+          <div class="md:col-span-2 space-y-2">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Street Name</label>
+            <input 
+              v-model="formData.streetName"
+              type="text" 
+              class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+              placeholder="Enter street name"
+            />
+          </div>
+        </div>
+        
+        <!-- Suburb & City -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Suburb</label>
+            <input 
+              v-model="formData.suburb"
+              type="text" 
+              class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+              placeholder="Enter suburb"
+            />
+          </div>
+          <div class="space-y-2">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">City</label>
+            <input 
+              v-model="formData.city"
+              type="text" 
+              class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+              placeholder="Enter city"
+            />
+          </div>
+        </div>
+        
+        <!-- State & Postal Code -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">State/Province</label>
+            <input 
+              v-model="formData.state"
+              type="text" 
+              class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+              placeholder="Enter state/province"
+            />
+          </div>
+          <div class="space-y-2">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Postal Code</label>
+            <input 
+              v-model="formData.postalCode"
+              type="text" 
+              class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+              placeholder="Enter postal code"
+            />
+          </div>
+        </div>
+        
+        <!-- Country -->
+        <div class="space-y-2">
+          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Country</label>
+          <input 
+            v-model="formData.country"
+            type="text" 
+            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+            placeholder="Enter country"
+          />
+        </div>
+          
+        <!-- Hidden fields (latitude, longitude, googlePlaceId) -->
+        <input type="hidden" v-model="formData.latitude">
+        <input type="hidden" v-model="formData.longitude">
+        <input type="hidden" v-model="formData.googlePlaceId">
+          
+        <!-- Form Actions -->
+        <div class="flex items-center justify-end gap-3 mt-6">
+          <button 
+            type="button" 
+            @click="$emit('close')"
+            class="flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+          >
+            Close
+          </button>
+          <button 
+            type="submit"
+            class="flex justify-center rounded-lg bg-brand-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600"
+            :disabled="isSaving"
+          >
+            <span v-if="isSaving" class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></span>
+            {{ isSaving ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, watch } from 'vue';
+import { type UserProfileAdmin } from '@/stores/userProfileAdminStore';
+import AddressAutocomplete from '@/components/common/AddressAutocomplete.vue';
+
+const props = defineProps({
+  userData: {
+    type: Object as () => UserProfileAdmin,
+    required: true
+  },
+  isSaving: {
+    type: Boolean,
+    default: false
+  }
+});
+
+const emit = defineEmits(['close', 'save']);
+
+// Create a form data object from user data props
+const formData = ref({
+  streetNumber: '',
+  streetName: '',
+  suburb: '',
+  city: '',
+  state: '',
+  postalCode: '',
+  country: '',
+  latitude: null as number | null,
+  longitude: null as number | null,
+  googlePlaceId: '' as string | null
+});
+
+// Address autocomplete data
+const addressData = ref<any>({});
+
+// Function to populate form fields from selected address
+const populateAddressFields = (data: any) => {
+  if (!data) {
+    console.error('No address data received');
+    return;
+  }
+  
+  console.log('Address data received:', data);
+  
+  // Copy the existing form data to avoid losing current values
+  const newFormData = { ...formData.value };
+  
+  // Handle street components
+  if (data.street && typeof data.street === 'string' && data.street.trim() !== '') {
+    const street = data.street.trim();
+    const streetParts = street.split(' ');
+    
+    // If the street has a number, use it as street number and the rest as street name
+    if (streetParts.length > 1 && !isNaN(parseInt(streetParts[0]))) {
+      newFormData.streetNumber = streetParts[0];
+      newFormData.streetName = streetParts.slice(1).join(' ');
+    } else {
+      newFormData.streetName = street;
+    }
+  } else if (data.components) {
+    // Use components directly if available
+    newFormData.streetNumber = data.components.street_number || '';
+    newFormData.streetName = data.components.route || '';
+  } else if (data.formatted_address) {
+    // Try to parse from formatted address as last resort
+    const parts = data.formatted_address.split(',');
+    if (parts.length > 0) {
+      const streetPart = parts[0].trim();
+      const streetParts = streetPart.split(' ');
+      
+      if (streetParts.length > 1 && !isNaN(parseInt(streetParts[0]))) {
+        newFormData.streetNumber = streetParts[0];
+        newFormData.streetName = streetParts.slice(1).join(' ');
+      } else {
+        newFormData.streetName = streetPart;
+      }
+    }
+  }
+  
+  // Handle city/suburb, state and postal code
+  if (data.city) {
+    // Sometimes city contains city + state + postal code (e.g. "Nirimba QLD 4551")
+    const cityParts = data.city.split(' ');
+    
+    if (cityParts.length > 1) {
+      // Check for postal code (usually a number at the end)
+      const lastPart = cityParts[cityParts.length - 1];
+      if (/^\d+$/.test(lastPart)) {
+        newFormData.postalCode = lastPart;
+        cityParts.pop(); // Remove postal code from city parts
+      }
+      
+      // Check for state (usually 2-3 uppercase letters)
+      const possibleState = cityParts[cityParts.length - 1];
+      if (possibleState.length <= 3 && possibleState === possibleState.toUpperCase()) {
+        newFormData.state = possibleState;
+        cityParts.pop(); // Remove state from city parts
+      }
+      
+      // For Australian addresses, use locality as suburb only, not city
+      const isAustralianAddress = 
+        (data.country && data.country.toLowerCase().includes('australia')) || 
+        (newFormData.state && ['nsw', 'qld', 'sa', 'tas', 'vic', 'wa', 'act', 'nt'].includes(newFormData.state.toLowerCase()));
+      
+      // Remaining parts should be the suburb
+      newFormData.suburb = cityParts.join(' ');
+      
+      // Only set city if it's not an Australian address
+      if (!isAustralianAddress) {
+        newFormData.city = cityParts.join(' ');
+      } else {
+        newFormData.city = ''; // Leave city blank for Australian addresses
+      }
+    } else {
+      // For single word localities
+      newFormData.suburb = data.city;
+      
+      // Check if Australian address
+      const isAustralianAddress = 
+        (data.country && data.country.toLowerCase().includes('australia')) || 
+        (newFormData.state && ['nsw', 'qld', 'sa', 'tas', 'vic', 'wa', 'act', 'nt'].includes(newFormData.state.toLowerCase()));
+      
+      // Only set city if not Australian
+      if (!isAustralianAddress) {
+        newFormData.city = data.city;
+      } else {
+        newFormData.city = ''; // Leave city blank for Australian addresses
+      }
+    }
+  }
+  
+  // If we have separate state data, use it
+  if (data.state) {
+    newFormData.state = data.state;
+  }
+  
+  // If we have separate postal code data, use it
+  if (data.postal_code) {
+    newFormData.postalCode = data.postal_code;
+  }
+  
+  // Set country if available
+  if (data.country) {
+    newFormData.country = data.country;
+  }
+  
+  // Store coordinates if available
+  if (data.lat !== undefined && data.lat !== null) {
+    newFormData.latitude = data.lat;
+  }
+  
+  if (data.lng !== undefined && data.lng !== null) {
+    newFormData.longitude = data.lng;
+  }
+  
+  // Store Google Place ID if available
+  if (data.place_id) {
+    newFormData.googlePlaceId = data.place_id;
+  }
+  
+  // Update form data
+  formData.value = newFormData;
+  
+  console.log('Address fields populated:', formData.value);
+};
+
+// Initialize form data when props change
+const initForm = () => {
+  if (props.userData?.profile) {
+    formData.value = {
+      streetNumber: props.userData.profile.streetNumber || '',
+      streetName: props.userData.profile.streetName || '',
+      suburb: props.userData.profile.suburb || '',
+      city: props.userData.profile.city || '',
+      state: props.userData.profile.state || '',
+      postalCode: props.userData.profile.postalCode || '',
+      country: props.userData.profile.country || '',
+      latitude: props.userData.profile.latitude,
+      longitude: props.userData.profile.longitude,
+      googlePlaceId: props.userData.profile.googlePlaceId
+    };
+    
+    console.log('Initialized admin address form data:', formData.value);
+  }
+};
+
+// Handle form submission
+const saveChanges = () => {
+  // Copy the form data to avoid mutating the original
+  const dataToSave = { ...formData.value } as any; // Use any type temporarily to allow null assignments
+  
+  // Convert all empty strings to null (Django expects null, not empty strings)
+  Object.keys(dataToSave).forEach(key => {
+    if (dataToSave[key] === '') {
+      dataToSave[key] = null;
+    }
+  });
+  
+  // Format coordinates as numbers with correct decimal precision
+  if (dataToSave.latitude !== null && dataToSave.latitude !== undefined) {
+    // Ensure it's a number and has at most 6 decimal places (as per Django model)
+    if (typeof dataToSave.latitude === 'string') {
+      dataToSave.latitude = parseFloat(dataToSave.latitude);
+    }
+    // If it's a valid number, ensure it has correct precision
+    if (!isNaN(dataToSave.latitude)) {
+      // Limit to 9 total digits with 6 decimal places as per Django model
+      dataToSave.latitude = parseFloat(dataToSave.latitude.toFixed(6));
+    } else {
+      dataToSave.latitude = null;
+    }
+  }
+  
+  if (dataToSave.longitude !== null && dataToSave.longitude !== undefined) {
+    // Ensure it's a number and has at most 6 decimal places (as per Django model)
+    if (typeof dataToSave.longitude === 'string') {
+      dataToSave.longitude = parseFloat(dataToSave.longitude);
+    }
+    // If it's a valid number, ensure it has correct precision
+    if (!isNaN(dataToSave.longitude)) {
+      // Limit to 9 total digits with 6 decimal places as per Django model
+      dataToSave.longitude = parseFloat(dataToSave.longitude.toFixed(6));
+    } else {
+      dataToSave.longitude = null;
+    }
+  }
+  
+  console.log('Saving admin address changes (fixed formatting):', dataToSave);
+  emit('save', dataToSave);
+};
+
+// Add keyboard event listener for Escape key
+onMounted(() => {
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      emit('close');
+    }
+  };
+  
+  window.addEventListener('keydown', handleKeyDown);
+  initForm();
+  
+  // Clean up event listener on component unmount
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+  };
+});
+
+// Watch for changes in userData
+watch(() => props.userData, initForm, { immediate: true });
+</script> 
