@@ -35,19 +35,6 @@ const client = ref<Client | null>(null);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 
-// Computed property to check if we have any address information
-const hasAddressInfo = computed(() => {
-  return client.value && (
-    client.value.streetNumber || 
-    client.value.streetName || 
-    client.value.suburb || 
-    client.value.city || 
-    client.value.state || 
-    client.value.postalCode || 
-    client.value.country
-  );
-});
-
 // Fetch client details
 const fetchClientDetails = async () => {
   if (!clientId.value) return;

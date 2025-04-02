@@ -128,7 +128,7 @@ export const useClientStore = defineStore('client', {
       this.loading = true;
       try {
         // Make real API call to update client status
-        await clientService.updateClientStatus(clientId, isActive);
+        await clientService.updateClientStatus(clientId.toString(), isActive);
         
         // Refresh the client list to reflect the updated status
         this.fetchClients();
