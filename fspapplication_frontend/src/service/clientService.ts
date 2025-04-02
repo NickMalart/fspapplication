@@ -125,6 +125,29 @@ export const clientService = {
     }
   },
   
+  async createClient(clientData: Partial<Client>): Promise<Client> {
+    try {
+      // Convert data from camelCase to snake_case for the API
+      const apiData = convertObjectKeysToSnake(clientData);
+      
+      // Make API call to create the client
+      const response = await axios.post(`${API_URL}/client/clients/`, apiData);
+      const newClient = convertObjectKeysToCamel(response.data);
+      
+      // Clear any cached client lists since we added a new client
+      for (const key of cache.keys()) {
+        if (key.startsWith(`${API_URL}/client/clients/:`)) {
+          cache.delete(key);
+        }
+      }
+      
+      return newClient;
+    } catch (error: any) {
+      console.error('Error creating client:', error);
+      throw error;
+    }
+  },
+  
   async updateClientStatus(id: number, isActive: boolean): Promise<Client> {
     try {
       const data = convertObjectKeysToSnake({ isActive });

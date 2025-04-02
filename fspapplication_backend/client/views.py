@@ -13,8 +13,8 @@ class StandardResultsPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class ClientListView(generics.ListAPIView):
-    """API view to list all clients with filtering, sorting and pagination"""
+class ClientListView(generics.ListCreateAPIView):
+    """API view to list and create clients with filtering, sorting and pagination"""
     serializer_class = ClientSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsPagination

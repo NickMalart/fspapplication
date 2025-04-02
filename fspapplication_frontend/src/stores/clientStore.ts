@@ -1,107 +1,179 @@
-import { defineStore } from 'pinia';
-import { clientService, Client, ClientListParams } from '@/service/clientService';
+import { defineStore } from 'pinia'
+import { clientService, type Client as ServiceClient } from '@/service/clientService';
+
+// Use Client interface from service
+export type Client = ServiceClient;
 
 interface ClientStoreState {
   clients: Client[];
-  totalClients: number;
-  currentPage: number;
-  perPage: number;
   loading: boolean;
   error: string | null;
-  searchQuery: string;
-  statusFilter: 'active' | 'inactive' | 'all';
+  currentPage: number;
+  perPage: number;
+  totalClients: number;
   sortColumn: string;
   sortDirection: 'asc' | 'desc';
-  selectedClient: Client | null;
+  searchTerm: string;
+  statusFilter: 'active' | 'inactive' | 'all';
 }
 
-export const useClientStore = defineStore('clients', {
+export const useClientStore = defineStore('client', {
   state: (): ClientStoreState => ({
     clients: [],
-    totalClients: 0,
-    currentPage: 1,
-    perPage: 10,
     loading: false,
     error: null,
-    searchQuery: '',
-    statusFilter: 'active',
+    currentPage: 1,
+    perPage: 10,
+    totalClients: 0,
     sortColumn: 'name',
     sortDirection: 'asc',
-    selectedClient: null
+    searchTerm: '',
+    statusFilter: 'active', // 'active', 'inactive', or 'all'
   }),
-  
+
   getters: {
-    totalPages: (state) => Math.ceil(state.totalClients / state.perPage) || 1,
-    
-    startIndex: (state) => {
-      if (state.totalClients === 0) return 0;
-      return (state.currentPage - 1) * state.perPage + 1;
-    },
-    
-    endIndex: (state) => {
-      if (state.totalClients === 0) return 0;
-      return Math.min(state.currentPage * state.perPage, state.totalClients);
-    },
-    
-    currentOrdering: (state) => {
-      return `${state.sortDirection === 'desc' ? '-' : ''}${state.sortColumn}`;
-    },
-    
-    // Generate array of nearby page numbers for pagination UI
-    pageNumbers: (state) => {
-      const range = 2;
-      const totalPages = Math.ceil(state.totalClients / state.perPage) || 1;
+    filteredClients(): Client[] {
+      // Filter by search term
+      let filtered = this.clients;
       
-      let pages = [];
-      for (
-        let i = Math.max(1, state.currentPage - range);
-        i <= Math.min(totalPages, state.currentPage + range);
-        i++
-      ) {
-        pages.push(i);
+      if (this.searchTerm) {
+        const searchLower = this.searchTerm.toLowerCase();
+        filtered = filtered.filter(client => 
+          client.name?.toLowerCase().includes(searchLower) ||
+          client.email?.toLowerCase().includes(searchLower) ||
+          client.abn?.toLowerCase().includes(searchLower) ||
+          client.phone?.toLowerCase().includes(searchLower)
+        );
       }
-      return pages;
+      
+      // Filter by status
+      if (this.statusFilter !== 'all') {
+        const isActive = this.statusFilter === 'active';
+        filtered = filtered.filter(client => client.isActive === isActive);
+      }
+      
+      return filtered;
+    },
+    
+    sortedClients(): Client[] {
+      const filtered = this.filteredClients;
+      
+      // Sort clients
+      return [...filtered].sort((a, b) => {
+        let aValue = a[this.sortColumn as keyof Client] || '';
+        let bValue = b[this.sortColumn as keyof Client] || '';
+        
+        // Handle string vs number comparison
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+        }
+        
+        if (this.sortDirection === 'asc') {
+          return aValue > bValue ? 1 : -1;
+        } else {
+          return aValue < bValue ? 1 : -1;
+        }
+      });
+    },
+    
+    paginatedClients(): Client[] {
+      const sorted = this.sortedClients;
+      const start = (this.currentPage - 1) * this.perPage;
+      const end = start + this.perPage;
+      
+      return sorted.slice(start, end);
+    },
+    
+    totalPages(): number {
+      return Math.ceil(this.filteredClients.length / this.perPage);
+    },
+    
+    startIndex(): number {
+      return this.filteredClients.length === 0 
+        ? 0 
+        : (this.currentPage - 1) * this.perPage + 1;
+    },
+    
+    endIndex(): number {
+      const end = this.currentPage * this.perPage;
+      return Math.min(end, this.filteredClients.length);
+    },
+    
+    pageNumbers(): number[] {
+      const totalPages = this.totalPages;
+      const currentPage = this.currentPage;
+      
+      if (totalPages <= 5) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+      }
+      
+      if (currentPage <= 3) {
+        return [1, 2, 3, 4, 5];
+      }
+      
+      if (currentPage >= totalPages - 2) {
+        return [
+          totalPages - 4,
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages
+        ];
+      }
+      
+      return [
+        currentPage - 2,
+        currentPage - 1,
+        currentPage,
+        currentPage + 1,
+        currentPage + 2
+      ];
     }
   },
   
   actions: {
     async fetchClients() {
       this.loading = true;
-      this.error = null;
-      
       try {
-        const params: ClientListParams = {
-          search: this.searchQuery,
+        // Make real API call using clientService
+        const response = await clientService.getClients({
+          search: this.searchTerm,
           status: this.statusFilter,
-          ordering: this.currentOrdering,
+          ordering: this.sortDirection === 'asc' ? this.sortColumn : `-${this.sortColumn}`,
           page: this.currentPage,
           pageSize: this.perPage
-        };
+        });
         
-        const response = await clientService.getClients(params);
-        
+        // Update store with response data
         this.clients = response.results;
         this.totalClients = response.count;
-        
-        return this.clients;
-      } catch (error: any) {
-        this.error = error.message || 'Failed to fetch clients';
-        return [];
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : String(error);
+        console.error('Error fetching clients:', error);
       } finally {
         this.loading = false;
       }
     },
     
-    async getClientById(clientId: number) {
+    async createClient(clientData: Partial<Client>): Promise<Client> {
       this.loading = true;
-      this.error = null;
-      
       try {
-        this.selectedClient = await clientService.getClientById(clientId);
-        return this.selectedClient;
-      } catch (error: any) {
-        this.error = error.message || `Failed to fetch client with ID ${clientId}`;
-        return null;
+        // Make real API call to create client
+        const newClient = await clientService.createClient(clientData);
+        
+        // Add the new client to the local store
+        this.clients.push(newClient);
+        this.totalClients += 1;
+        
+        // Ensure clients list is updated in the state
+        this.clients = [...this.clients];
+        
+        return newClient;
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : String(error);
+        console.error('Error creating client:', error);
+        throw error;
       } finally {
         this.loading = false;
       }
@@ -109,71 +181,67 @@ export const useClientStore = defineStore('clients', {
     
     async updateClientStatus(clientId: number, isActive: boolean) {
       this.loading = true;
-      this.error = null;
-      
       try {
+        // Make real API call to update client status
         const updatedClient = await clientService.updateClientStatus(clientId, isActive);
         
-        // Update the client in the local state
-        const index = this.clients.findIndex((client: Client) => client.id === clientId);
-        if (index !== -1) {
-          this.clients[index] = updatedClient;
+        // Update client in local store
+        const clientIndex = this.clients.findIndex(c => c.id === clientId);
+        if (clientIndex !== -1) {
+          this.clients[clientIndex] = updatedClient;
+          // Ensure reactivity
+          this.clients = [...this.clients];
         }
-        
-        return true;
-      } catch (error: any) {
-        this.error = error.message || `Failed to update status for client ${clientId}`;
-        return false;
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : String(error);
+        console.error('Error updating client status:', error);
       } finally {
         this.loading = false;
       }
     },
     
-    // Pagination and filtering actions
-    goToPage(page: number) {
-      if (page >= 1 && page <= this.totalPages) {
-        this.currentPage = page;
-        return this.fetchClients();
+    setSearch(searchTerm: string) {
+      this.searchTerm = searchTerm;
+      this.currentPage = 1; // Reset to first page when searching
+    },
+    
+    setSorting(column: string) {
+      if (this.sortColumn === column) {
+        // Toggle direction if clicking the same column
+        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        // Default to ascending for new columns
+        this.sortColumn = column;
+        this.sortDirection = 'asc';
       }
-      return Promise.resolve([]);
-    },
-    
-    nextPage() {
-      return this.goToPage(this.currentPage + 1);
-    },
-    
-    prevPage() {
-      return this.goToPage(this.currentPage - 1);
     },
     
     setPerPage(perPage: number) {
       this.perPage = perPage;
       this.currentPage = 1; // Reset to first page
-      return this.fetchClients();
-    },
-    
-    setSearch(query: string) {
-      this.searchQuery = query;
-      this.currentPage = 1; // Reset to first page
-      return this.fetchClients();
     },
     
     setStatusFilter(status: 'active' | 'inactive' | 'all') {
       this.statusFilter = status;
       this.currentPage = 1; // Reset to first page
-      return this.fetchClients();
     },
     
-    setSorting(column: string) {
-      if (this.sortColumn === column) {
-        // Toggle direction if same column
-        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-      } else {
-        // New column, default to ascending
-        this.sortColumn = column;
-        this.sortDirection = 'asc';
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
       }
-      return this.fetchClients();
+    },
+    
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+      }
+    },
+    
+    goToPage(page: number) {
+      if (page >= 1 && page <= this.totalPages) {
+        this.currentPage = page;
+      }
     }
   }
 }); 

@@ -14,18 +14,68 @@
             Below is the list of client accounts currently available.
           </p>
         </div>
-        <ClientDataTable />
+        
+        <!-- Action buttons -->
+        <div class="mb-6 flex justify-end">
+          <button
+            @click="openCreateModal"
+            class="flex items-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-brand-600"
+          >
+            <span class="mr-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </span>
+            Create Client
+          </button>
+        </div>
+        
+        <ClientDataTable @refresh="fetchClients" />
+        
+        <!-- Create Client Modal -->
+        <ClientCreateModal 
+          :show="showCreateModal" 
+          @close="closeCreateModal" 
+          @client-created="handleClientCreated" 
+        />
       </div>
     </AdminLayout>
   </template>
   
   <script setup>
-  import { ref } from "vue";
+  import { ref, onMounted } from "vue";
   import AdminLayout from "@/components/layout/AdminLayout.vue";
   import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
   import ClientDataTable from "@/components/client/ClientDataTable.vue";
+  import ClientCreateModal from "@/components/client/ClientCreateModal.vue";
+  import { useClientStore } from "@/stores/clientStore";
   
   const currentPageTitle = ref("Client Management");
+  const showCreateModal = ref(false);
+  const clientStore = useClientStore();
+  
+  const openCreateModal = () => {
+    showCreateModal.value = true;
+  };
+  
+  const closeCreateModal = () => {
+    showCreateModal.value = false;
+  };
+  
+  const handleClientCreated = (newClient) => {
+    // Refresh the client list to ensure the new client is displayed
+    fetchClients();
+    closeCreateModal();
+  };
+  
+  const fetchClients = async () => {
+    await clientStore.fetchClients();
+  };
+  
+  onMounted(() => {
+    fetchClients();
+  });
   </script>
   
   <style></style>

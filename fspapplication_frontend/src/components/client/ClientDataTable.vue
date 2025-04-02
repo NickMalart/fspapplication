@@ -290,7 +290,7 @@ const pageNumbers = computed(() => clientStore.pageNumbers)
 const loading = computed(() => clientStore.loading)
 
 // Computed properties
-const paginatedClients = computed(() => clients.value)
+const paginatedClients = computed(() => clientStore.paginatedClients)
 
 // Debounced search to prevent excessive API calls
 const debouncedSearch = debounce(() => {
