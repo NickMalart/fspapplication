@@ -1,11 +1,5 @@
 <template>
-  <ComponentCard title="Personal Information">
-    <!-- Debug Info (Remove in production) -->
-    <pre v-if="false" class="text-xs bg-gray-100 dark:bg-gray-800 p-2 mb-4 overflow-auto">
-      userProfile: {{ JSON.stringify(userProfile, null, 2) }}
-      completeUser: {{ JSON.stringify(completeUser, null, 2) }}
-    </pre>
-
+  <ComponentCard title="Emergency Contact">
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
@@ -30,26 +24,29 @@
       </button>
 
       <div v-if="userProfile" class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+        <!-- Emergency Contact -->
         <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Phone Number</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Emergency Contact</p>
           <p class="font-medium text-black dark:text-white">
-            {{ userProfile.phoneNumber || 'Not provided' }}
+            {{ userProfile.emergencyContact || 'Not provided' }}
           </p>
         </div>
+        
+        <!-- Contact Name -->
         <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Date of Birth</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Contact Name</p>
           <p class="font-medium text-black dark:text-white">
-            {{ formatDate(userProfile.dateOfBirth) }}
+            {{ formatContactName(userProfile) }}
           </p>
         </div>
       </div>
       <div v-else class="py-4 text-center text-gray-500">
-        No profile information available
+        No emergency contact information available
       </div>
     </div>
 
-    <!-- Edit Modal with key to force re-render -->
-    <EditUserPersonalInformationModal
+    <!-- Edit Modal -->
+    <EditUserEmergencyContactModal
       v-if="isModalOpen && userProfile"
       :key="modalKey"
       :userData="userProfile"
@@ -65,47 +62,44 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useUserStore } from '@/stores/userProfileStore';
 import { storeToRefs } from 'pinia';
 import ComponentCard from '@/components/common/ComponentCard.vue';
-import EditUserPersonalInformationModal from '@/components/profile/EditUserPersonalInformationModal.vue';
+import EditUserEmergencyContactModal from '@/components/userSettings/profile/EditUserEmergencyContactModal.vue';
+import { ProfileData } from '@/service/userProfileService';
 
 const userStore = useUserStore();
 const { completeUser, loading, error } = storeToRefs(userStore);
 
 const userProfile = computed(() => {
   const profile = completeUser.value?.profile || null;
-  console.log('Computing userProfile:', profile);
   return profile;
 });
 const isModalOpen = ref(false);
 const isSaving = ref(false);
 const modalKey = ref(0); // Used to force modal re-render
 
-// Format date for display
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return 'Not provided';
+// Format contact name
+const formatContactName = (profile: ProfileData) => {
+  if (!profile.emergencyContactFirstName && !profile.emergencyContactLastName) return 'Not provided';
   
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Not provided';
-    
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric'
-    }).format(date);
-  } catch (e) {
-    console.error('Error formatting date:', e);
-    return 'Not provided';
-  }
+  let name = '';
+  if (profile.emergencyContactFirstName) name += profile.emergencyContactFirstName;
+  if (profile.emergencyContactFirstName && profile.emergencyContactLastName) name += ' ';
+  if (profile.emergencyContactLastName) name += profile.emergencyContactLastName;
+  
+  return name;
 };
 
 // Handle save from modal
-const handleSave = async (formData: { phoneNumber: string | null, dateOfBirth: string | null }) => {
+const handleSave = async (formData: Partial<ProfileData>) => {
   isSaving.value = true;
   
   try {
-    console.log('Sending form data to store:', formData);
-    const result = await userStore.updateProfileData(formData);
-    console.log('Update result:', result);
+    const contactData: Partial<ProfileData> = {
+      emergencyContact: formData.emergencyContact,
+      emergencyContactFirstName: formData.emergencyContactFirstName,
+      emergencyContactLastName: formData.emergencyContactLastName
+    };
+    
+    await userStore.updateProfileData(contactData);
     
     // Increment key to force modal re-render on next open
     modalKey.value++;
@@ -114,7 +108,7 @@ const handleSave = async (formData: { phoneNumber: string | null, dateOfBirth: s
     await userStore.fetchUserProfile();
     isModalOpen.value = false;
   } catch (error) {
-    console.error('Failed to save changes:', error);
+    console.error('Failed to save emergency contact changes:', error);
   } finally {
     isSaving.value = false;
   }
@@ -122,27 +116,13 @@ const handleSave = async (formData: { phoneNumber: string | null, dateOfBirth: s
 
 // Fetch profile data on mount
 onMounted(async () => {
-  console.log('Component mounted, fetching profile data');
-  // Only fetch if we don't already have the data
-  if (!completeUser.value) {
-    await userStore.fetchUserProfile();
-  }
+  await userStore.fetchUserProfile();
 });
-
-// Debug log when profile data changes
-watch(() => completeUser.value, (newValue) => {
-  console.log('completeUser changed:', newValue);
-}, { deep: true });
-
-watch(userProfile, (newProfile) => {
-  console.log('userProfile computed changed:', newProfile);
-}, { deep: true });
 
 // Force refetch when modal closes
 watch(isModalOpen, (open) => {
   if (!open) {
-    console.log('Modal closed, refreshing data');
     userStore.fetchUserProfile();
   }
 });
-</script>
+</script> 

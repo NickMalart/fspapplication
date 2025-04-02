@@ -1,0 +1,32 @@
+<template>
+    <AdminLayout>
+      <PageBreadcrumb :pageTitle="currentPageTitle" />
+      <div
+        class="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12"
+      >
+        <div class="mx-auto w-full max-w-[630px] text-center">
+          <h3
+            class="mb-4 font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-2xl"
+          >
+            Client Management
+          </h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 sm:text-base">
+            Below is the list of client accounts currently available.
+          </p>
+        </div>
+        <ClientDataTable />
+      </div>
+    </AdminLayout>
+  </template>
+  
+  <script setup>
+  import { ref } from "vue";
+  import AdminLayout from "@/components/layout/AdminLayout.vue";
+  import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
+  import ClientDataTable from "@/components/client/ClientDataTable.vue";
+  
+  const currentPageTitle = ref("Client Management");
+  </script>
+  
+  <style></style>
+  

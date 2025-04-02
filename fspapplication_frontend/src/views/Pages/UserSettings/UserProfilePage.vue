@@ -21,10 +21,10 @@ import { ref, onMounted, computed, onBeforeUnmount } from "vue";
 import { useUserStore } from "@/stores/userProfileStore";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
-import UserAvatarSection from '@/components/profile/UserAvatarSection.vue';
-import UserPersonalInformationCard from '@/components/profile/UserPersonalInformationCard.vue';
-import UserAddressCard from '@/components/profile/UserAddressCard.vue';
-import UserEmergencyContactCard from '@/components/profile/UserEmergencyContactCard.vue';
+import UserAvatarSection from '@/components/userSettings/profile/UserAvatarSection.vue';
+import UserPersonalInformationCard from '@/components/userSettings/profile/UserPersonalInformationCard.vue';
+import UserAddressCard from '@/components/userSettings/profile/UserAddressCard.vue';
+import UserEmergencyContactCard from '@/components/userSettings/profile/UserEmergencyContactCard.vue';
 
 const currentPageTitle = ref('User Profile');
 const userStore = useUserStore();
@@ -32,7 +32,7 @@ const loading = computed(() => userStore.loading);
 const error = computed(() => userStore.error);
 const userProfile = computed(() => userStore.completeUser);
 
-// Function to fetch user profile data
+// Function to fetch user profile data  
 const fetchUserData = async () => {
   await userStore.fetchUserProfile();
 };

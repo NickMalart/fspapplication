@@ -1,5 +1,11 @@
 <template>
-  <ComponentCard title="Address Information">
+  <ComponentCard title="Personal Information">
+    <!-- Debug Info (Remove in production) -->
+    <pre v-if="false" class="text-xs bg-gray-100 dark:bg-gray-800 p-2 mb-4 overflow-auto">
+      userProfile: {{ JSON.stringify(userProfile, null, 2) }}
+      completeUser: {{ JSON.stringify(completeUser, null, 2) }}
+    </pre>
+
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
@@ -24,53 +30,26 @@
       </button>
 
       <div v-if="userProfile" class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-        <!-- Street Address -->
         <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Street Address</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Phone Number</p>
           <p class="font-medium text-black dark:text-white">
-            {{ formatStreetAddress(userProfile) }}
+            {{ userProfile.phoneNumber || 'Not provided' }}
           </p>
         </div>
-        
-        <!-- Suburb/City -->
         <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Suburb/City</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Date of Birth</p>
           <p class="font-medium text-black dark:text-white">
-            {{ userProfile.suburb || userProfile.city || 'Not provided' }}
-          </p>
-        </div>
-        
-        <!-- State/Province -->
-        <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">State/Province</p>
-          <p class="font-medium text-black dark:text-white">
-            {{ userProfile.state || 'Not provided' }}
-          </p>
-        </div>
-        
-        <!-- Postal Code -->
-        <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Postal Code</p>
-          <p class="font-medium text-black dark:text-white">
-            {{ userProfile.postalCode || 'Not provided' }}
-          </p>
-        </div>
-        
-        <!-- Country -->
-        <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Country</p>
-          <p class="font-medium text-black dark:text-white">
-            {{ userProfile.country || 'Not provided' }}
+            {{ formatDate(userProfile.dateOfBirth) }}
           </p>
         </div>
       </div>
       <div v-else class="py-4 text-center text-gray-500">
-        No address information available
+        No profile information available
       </div>
     </div>
 
-    <!-- Placeholder for the EditUserAddressModal -->
-    <EditUserAddressModal
+    <!-- Edit Modal with key to force re-render -->
+    <EditUserPersonalInformationModal
       v-if="isModalOpen && userProfile"
       :key="modalKey"
       :userData="userProfile"
@@ -86,51 +65,47 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useUserStore } from '@/stores/userProfileStore';
 import { storeToRefs } from 'pinia';
 import ComponentCard from '@/components/common/ComponentCard.vue';
-import EditUserAddressModal from '@/components/profile/EditUserAddressModal.vue';
-import { ProfileData } from '@/service/userProfileService';
+import EditUserPersonalInformationModal from '@/components/userSettings/profile/EditUserPersonalInformationModal.vue';
 
 const userStore = useUserStore();
 const { completeUser, loading, error } = storeToRefs(userStore);
 
 const userProfile = computed(() => {
   const profile = completeUser.value?.profile || null;
+  console.log('Computing userProfile:', profile);
   return profile;
 });
 const isModalOpen = ref(false);
 const isSaving = ref(false);
 const modalKey = ref(0); // Used to force modal re-render
 
-// Format street address
-const formatStreetAddress = (profile: ProfileData) => {
-  if (!profile.streetNumber && !profile.streetName) return 'Not provided';
+// Format date for display
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return 'Not provided';
   
-  let address = '';
-  if (profile.streetNumber) address += profile.streetNumber;
-  if (profile.streetNumber && profile.streetName) address += ' ';
-  if (profile.streetName) address += profile.streetName;
-  
-  return address;
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Not provided';
+    
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric'
+    }).format(date);
+  } catch (e) {
+    console.error('Error formatting date:', e);
+    return 'Not provided';
+  }
 };
 
 // Handle save from modal
-const handleSave = async (formData: Partial<ProfileData>) => {
+const handleSave = async (formData: { phoneNumber: string | null, dateOfBirth: string | null }) => {
   isSaving.value = true;
   
   try {
-    const addressData: Partial<ProfileData> = {
-      streetNumber: formData.streetNumber,
-      streetName: formData.streetName,
-      suburb: formData.suburb,
-      city: formData.city,
-      state: formData.state,
-      postalCode: formData.postalCode,
-      country: formData.country,
-      latitude: formData.latitude,
-      longitude: formData.longitude,
-      googlePlaceId: formData.googlePlaceId
-    };
-    
-    await userStore.updateProfileData(addressData);
+    console.log('Sending form data to store:', formData);
+    const result = await userStore.updateProfileData(formData);
+    console.log('Update result:', result);
     
     // Increment key to force modal re-render on next open
     modalKey.value++;
@@ -139,7 +114,7 @@ const handleSave = async (formData: Partial<ProfileData>) => {
     await userStore.fetchUserProfile();
     isModalOpen.value = false;
   } catch (error) {
-    console.error('Failed to save address changes:', error);
+    console.error('Failed to save changes:', error);
   } finally {
     isSaving.value = false;
   }
@@ -147,12 +122,26 @@ const handleSave = async (formData: Partial<ProfileData>) => {
 
 // Fetch profile data on mount
 onMounted(async () => {
-  await userStore.fetchUserProfile();
+  console.log('Component mounted, fetching profile data');
+  // Only fetch if we don't already have the data
+  if (!completeUser.value) {
+    await userStore.fetchUserProfile();
+  }
 });
+
+// Debug log when profile data changes
+watch(() => completeUser.value, (newValue) => {
+  console.log('completeUser changed:', newValue);
+}, { deep: true });
+
+watch(userProfile, (newProfile) => {
+  console.log('userProfile computed changed:', newProfile);
+}, { deep: true });
 
 // Force refetch when modal closes
 watch(isModalOpen, (open) => {
   if (!open) {
+    console.log('Modal closed, refreshing data');
     userStore.fetchUserProfile();
   }
 });

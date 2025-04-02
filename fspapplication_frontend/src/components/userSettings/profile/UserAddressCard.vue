@@ -1,5 +1,5 @@
 <template>
-  <ComponentCard title="Emergency Contact">
+  <ComponentCard title="Address Information">
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
@@ -24,29 +24,53 @@
       </button>
 
       <div v-if="userProfile" class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-        <!-- Emergency Contact -->
+        <!-- Street Address -->
         <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Emergency Contact</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Street Address</p>
           <p class="font-medium text-black dark:text-white">
-            {{ userProfile.emergencyContact || 'Not provided' }}
+            {{ formatStreetAddress(userProfile) }}
           </p>
         </div>
         
-        <!-- Contact Name -->
+        <!-- Suburb/City -->
         <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Contact Name</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Suburb/City</p>
           <p class="font-medium text-black dark:text-white">
-            {{ formatContactName(userProfile) }}
+            {{ userProfile.suburb || userProfile.city || 'Not provided' }}
+          </p>
+        </div>
+        
+        <!-- State/Province -->
+        <div class="space-y-2">
+          <p class="text-sm text-gray-500 dark:text-gray-400">State/Province</p>
+          <p class="font-medium text-black dark:text-white">
+            {{ userProfile.state || 'Not provided' }}
+          </p>
+        </div>
+        
+        <!-- Postal Code -->
+        <div class="space-y-2">
+          <p class="text-sm text-gray-500 dark:text-gray-400">Postal Code</p>
+          <p class="font-medium text-black dark:text-white">
+            {{ userProfile.postalCode || 'Not provided' }}
+          </p>
+        </div>
+        
+        <!-- Country -->
+        <div class="space-y-2">
+          <p class="text-sm text-gray-500 dark:text-gray-400">Country</p>
+          <p class="font-medium text-black dark:text-white">
+            {{ userProfile.country || 'Not provided' }}
           </p>
         </div>
       </div>
       <div v-else class="py-4 text-center text-gray-500">
-        No emergency contact information available
+        No address information available
       </div>
     </div>
 
-    <!-- Edit Modal -->
-    <EditUserEmergencyContactModal
+    <!-- Placeholder for the EditUserAddressModal -->
+    <EditUserAddressModal
       v-if="isModalOpen && userProfile"
       :key="modalKey"
       :userData="userProfile"
@@ -62,7 +86,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useUserStore } from '@/stores/userProfileStore';
 import { storeToRefs } from 'pinia';
 import ComponentCard from '@/components/common/ComponentCard.vue';
-import EditUserEmergencyContactModal from '@/components/profile/EditUserEmergencyContactModal.vue';
+import EditUserAddressModal from './EditUserAddressModal.vue';
 import { ProfileData } from '@/service/userProfileService';
 
 const userStore = useUserStore();
@@ -76,16 +100,16 @@ const isModalOpen = ref(false);
 const isSaving = ref(false);
 const modalKey = ref(0); // Used to force modal re-render
 
-// Format contact name
-const formatContactName = (profile: ProfileData) => {
-  if (!profile.emergencyContactFirstName && !profile.emergencyContactLastName) return 'Not provided';
+// Format street address
+const formatStreetAddress = (profile: ProfileData) => {
+  if (!profile.streetNumber && !profile.streetName) return 'Not provided';
   
-  let name = '';
-  if (profile.emergencyContactFirstName) name += profile.emergencyContactFirstName;
-  if (profile.emergencyContactFirstName && profile.emergencyContactLastName) name += ' ';
-  if (profile.emergencyContactLastName) name += profile.emergencyContactLastName;
+  let address = '';
+  if (profile.streetNumber) address += profile.streetNumber;
+  if (profile.streetNumber && profile.streetName) address += ' ';
+  if (profile.streetName) address += profile.streetName;
   
-  return name;
+  return address;
 };
 
 // Handle save from modal
@@ -93,13 +117,20 @@ const handleSave = async (formData: Partial<ProfileData>) => {
   isSaving.value = true;
   
   try {
-    const contactData: Partial<ProfileData> = {
-      emergencyContact: formData.emergencyContact,
-      emergencyContactFirstName: formData.emergencyContactFirstName,
-      emergencyContactLastName: formData.emergencyContactLastName
+    const addressData: Partial<ProfileData> = {
+      streetNumber: formData.streetNumber,
+      streetName: formData.streetName,
+      suburb: formData.suburb,
+      city: formData.city,
+      state: formData.state,
+      postalCode: formData.postalCode,
+      country: formData.country,
+      latitude: formData.latitude,
+      longitude: formData.longitude,
+      googlePlaceId: formData.googlePlaceId
     };
     
-    await userStore.updateProfileData(contactData);
+    await userStore.updateProfileData(addressData);
     
     // Increment key to force modal re-render on next open
     modalKey.value++;
@@ -108,7 +139,7 @@ const handleSave = async (formData: Partial<ProfileData>) => {
     await userStore.fetchUserProfile();
     isModalOpen.value = false;
   } catch (error) {
-    console.error('Failed to save emergency contact changes:', error);
+    console.error('Failed to save address changes:', error);
   } finally {
     isSaving.value = false;
   }
@@ -125,4 +156,4 @@ watch(isModalOpen, (open) => {
     userStore.fetchUserProfile();
   }
 });
-</script> 
+</script>

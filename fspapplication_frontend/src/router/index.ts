@@ -14,7 +14,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/profile',
     name: 'Profile',
-    component: () => import('../views/Pages/UserProfilePage.vue'),
+    component: () => import('../views/Pages/UserSettings/UserProfilePage.vue'),
     meta: {
       title: 'Profile',
       requiresAuth: true,
@@ -23,7 +23,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/company',
     name: 'Company',
-    component: () => import('../views/Pages/CompanyPage.vue'),
+    component: () => import('../views/Pages/Administration/CompanyPage.vue'),
     meta: {
       title: 'Company',
       requiresAuth: true,
@@ -32,7 +32,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/accounts',
     name: 'User Accounts',
-    component: () => import('../views/Pages/AccountsPage.vue'),
+    component: () => import('../views/Pages/Administration/AccountAdminPage.vue'),
     meta: {
       title: 'User Accounts',
       requiresAuth: true,
@@ -41,9 +41,18 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/user-profile-admin/:id',
     name: 'User Profile Admin',
-    component: () => import('../views/Pages/UserProfileAdminPage.vue'),
+    component: () => import('../views/Pages/Administration/UserProfileAdminPage.vue'),
     meta: {
       title: 'User Profile Admin',
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/client-admin',
+    name: 'Client Admin',
+    component: () => import('../views/Pages/Client/ClientAdminPage.vue'),
+    meta: {
+      title: 'Client Admin',
       requiresAuth: true,
     },
   },

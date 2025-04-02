@@ -298,7 +298,8 @@ const menuGroups = [
             { type: "divider", label: "Client Admin" },
 
             // Client Admin Group
-            { name: "Settings", path: "/agent-settings", pro: false },
+            { name: "Client Admin", path: "/client-admin", pro: false },
+            { name: "Settings", path: "/agent-settings", pro: false },            
           ],
         },      
         {
