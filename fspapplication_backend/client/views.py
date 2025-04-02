@@ -66,3 +66,10 @@ class ClientListView(generics.ListCreateAPIView):
             return f"{desc_prefix}{ordering}"
         
         return super().get_ordering()
+
+
+class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """API view to retrieve, update, or delete a single client by ID"""
+    queryset = Client.objects.all()
+    serializer_class = ClientSerializer
+    permission_classes = [permissions.IsAuthenticated]
