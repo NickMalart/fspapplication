@@ -1,10 +1,14 @@
 from django.db import models
+import uuid
 
 class Client(models.Model):
     """
     Model to store client information including business details, 
     location, contacts, and logistics information.
     """
+    # Primary Key
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
     # Basic Information
     name = models.CharField(max_length=255)
     logo = models.CharField(max_length=255, blank=True, null=True, verbose_name="Client Logo", help_text="S3 path to client logo")
@@ -39,6 +43,9 @@ class ClientWarehouse(models.Model):
     Model to store warehouse information for clients.
     A client can have multiple warehouses.
     """
+    # Primary Key
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='warehouses')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
@@ -77,6 +84,9 @@ class ClientContact(models.Model):
     """
     Model to store contact persons for each client.
     """
+    # Primary Key
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='contacts')
     name = models.CharField(max_length=255)
     

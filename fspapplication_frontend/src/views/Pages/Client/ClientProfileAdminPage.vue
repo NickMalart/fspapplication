@@ -28,7 +28,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import ClientAvatarSection from '@/components/client/ClientAvatarSection.vue';
 
 const route = useRoute();
-const clientId = computed(() => Number(route.params.id));
+const clientId = computed(() => route.params.id as string); // Use string UUID directly
 const currentPageTitle = ref('Client Profile');
 
 const client = ref<Client | null>(null);
@@ -67,7 +67,7 @@ const fetchClientDetails = async () => {
 };
 
 // Handle logo update events from the avatar component
-const handleLogoUpdate = async (updateData: { id: number, logo: string | null }) => {
+const handleLogoUpdate = async (updateData: { id: string, logo: string | null }) => {
   try {
     // Here you would call your client update service
     // For now, just update the local client data

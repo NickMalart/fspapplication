@@ -5,7 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Client model definition
 export interface Client {
-  id: number;
+  id: string;
   name: string;
   logo: string | null;
   abn: string | null;
@@ -101,7 +101,7 @@ export const clientService = {
     }
   },
   
-  async getClientById(id: number): Promise<Client> {
+  async getClientById(id: string): Promise<Client> {
     try {
       const cacheKey = generateCacheKey(`${API_URL}/client/clients/${id}/`);
       const cachedData = cache.get(cacheKey);
@@ -149,7 +149,7 @@ export const clientService = {
     }
   },
   
-  async updateClientStatus(id: number, isActive: boolean): Promise<Client> {
+  async updateClientStatus(id: string, isActive: boolean): Promise<Client> {
     try {
       const data = convertObjectKeysToSnake({ isActive });
       const response = await axios.patch(`${API_URL}/client/clients/${id}/`, data);

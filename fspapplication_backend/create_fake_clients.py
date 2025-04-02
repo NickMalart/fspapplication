@@ -1,6 +1,7 @@
 import os
 import random
 import django
+import uuid
 
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fspapplication_backend.settings')
@@ -33,6 +34,9 @@ def create_fake_clients(tenant_schema='dev', count=100):
     
     # List of domain extensions
     domain_extensions = ['com.au', 'com', 'net.au', 'net', 'org', 'co', 'io', 'tech', 'digital']
+    
+    # Australian states
+    au_states = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']
     
     print(f'Creating {count} fake clients for tenant {tenant.name}...')
     
@@ -75,21 +79,44 @@ def create_fake_clients(tenant_schema='dev', count=100):
         ]
         phone = fake.numerify(random.choice(phone_formats))
         
+        # Generate address data
+        street_number = fake.building_number()
+        street_name = fake.street_name()
+        suburb = fake.city()
+        city = suburb  # In Australia, suburb and city can be the same
+        state = random.choice(au_states)
+        postal_code = fake.postcode()
+        country = 'Australia'
+        
+        # Generate random coordinates within Australia
+        latitude = random.uniform(-39.0, -33.0)  # Approximate latitude range for main Australian cities
+        longitude = random.uniform(140.0, 153.0)  # Approximate longitude range for main Australian cities
+        
         # Randomly decide if client is active (80% active, 20% inactive)
         is_active = random.random() < 0.8
         
         # Create client object
         try:
             client = ClientModel.objects.create(
+                id=uuid.uuid4(),  # Explicitly set UUID (though default would work too)
                 name=company_name,
                 abn=abn,
                 email=email,
                 phone=phone,
                 website=website,
+                street_number=street_number,
+                street_name=street_name,
+                suburb=suburb,
+                city=city,
+                state=state,
+                postal_code=postal_code,
+                country=country,
+                latitude=latitude,
+                longitude=longitude,
                 is_active=is_active
             )
             clients_created += 1
-            print(f"Created client: {company_name} (ABN: {abn})")
+            print(f"Created client: {company_name} (ID: {client.id}, ABN: {abn})")
         except Exception as e:
             print(f"Error creating client {company_name}: {e}")
     
