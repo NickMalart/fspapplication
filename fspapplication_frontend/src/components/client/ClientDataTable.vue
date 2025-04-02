@@ -102,66 +102,60 @@
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-800/50">
               <tr>
-                <th @click="sortBy('name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  Name
-                  <span v-if="sortColumn === 'name'">
-                    {{ sortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-16">
+                  LOGO
                 </th>
-                <th @click="sortBy('abn')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                <th @click="sortBy('name')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/6">
+                  NAME
+                </th>
+                <th @click="sortBy('abn')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/6">
                   ABN
-                  <span v-if="sortColumn === 'abn'">
-                    {{ sortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
                 </th>
-                <th @click="sortBy('email')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  Email
-                  <span v-if="sortColumn === 'email'">
-                    {{ sortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
+                <th @click="sortBy('email')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/5">
+                  EMAIL
                 </th>
-                <th @click="sortBy('phone')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  Phone
-                  <span v-if="sortColumn === 'phone'">
-                    {{ sortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
+                <th @click="sortBy('phone')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/6">
+                  PHONE
                 </th>
-                <th @click="sortBy('isActive')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  Status
-                  <span v-if="sortColumn === 'isActive'">
-                    {{ sortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
+                <th @click="sortBy('isActive')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-[80px]">
+                  STATUS
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Actions
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[120px]">
+                  ACTIONS
                 </th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               <tr v-if="paginatedClients.length === 0" class="text-center">
-                <td colspan="6" class="px-6 py-4 text-gray-500 dark:text-gray-400">
+                <td colspan="7" class="px-4 py-3 text-gray-500 dark:text-gray-400">
                   No clients found
                 </td>
               </tr>
               <tr v-else v-for="client in paginatedClients" :key="client.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-medium text-gray-900 dark:text-white/90">
-                    {{ client.name }}
-                  </div>
+                <td class="px-4 py-3 w-16">
+                  <img 
+                    :src="getLogoUrl(client)" 
+                    :alt="`${client.name} logo`"
+                    class="h-10 w-10 rounded-full object-cover mx-auto border border-gray-200 dark:border-gray-700"
+                    @error="$event.target.src = generateDefaultLogo(client.name)"
+                  />
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white/90">
+                  {{ client.name }}
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {{ client.abn || 'Not provided' }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 overflow-hidden text-ellipsis">
                   {{ client.email }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {{ client.phone || 'Not provided' }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
+                <td class="px-4 py-3">
                   <span 
                     :class="[
-                      'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                      'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
                       client.isActive 
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-red-100 text-red-800'
@@ -170,31 +164,16 @@
                     {{ client.isActive ? 'Active' : 'Inactive' }}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <td class="px-4 py-3 text-sm whitespace-nowrap">
                   <button 
                     @click="viewClientDetails(client)" 
-                    class="inline-flex items-center px-3 py-1.5 mr-2 text-sm font-medium rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors duration-200"
+                    class="flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    View
-                  </button>
-                  <button 
-                    @click="toggleClientStatus(client)" 
-                    :class="[
-                      'inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors duration-200',
-                      client.isActive 
-                        ? 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/50' 
-                        : 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/50'
-                    ]"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path v-if="client.isActive" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                      <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {{ client.isActive ? 'Deactivate' : 'Activate' }}
+                    View Profile
                   </button>
                 </td>
               </tr>
@@ -261,6 +240,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import debounce from 'lodash/debounce'
 import { useRouter } from 'vue-router'
 import { useClientStore } from '@/stores/clientStore'
+import { fileService } from '@/service/fileService'
 
 const router = useRouter()
 const clientStore = useClientStore()
@@ -289,29 +269,39 @@ const endIndex = computed(() => clientStore.endIndex)
 const pageNumbers = computed(() => clientStore.pageNumbers)
 const loading = computed(() => clientStore.loading)
 
-// Computed properties
-const paginatedClients = computed(() => clientStore.paginatedClients)
+// Use paginatedClients directly from the store
+const paginatedClients = computed(() => clientStore.clients)
 
 // Debounced search to prevent excessive API calls
 const debouncedSearch = debounce(() => {
   clientStore.setSearch(search.value)
+  // Trigger API call with new search parameter
+  clientStore.fetchClients()
 }, 500) // 500ms delay
 
 // Methods
 const sortBy = (column) => {
   clientStore.setSorting(column)
+  // Refresh data with new sort parameters
+  clientStore.fetchClients()
 }
 
 const prevPage = () => {
   clientStore.prevPage()
+  // Fetch the previous page from the server
+  clientStore.fetchClients()
 }
 
 const nextPage = () => {
   clientStore.nextPage()
+  // Fetch the next page from the server
+  clientStore.fetchClients()
 }
 
 const goToPage = (page) => {
   clientStore.goToPage(page)
+  // Fetch the specific page from the server
+  clientStore.fetchClients()
 }
 
 const viewClientDetails = (client) => {
@@ -320,17 +310,16 @@ const viewClientDetails = (client) => {
 
 const toggleClientStatus = async (client) => {
   await clientStore.updateClientStatus(client.id, !client.isActive)
+  // Refresh the list after status update
+  clientStore.fetchClients()
 }
 
 // Method to set status filter
 const setStatusFilter = (status) => {
   statusFilter.value = status
   clientStore.setStatusFilter(status)
-}
-
-// Enhanced search method
-const performSearch = () => {
-  clientStore.setSearch(search.value)
+  // Refresh data with new status filter
+  clientStore.fetchClients()
 }
 
 // Add to template
@@ -343,14 +332,62 @@ watch(search, (newSearch) => {
 
 watch(perPage, () => {
   clientStore.setPerPage(perPage.value)
+  // Refresh data with new per page setting
+  clientStore.fetchClients()
 })
 
 watch(statusFilter, () => {
   clientStore.setStatusFilter(statusFilter.value)
+  // Refresh data with new status filter
+  clientStore.fetchClients()
 })
 
 // Initial fetch
 onMounted(() => {
+  // Initial API call to load the first page of data
   clientStore.fetchClients()
 })
+
+// Default logo generation function
+const generateDefaultLogo = (name) => {
+  // Simple hash function for name to get consistent colors for same name
+  const getColor = (name) => {
+    const colors = [
+      '#1E88E5', '#43A047', '#E53935', '#5E35B1', '#FB8C00', 
+      '#00897B', '#3949AB', '#8E24AA', '#D81B60', '#039BE5'
+    ]
+    
+    let hash = 0
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    
+    return colors[Math.abs(hash) % colors.length]
+  }
+
+  const initials = name ? name.charAt(0).toUpperCase() : 'C'
+  const bgColor = getColor(name || 'Client')
+  
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+    <rect width="100%" height="100%" fill="${bgColor}"/>
+    <text x="50" y="50" font-size="40" text-anchor="middle" fill="white" font-family="Arial, sans-serif" dominant-baseline="central">${initials}</text>
+  </svg>`
+  
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+}
+
+// Function to get proper logo URL
+const getLogoUrl = (client) => {
+  if (!client.logo) {
+    return generateDefaultLogo(client.name)
+  }
+  
+  // If it's already a full CloudFront URL, use it as-is
+  if (client.logo.startsWith('https://')) {
+    return client.logo
+  }
+  
+  // Otherwise, construct the CloudFront URL
+  return fileService.getCloudFrontUrl(client.logo)
+}
 </script> 

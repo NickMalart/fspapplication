@@ -7,6 +7,7 @@ class Client(models.Model):
     """
     # Basic Information
     name = models.CharField(max_length=255)
+    logo = models.CharField(max_length=255, blank=True, null=True, verbose_name="Client Logo", help_text="S3 path to client logo")
     abn = models.CharField(max_length=50, blank=True, null=True)
     website = models.URLField(blank=True, null=True)
     

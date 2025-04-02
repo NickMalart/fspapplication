@@ -7,6 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 export interface Client {
   id: number;
   name: string;
+  logo: string | null;
   abn: string | null;
   website: string | null;
   email: string;

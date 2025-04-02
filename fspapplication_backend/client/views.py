@@ -19,9 +19,9 @@ class ClientListView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'business_name', 'email', 'phone']
+    search_fields = ['name', 'email', 'phone', 'abn']
     ordering_fields = [
-        'name', 'business_name', 'email', 'industry', 'city', 
+        'name', 'email', 'abn', 'city', 
         'state', 'country', 'is_active', 'created_at'
     ]
     ordering = ['name']
@@ -36,14 +36,14 @@ class ClientListView(generics.ListCreateAPIView):
         elif status == 'inactive':
             queryset = queryset.filter(is_active=False)
         
-        # Search for client by name, business name, or email
+        # Search for client by name, email, or phone
         search = self.request.query_params.get('search', '')
         if search:
             queryset = queryset.filter(
                 Q(name__icontains=search) |
-                Q(business_name__icontains=search) |
                 Q(email__icontains=search) |
-                Q(phone__icontains=search)
+                Q(phone__icontains=search) |
+                Q(abn__icontains=search)
             )
             
         return queryset

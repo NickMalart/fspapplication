@@ -32,72 +32,21 @@ export const useClientStore = defineStore('client', {
   }),
 
   getters: {
-    filteredClients(): Client[] {
-      // Filter by search term
-      let filtered = this.clients;
-      
-      if (this.searchTerm) {
-        const searchLower = this.searchTerm.toLowerCase();
-        filtered = filtered.filter(client => 
-          client.name?.toLowerCase().includes(searchLower) ||
-          client.email?.toLowerCase().includes(searchLower) ||
-          client.abn?.toLowerCase().includes(searchLower) ||
-          client.phone?.toLowerCase().includes(searchLower)
-        );
-      }
-      
-      // Filter by status
-      if (this.statusFilter !== 'all') {
-        const isActive = this.statusFilter === 'active';
-        filtered = filtered.filter(client => client.isActive === isActive);
-      }
-      
-      return filtered;
-    },
-    
-    sortedClients(): Client[] {
-      const filtered = this.filteredClients;
-      
-      // Sort clients
-      return [...filtered].sort((a, b) => {
-        let aValue = a[this.sortColumn as keyof Client] || '';
-        let bValue = b[this.sortColumn as keyof Client] || '';
-        
-        // Handle string vs number comparison
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
-        }
-        
-        if (this.sortDirection === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
-        }
-      });
-    },
-    
-    paginatedClients(): Client[] {
-      const sorted = this.sortedClients;
-      const start = (this.currentPage - 1) * this.perPage;
-      const end = start + this.perPage;
-      
-      return sorted.slice(start, end);
-    },
-    
+    // Server-side pagination and filtering means we don't need these client-side getters
+    // Instead use the clients array directly which contains paginated results from API
     totalPages(): number {
-      return Math.ceil(this.filteredClients.length / this.perPage);
+      return Math.ceil(this.totalClients / this.perPage);
     },
     
     startIndex(): number {
-      return this.filteredClients.length === 0 
+      return this.clients.length === 0 
         ? 0 
         : (this.currentPage - 1) * this.perPage + 1;
     },
     
     endIndex(): number {
       const end = this.currentPage * this.perPage;
-      return Math.min(end, this.filteredClients.length);
+      return Math.min(end, this.totalClients);
     },
     
     pageNumbers(): number[] {
@@ -145,7 +94,7 @@ export const useClientStore = defineStore('client', {
           pageSize: this.perPage
         });
         
-        // Update store with response data
+        // Update store with response data - these are already paginated from server
         this.clients = response.results;
         this.totalClients = response.count;
       } catch (error) {
@@ -162,12 +111,8 @@ export const useClientStore = defineStore('client', {
         // Make real API call to create client
         const newClient = await clientService.createClient(clientData);
         
-        // Add the new client to the local store
-        this.clients.push(newClient);
-        this.totalClients += 1;
-        
-        // Ensure clients list is updated in the state
-        this.clients = [...this.clients];
+        // Refresh the client list to include the new client
+        this.fetchClients();
         
         return newClient;
       } catch (error) {
@@ -183,15 +128,10 @@ export const useClientStore = defineStore('client', {
       this.loading = true;
       try {
         // Make real API call to update client status
-        const updatedClient = await clientService.updateClientStatus(clientId, isActive);
+        await clientService.updateClientStatus(clientId, isActive);
         
-        // Update client in local store
-        const clientIndex = this.clients.findIndex(c => c.id === clientId);
-        if (clientIndex !== -1) {
-          this.clients[clientIndex] = updatedClient;
-          // Ensure reactivity
-          this.clients = [...this.clients];
-        }
+        // Refresh the client list to reflect the updated status
+        this.fetchClients();
       } catch (error) {
         this.error = error instanceof Error ? error.message : String(error);
         console.error('Error updating client status:', error);
