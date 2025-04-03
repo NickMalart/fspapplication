@@ -81,11 +81,14 @@ class ClientWarehouse(models.Model):
         return f"{self.name} - {self.client.name}"
 
 class ClientContract(models.Model):
-    # Primary Key
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='contacts')
     name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return f"{self.name} ({self.client.name})"

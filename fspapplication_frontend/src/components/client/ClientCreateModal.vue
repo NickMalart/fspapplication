@@ -89,13 +89,6 @@ import { ref, reactive } from 'vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import { useClientStore, type Client } from '@/stores/clientStore';
 
-const props = defineProps({
-  show: {
-    type: Boolean,
-    default: false
-  }
-});
-
 const emit = defineEmits(['close', 'client-created']);
 const clientStore = useClientStore();
 
@@ -115,13 +108,15 @@ const closeModal = () => {
 const handleSubmit = async () => {
   try {
     isLoading.value = true;
+    const newClient = await clientStore.addClient(clientData); 
     
-    // Create client using the store
-    const newClient = await clientStore.createClient(clientData);
-    
-    emit('client-created', newClient);
-    resetForm();
-    closeModal();
+    if (newClient) {
+      emit('client-created', newClient);
+      resetForm();
+      closeModal();
+    } else {
+      console.error('Client creation failed'); // Added error handling for client creation
+    }
   } catch (error) {
     console.error('Error creating client:', error);
     // Handle error (show notification, etc.)
