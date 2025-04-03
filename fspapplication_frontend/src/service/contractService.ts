@@ -33,7 +33,8 @@ export const contractService = {
   async getContracts(params: ContractListParams = {}): Promise<ContractsResponse> {
     try {
       const apiParams = convertObjectKeysToSnake(params);
-      const response = await axios.get(`${API_URL}/client/contracts/`, { params: apiParams });
+      const clientId = params.client;
+      const response = await axios.get(`${API_URL}/client/clients/${clientId}/contracts/`, { params: apiParams });
       
       return {
         count: response.data.count,
@@ -49,7 +50,7 @@ export const contractService = {
 
   async getContractById(id: string): Promise<Contract> {
     try {
-      const response = await axios.get(`${API_URL}/client/contracts/${id}/`);
+      const response = await axios.get(`${API_URL}/client/clients/${id}/contracts/${id}/`);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
       console.error(`Error fetching contract with ID ${id}:`, error);
