@@ -18,10 +18,44 @@ export interface ClientStoreState {
 }
 
 export const useClientStore = defineStore('client', () => {
+  // State
   const clients = ref<Client[]>([]);
   const selectedClient = ref<Client | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const currentPage = ref(1);
+  const perPage = ref(10);
+  const totalClients = ref(0);
+  const searchTerm = ref('');
+  const statusFilter = ref<'active' | 'inactive' | 'all'>('active');
+  const sortColumn = ref('name');
+  const sortDirection = ref<'asc' | 'desc'>('asc');
+
+  // Computed properties
+  const totalPages = computed(() => Math.ceil(totalClients.value / perPage.value) || 1);
+  
+  const startIndex = computed(() => {
+    if (totalClients.value === 0) return 0;
+    return (currentPage.value - 1) * perPage.value + 1;
+  });
+  
+  const endIndex = computed(() => {
+    if (totalClients.value === 0) return 0;
+    return Math.min(currentPage.value * perPage.value, totalClients.value);
+  });
+  
+  const pageNumbers = computed(() => {
+    const range = 2;
+    const pages = [];
+    for (
+      let i = Math.max(1, currentPage.value - range);
+      i <= Math.min(totalPages.value, currentPage.value + range);
+      i++
+    ) {
+      pages.push(i);
+    }
+    return pages;
+  });
 
   // Getters
   const getClientById = computed(() => (id: string) => {
@@ -30,12 +64,36 @@ export const useClientStore = defineStore('client', () => {
 
   // Actions
   const fetchClients = async () => {
+    console.log('Store: Fetching clients with state:', {
+      statusFilter: statusFilter.value,
+      searchTerm: searchTerm.value,
+      currentPage: currentPage.value,
+      perPage: perPage.value,
+      sortColumn: sortColumn.value,
+      sortDirection: sortDirection.value
+    });
+    
     loading.value = true;
     error.value = null;
     try {
-      const response = await clientService.getClients();
+      const response = await clientService.getClients({
+        search: searchTerm.value,
+        status: statusFilter.value,
+        ordering: `${sortDirection.value === 'desc' ? '-' : ''}${sortColumn.value}`,
+        page: currentPage.value,
+        pageSize: perPage.value
+      });
+      
+      console.log('Store: Received clients response:', {
+        count: response.count,
+        resultsCount: response.results.length,
+        firstClientStatus: response.results[0]?.isActive
+      });
+      
       clients.value = response.results;
+      totalClients.value = response.count;
     } catch (err: any) {
+      console.error('Store: Error fetching clients:', err);
       error.value = err.message || 'Failed to fetch clients';
       throw error.value;
     } finally {
@@ -82,7 +140,7 @@ export const useClientStore = defineStore('client', () => {
     error.value = null;
     try {
       const newClient = await clientService.createClient(data);
-      clients.value.push(newClient);
+      await fetchClients(); // Refresh the list to get updated pagination
       return newClient;
     } catch (err: any) {
       error.value = err.message || 'Failed to create client';
@@ -96,12 +154,72 @@ export const useClientStore = defineStore('client', () => {
     selectedClient.value = client;
   };
 
+  // Pagination and filtering actions
+  const setPerPage = (value: number) => {
+    perPage.value = value;
+    currentPage.value = 1; // Reset to first page when changing items per page
+    fetchClients(); // Fetch data with new page size
+  };
+
+  const prevPage = () => {
+    if (currentPage.value > 1) {
+      currentPage.value--;
+      fetchClients(); // Fetch data for previous page
+    }
+  };
+
+  const nextPage = () => {
+    if (currentPage.value < totalPages.value) {
+      currentPage.value++;
+      fetchClients(); // Fetch data for next page
+    }
+  };
+
+  const goToPage = (page: number) => {
+    currentPage.value = page;
+    fetchClients(); // Fetch data for specific page
+  };
+
+  const setSearch = (term: string) => {
+    searchTerm.value = term;
+    currentPage.value = 1; // Reset to first page when searching
+    fetchClients(); // Fetch filtered data
+  };
+
+  const setStatusFilter = (status: 'active' | 'inactive' | 'all') => {
+    console.log('Store: Setting status filter to:', status);
+    console.log('Store: Previous status filter:', statusFilter.value);
+    statusFilter.value = status;
+    currentPage.value = 1; // Reset to first page when changing filter
+    fetchClients(); // Fetch filtered data
+  };
+
+  const setSorting = (column: string) => {
+    if (sortColumn.value === column) {
+      sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortColumn.value = column;
+      sortDirection.value = 'asc';
+    }
+    fetchClients(); // Fetch sorted data
+  };
+
   return {
     // State
     clients,
     selectedClient,
     loading,
     error,
+    currentPage,
+    perPage,
+    totalClients,
+    sortColumn,
+    sortDirection,
+    // Computed
+    totalPages,
+    startIndex,
+    endIndex,
+    pageNumbers,
     // Getters
     getClientById,
     // Actions
@@ -111,5 +229,13 @@ export const useClientStore = defineStore('client', () => {
     updateClientStatus,
     setSelectedClient,
     addClient,
+    // Pagination and filtering actions
+    setPerPage,
+    prevPage,
+    nextPage,
+    goToPage,
+    setSearch,
+    setStatusFilter,
+    setSorting
   };
 }); 

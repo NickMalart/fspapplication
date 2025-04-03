@@ -275,52 +275,39 @@ const paginatedClients = computed(() => clientStore.clients)
 // Debounced search to prevent excessive API calls
 const debouncedSearch = debounce(() => {
   clientStore.setSearch(search.value)
-  // Trigger API call with new search parameter
-  clientStore.fetchClients()
 }, 500) // 500ms delay
 
 // Methods
 const sortBy = (column) => {
   clientStore.setSorting(column)
-  // Refresh data with new sort parameters
-  clientStore.fetchClients()
 }
 
 const prevPage = () => {
   clientStore.prevPage()
-  // Fetch the previous page from the server
-  clientStore.fetchClients()
 }
 
 const nextPage = () => {
   clientStore.nextPage()
-  // Fetch the next page from the server
-  clientStore.fetchClients()
 }
 
 const goToPage = (page) => {
   clientStore.goToPage(page)
-  // Fetch the specific page from the server
-  clientStore.fetchClients()
 }
 
 const viewClientDetails = (client) => {
   router.push(`/client/${client.id}`)
 }
 
-const toggleClientStatus = async (client) => {
-  await clientStore.updateClientStatus(client.id, !client.isActive)
-  // Refresh the list after status update
-  clientStore.fetchClients()
-}
-
 // Method to set status filter
 const setStatusFilter = (status) => {
   statusFilter.value = status
   clientStore.setStatusFilter(status)
-  // Refresh data with new status filter
-  clientStore.fetchClients()
 }
+
+// Add watcher for statusFilter
+watch(statusFilter, (newStatus) => {
+  clientStore.setStatusFilter(newStatus)
+})
 
 // Add to template
 const searchInput = ref(null)
@@ -332,20 +319,13 @@ watch(search, (newSearch) => {
 
 watch(perPage, () => {
   clientStore.setPerPage(perPage.value)
-  // Refresh data with new per page setting
-  clientStore.fetchClients()
-})
-
-watch(statusFilter, () => {
-  clientStore.setStatusFilter(statusFilter.value)
-  // Refresh data with new status filter
-  clientStore.fetchClients()
 })
 
 // Initial fetch
 onMounted(() => {
-  // Initial API call to load the first page of data
-  clientStore.fetchClients()
+  // Set initial status filter to 'active' and fetch data
+  statusFilter.value = 'active'
+  clientStore.setStatusFilter('active')
 })
 
 // Default logo generation function

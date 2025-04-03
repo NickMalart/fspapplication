@@ -66,39 +66,52 @@ const isCacheValid = (entry: CacheEntry): boolean => {
 export const clientService = {
   async getClients(params: ClientListParams = {}): Promise<ClientsResponse> {
     try {
-      // Convert all params from camelCase to snake_case for the API
-      const apiParams = convertObjectKeysToSnake(params);
+      console.log('getClients called with params:', params);
       
-      // Check cache first
-      const cacheKey = generateCacheKey(`${API_URL}/client/clients/`, apiParams);
-      const cachedData = cache.get(cacheKey);
+      // Convert data from camelCase to snake_case for the API
+      const apiParams = convertObjectKeysToSnake({
+        ...params,
+        // Convert status to is_active for the API
+        is_active: params.status === 'all' 
+          ? null 
+          : params.status === 'active' 
+            ? true 
+            : false,
+        // Remove the original status parameter as we've converted it
+        status: undefined
+      });
+
+      console.log('Converted API params:', apiParams);
+
+      // Remove undefined or null parameters
+      Object.keys(apiParams).forEach(key => 
+        (apiParams[key] === undefined || apiParams[key] === null) && delete apiParams[key]
+      );
       
-      if (cachedData && isCacheValid(cachedData)) {
-        return cachedData.data;
-      }
+      console.log('Final API params after cleanup:', apiParams);
       
-      // Make a single batch request with all parameters
-      const response = await axios.get(`${API_URL}/client/clients/`, { 
-        params: apiParams
+      const response = await axios.get(`${API_URL}/client/clients/`, { params: apiParams });
+      
+      console.log('API Response:', {
+        count: response.data.count,
+        resultsCount: response.data.results.length,
+        firstResult: response.data.results[0],
+        params: response.config.params
       });
       
-      // Process and transform the response
-      const transformedResponse = {
+      return {
         count: response.data.count,
         next: response.data.next,
         previous: response.data.previous,
         results: response.data.results.map((client: any) => convertObjectKeysToCamel(client))
       };
-      
-      // Cache the response
-      cache.set(cacheKey, {
-        timestamp: Date.now(),
-        data: transformedResponse
-      });
-      
-      return transformedResponse;
     } catch (error: any) {
       console.error('Error fetching clients:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw error;
     }
   },
