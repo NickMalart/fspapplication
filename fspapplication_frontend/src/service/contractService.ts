@@ -8,6 +8,10 @@ export interface Contract {
   id: string;
   name: string;
   client: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ContractsResponse {
@@ -21,6 +25,8 @@ export interface ContractListParams {
   search?: string;
   ordering?: string;
   client?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export const contractService = {

@@ -3,81 +3,87 @@ import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/case
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-// Contact model definition
-export interface Contact {
+// Contract model definition
+export interface Contract {
   id: string;
   name: string;
   client: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface ContactsResponse {
+export interface ContractsResponse {
   count: number;
   next: string | null;
   previous: string | null;
-  results: Contact[];
+  results: Contract[];
 }
 
-export interface ContactListParams {
+export interface ContractListParams {
   search?: string;
   ordering?: string;
   client?: string;
+  page?: number;
+  page_size?: number;
 }
 
-export const contactService = {
-  async getContacts(params: ContactListParams = {}): Promise<ContactsResponse> {
+export const contractService = {
+  async getContracts(params: ContractListParams = {}): Promise<ContractsResponse> {
     try {
       const apiParams = convertObjectKeysToSnake(params);
-      const response = await axios.get(`${API_URL}/client/contacts/`, { params: apiParams });
+      const response = await axios.get(`${API_URL}/client/contracts/`, { params: apiParams });
       
       return {
         count: response.data.count,
         next: response.data.next,
         previous: response.data.previous,
-        results: response.data.results.map((contact: any) => convertObjectKeysToCamel(contact))
+        results: response.data.results.map((contract: any) => convertObjectKeysToCamel(contract))
       };
     } catch (error: any) {
-      console.error('Error fetching contacts:', error);
+      console.error('Error fetching contracts:', error);
       throw error;
     }
   },
 
-  async getContactById(id: string): Promise<Contact> {
+  async getContractById(id: string): Promise<Contract> {
     try {
-      const response = await axios.get(`${API_URL}/client/contacts/${id}/`);
+      const response = await axios.get(`${API_URL}/client/contracts/${id}/`);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
-      console.error(`Error fetching contact with ID ${id}:`, error);
+      console.error(`Error fetching contract with ID ${id}:`, error);
       throw error;
     }
   },
 
-  async createContact(contactData: Partial<Contact>): Promise<Contact> {
+  async createContract(contractData: Partial<Contract>): Promise<Contract> {
     try {
-      const apiData = convertObjectKeysToSnake(contactData);
-      const response = await axios.post(`${API_URL}/client/contacts/`, apiData);
+      const apiData = convertObjectKeysToSnake(contractData);
+      const response = await axios.post(`${API_URL}/client/contracts/`, apiData);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
-      console.error('Error creating contact:', error);
+      console.error('Error creating contract:', error);
       throw error;
     }
   },
 
-  async updateContact(id: string, data: Partial<Contact>): Promise<Contact> {
+  async updateContract(id: string, data: Partial<Contract>): Promise<Contract> {
     try {
       const apiData = convertObjectKeysToSnake(data);
-      const response = await axios.patch(`${API_URL}/client/contacts/${id}/`, apiData);
+      const response = await axios.patch(`${API_URL}/client/contracts/${id}/`, apiData);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
-      console.error('Error updating contact:', error);
+      console.error('Error updating contract:', error);
       throw error;
     }
   },
 
-  async deleteContact(id: string): Promise<void> {
+  async deleteContract(id: string): Promise<void> {
     try {
-      await axios.delete(`${API_URL}/client/contacts/${id}/`);
+      await axios.delete(`${API_URL}/client/contracts/${id}/`);
     } catch (error: any) {
-      console.error('Error deleting contact:', error);
+      console.error('Error deleting contract:', error);
       throw error;
     }
   }

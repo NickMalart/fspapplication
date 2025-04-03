@@ -14,4 +14,14 @@ class ClientSerializer(serializers.ModelSerializer):
             'city', 'state', 'postal_code', 'country', 'latitude', 'longitude',
             'is_active', 'created_at', 'updated_at'
         ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+class ClientContractSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the ClientContract model.
+    Used for listing, retrieving, creating, and updating client contracts.
+    """
+    class Meta:
+        model = ClientContract
+        fields = ['id', 'client', 'name', 'description', 'is_active', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at'] 
