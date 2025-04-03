@@ -15,6 +15,7 @@ interface ClientStoreState {
   sortDirection: 'asc' | 'desc';
   searchTerm: string;
   statusFilter: 'active' | 'inactive' | 'all';
+  selectedClient: Client | null;
 }
 
 export const useClientStore = defineStore('client', {
@@ -29,6 +30,7 @@ export const useClientStore = defineStore('client', {
     sortDirection: 'asc',
     searchTerm: '',
     statusFilter: 'active', // 'active', 'inactive', or 'all'
+    selectedClient: null
   }),
 
   getters: {
@@ -181,6 +183,34 @@ export const useClientStore = defineStore('client', {
     goToPage(page: number) {
       if (page >= 1 && page <= this.totalPages) {
         this.currentPage = page;
+      }
+    },
+    
+    async updateClientLogo(clientId: string, logo: string | null) {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        // Update the client with the new logo
+        const updatedClient = await clientService.updateClient(clientId, { logo });
+        
+        // Update the client in the local state
+        const index = this.clients.findIndex(client => client.id === clientId);
+        if (index !== -1) {
+          this.clients[index] = updatedClient;
+        }
+        
+        // Update selected client if it's the same one
+        if (this.selectedClient?.id === clientId) {
+          this.selectedClient = updatedClient;
+        }
+        
+        return updatedClient;
+      } catch (error: any) {
+        this.error = error.message || 'Failed to update client logo';
+        throw error;
+      } finally {
+        this.loading = false;
       }
     }
   }

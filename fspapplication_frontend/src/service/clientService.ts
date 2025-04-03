@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
+import type { AxiosResponse } from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -170,6 +171,18 @@ export const clientService = {
     } catch (error: any) {
       console.error(`Error updating status for client ${id}:`, error);
       throw error;
+    }
+  },
+  
+  async updateClient(clientId: string, data: Partial<Client>): Promise<Client> {
+    try {
+      const response: AxiosResponse<Client> = await axios.patch(
+        `${API_URL}/client/clients/${clientId}/`,
+        data
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Failed to update client');
     }
   },
   

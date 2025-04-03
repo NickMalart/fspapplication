@@ -13,8 +13,8 @@
           class="h-full w-full object-cover transition-opacity group-hover:opacity-80"
         />
         <img
-          v-else-if="logoUrl"
-          :src="logoUrl"
+          v-else-if="client?.logo"
+          :src="fileService.getCloudFrontUrl(client.logo)"
           :alt="`${clientName}'s logo`"
           class="h-full w-full object-cover transition-opacity group-hover:opacity-80"
         />
@@ -48,7 +48,7 @@
 
       <!-- Remove logo button - only show if a logo exists -->
       <button 
-        v-if="logoUrl" 
+        v-if="client?.logo" 
         @click.stop="removeLogo"
         class="absolute -bottom-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
         title="Remove logo"
@@ -87,47 +87,23 @@
     </p>
     
     <!-- Client Status Badge -->
-    <div class="mt-2 flex items-center gap-2">
-      <span 
-        :class="[
-          'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
-          client?.isActive 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        ]"
-      >
+    <div class="mt-2 flex items-center">
+      <span class="h-2 w-2 rounded-full mr-1" :class="client?.isActive ? 'bg-green-500' : 'bg-red-500'"></span>
+      <span class="text-xs text-gray-500 dark:text-gray-400">
         {{ client?.isActive ? 'Active' : 'Inactive' }}
       </span>
-      <button
+    </div>
+
+    <!-- Admin actions -->
+    <div class="mt-4 flex gap-2">
+      <button 
         @click="toggleClientStatus"
-        class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        :title="client?.isActive ? 'Deactivate Client' : 'Activate Client'"
+        class="px-2 py-0.5 text-[11px] rounded font-medium transition-colors"
+        :class="client?.isActive 
+          ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+          : 'bg-green-100 text-green-700 hover:bg-green-200'"
       >
-        <svg 
-          v-if="isUpdatingStatus"
-          class="h-4 w-4 animate-spin text-gray-500" 
-          xmlns="http://www.w3.org/2000/svg" 
-          fill="none" 
-          viewBox="0 0 24 24"
-        >
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <svg 
-          v-else
-          class="h-4 w-4 text-gray-500" 
-          xmlns="http://www.w3.org/2000/svg" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
-        >
-          <path 
-            stroke-linecap="round" 
-            stroke-linejoin="round" 
-            stroke-width="2" 
-            :d="client?.isActive ? 'M5 13l4 4L19 7' : 'M12 4v16m8-8H4'"
-          />
-        </svg>
+        {{ client?.isActive ? 'Deactivate' : 'Activate' }}
       </button>
     </div>
   </div>
@@ -138,6 +114,7 @@ import { computed, ref } from 'vue';
 import { fileService } from '@/service/fileService';
 import { Client } from '@/service/clientService';
 import { clientService } from '@/service/clientService';
+import { useClientStore } from '@/stores/clientStore';
 
 // Define props for client data
 const props = defineProps<{
@@ -152,6 +129,8 @@ const uploadError = ref('');
 const tempLogoUrl = ref<string | null>(null);
 const isUpdatingStatus = ref(false);
 const statusError = ref('');
+
+const clientStore = useClientStore();
 
 // Calculate client name
 const clientName = computed(() => {
@@ -179,21 +158,6 @@ const generateInitialBgColor = (name: string) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-// Create a computed property for the logo URL
-const logoUrl = computed(() => {
-  if (!props.client?.logo) return null;
-  
-  const logoPath = props.client.logo;
-  
-  // If it's already a CloudFront URL, use it as-is
-  if (logoPath.startsWith('https://d1elaz1f509qmb.cloudfront.net/')) {
-    return logoPath;
-  }
-  
-  // Otherwise, construct the CloudFront URL directly
-  return fileService.getCloudFrontUrl(logoPath);
-});
-
 // Trigger file input click
 const triggerFileInput = () => {
   if (isUploading.value) return;
@@ -207,27 +171,14 @@ const handleFileChange = async (event: Event) => {
   
   const file = target.files[0];
   
-  // Enhanced validation
+  // Basic validation
   if (!file.type.startsWith('image/')) {
-    uploadError.value = 'Please select an image file (JPEG, PNG, GIF)';
+    uploadError.value = 'Please select an image file';
     return;
   }
   
   if (file.size > 5 * 1024 * 1024) { // 5MB limit
     uploadError.value = 'Image size must be less than 5MB';
-    return;
-  }
-  
-  // Validate image dimensions
-  const img = new Image();
-  img.src = URL.createObjectURL(file);
-  await new Promise((resolve) => {
-    img.onload = resolve;
-  });
-  
-  if (img.width < 100 || img.height < 100) {
-    uploadError.value = 'Image dimensions must be at least 100x100 pixels';
-    URL.revokeObjectURL(img.src);
     return;
   }
   
@@ -256,16 +207,28 @@ const handleFileChange = async (event: Event) => {
     if (!uploadResult.success || !uploadResult.path) {
       throw new Error(uploadResult.error || 'Failed to upload logo to S3');
     }
-    
-    // Emit the update to parent component
-    emit('logo-updated', { id: props.client.id, logo: uploadResult.path });
+
+    // Get the S3 path from the upload result
+    const s3Path = uploadResult.path;
+
+    // Update client with the S3 path using the store
+    try {
+      const updatedClient = await clientStore.updateClientLogo(props.client.id, s3Path);
+
+      // Emit the update to parent component with the full updated client
+      emit('logo-updated', updatedClient);
+
+      // Clear the temporary preview since we'll now use the saved path
+      tempLogoUrl.value = null;
+    } catch (error) {
+      throw new Error('Failed to update client with new logo');
+    }
     
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : 'An error occurred while updating logo';
     tempLogoUrl.value = null;
   } finally {
     isUploading.value = false;
-    URL.revokeObjectURL(img.src);
   }
   
   // Reset input value to allow selecting the same file again
@@ -282,11 +245,15 @@ const removeLogo = async (event: Event) => {
   uploadError.value = '';
   
   try {
-    // Emit the update to parent component
-    emit('logo-updated', { id: props.client.id, logo: null });
+    // Update client in the database with null logo using the store
+    const updatedClient = await clientStore.updateClientLogo(props.client.id, null);
+
+    // Emit the update to parent component with the full updated client
+    emit('logo-updated', updatedClient);
     
     // Clear any temporary logo preview
     tempLogoUrl.value = null;
+    
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : 'An error occurred while removing logo';
   } finally {
@@ -298,9 +265,6 @@ const removeLogo = async (event: Event) => {
 const toggleClientStatus = async () => {
   if (!props.client?.id) return;
   
-  isUpdatingStatus.value = true;
-  statusError.value = '';
-  
   try {
     const updatedClient = await clientService.updateClientStatus(
       props.client.id,
@@ -310,9 +274,7 @@ const toggleClientStatus = async () => {
     // Emit the update to parent component
     emit('status-updated', { id: props.client.id, isActive: updatedClient.isActive });
   } catch (error) {
-    statusError.value = error instanceof Error ? error.message : 'Failed to update client status';
-  } finally {
-    isUpdatingStatus.value = false;
+    console.error('Failed to update client status:', error);
   }
 };
 </script> 
