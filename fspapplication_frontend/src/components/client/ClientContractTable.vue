@@ -196,6 +196,16 @@
     @close="showCreateModal = false"
     @contract-created="handleContractCreated"
   />
+
+  <!-- Contract Details Modal -->
+  <ContractDetailsModal
+    v-if="showDetailsModal && selectedContract"
+    :show="showDetailsModal"
+    :contract="selectedContract"
+    @close="closeDetailsModal"
+    @status-updated="handleStatusUpdated"
+    @contract-updated="handleContractUpdated"
+  />
 </template>
 
 <script setup lang="ts">
@@ -204,6 +214,7 @@ import { useRouter } from 'vue-router';
 import { contractService, type Contract } from '@/service/contractService';
 import debounce from 'lodash/debounce';
 import ContractCreateModal from './ContractCreateModal.vue';
+import ContractDetailsModal from './ContractDetailsModal.vue';
 
 const router = useRouter();
 const props = defineProps<{
@@ -222,6 +233,8 @@ const totalContracts = ref(0);
 const sortColumn = ref('name');
 const sortDirection = ref<'asc' | 'desc'>('asc');
 const showCreateModal = ref(false);
+const showDetailsModal = ref(false);
+const selectedContract = ref<Contract | null>(null);
 
 // Computed properties
 const totalPages = computed(() => Math.ceil(totalContracts.value / perPage.value));
@@ -293,7 +306,36 @@ const goToPage = (page: number) => {
 };
 
 const viewContractDetails = (contract: Contract) => {
-  router.push(`/client/${props.clientId}/contract/${contract.id}`);
+  selectedContract.value = contract;
+  showDetailsModal.value = true;
+};
+
+const closeDetailsModal = () => {
+  showDetailsModal.value = false;
+  selectedContract.value = null;
+};
+
+const handleStatusUpdated = (updatedContract: Contract) => {
+  // Update the contract in the list
+  const index = contracts.value.findIndex(c => c.id === updatedContract.id);
+  if (index !== -1) {
+    contracts.value[index] = updatedContract;
+  }
+  closeDetailsModal();
+};
+
+const handleContractUpdated = (updatedContract: Contract) => {
+  // Update the contract in the list
+  const index = contracts.value.findIndex(c => c.id === updatedContract.id);
+  if (index !== -1) {
+    contracts.value[index] = updatedContract;
+  }
+  closeDetailsModal();
+};
+
+const handleEditContract = (contract: Contract) => {
+  // Will implement edit functionality later
+  console.log('Edit contract:', contract);
 };
 
 const handleContractCreated = (newContract: Contract) => {

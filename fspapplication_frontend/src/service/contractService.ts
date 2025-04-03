@@ -71,5 +71,28 @@ export const contractService = {
       console.error('Error creating contract:', error);
       throw error;
     }
+  },
+
+  async updateContractStatus(contractId: string, isActive: boolean): Promise<Contract> {
+    try {
+      const response = await axios.patch(`${API_URL}/client/clients/${contractId}/contracts/${contractId}/`, {
+        is_active: isActive
+      });
+      return convertObjectKeysToCamel(response.data);
+    } catch (error: any) {
+      console.error('Error updating contract status:', error);
+      throw error;
+    }
+  },
+
+  async updateContract(contractId: string, contractData: Partial<Contract>): Promise<Contract> {
+    try {
+      const apiData = convertObjectKeysToSnake(contractData);
+      const response = await axios.patch(`${API_URL}/client/clients/${contractId}/contracts/${contractId}/`, apiData);
+      return convertObjectKeysToCamel(response.data);
+    } catch (error: any) {
+      console.error('Error updating contract:', error);
+      throw error;
+    }
   }
 }; 
