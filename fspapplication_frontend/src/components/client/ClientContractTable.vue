@@ -4,18 +4,73 @@
     <!-- Header Section -->
     <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-gray-100 dark:border-gray-700">
       <div class="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
-        <h3 class="text-base font-medium text-gray-800 dark:text-white/90 mb-3 sm:mb-0">
+        <h3 class="text-base font-medium text-gray-800 dark:text-white/90">
           Client Contracts
         </h3>
-        <button
-          @click="showCreateModal = true"
-          class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-900 transition-colors duration-200 border border-transparent"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 stroke-current" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Create Contract
-        </button>
+        
+        <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
+          <!-- Status Filter Buttons/Dropdown -->
+          <div class="w-full sm:w-auto">
+            <!-- Mobile: Dropdown -->
+            <div class="sm:hidden w-full">
+              <select 
+                v-model="statusFilter" 
+                class="form-select w-full rounded-lg border border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white/90"
+              >
+                <option value="active">Active Contracts</option>
+                <option value="inactive">Inactive Contracts</option>
+                <option value="all">All Contracts</option>
+              </select>
+            </div>
+            
+            <!-- Desktop: Button Group -->
+            <div class="hidden sm:flex items-center space-x-2">
+              <button 
+                @click="setStatusFilter('active')"
+                :class="[
+                  'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                  statusFilter === 'active' 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/70'
+                ]"
+              >
+                Active Contracts
+              </button>
+              <button 
+                @click="setStatusFilter('inactive')"
+                :class="[
+                  'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                  statusFilter === 'inactive' 
+                    ? 'bg-red-500 text-white' 
+                    : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/70'
+                ]"
+              >
+                Inactive Contracts
+              </button>
+              <button 
+                @click="setStatusFilter('all')"
+                :class="[
+                  'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                  statusFilter === 'all' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/70'
+                ]"
+              >
+                All Contracts
+              </button>
+            </div>
+          </div>
+
+          <button
+            @click="showCreateModal = true"
+            class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-900 transition-colors duration-200 border border-transparent whitespace-nowrap"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 stroke-current" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Create Contract
+          </button>
+        </div>
       </div>
     </div>
 
@@ -242,6 +297,7 @@ const sortDirection = ref<'asc' | 'desc'>('asc');
 const showCreateModal = ref(false);
 const showDetailsModal = ref(false);
 const selectedContract = ref<Contract | null>(null);
+const statusFilter = ref<'active' | 'inactive' | 'all'>('active'); // Default to active contracts
 
 // Computed properties
 const totalPages = computed(() => Math.ceil(totalContracts.value / perPage.value));
@@ -272,7 +328,8 @@ const fetchContracts = async () => {
       search: search.value,
       ordering: `${sortDirection.value === 'desc' ? '-' : ''}${sortColumn.value}`,
       page: currentPage.value,
-      pageSize: perPage.value
+      pageSize: perPage.value,
+      status: statusFilter.value
     });
     contracts.value = response.results;
     totalContracts.value = response.count;
@@ -353,6 +410,13 @@ const handleContractCreated = (newContract: Contract) => {
   fetchContracts();
 };
 
+// Method to set status filter
+const setStatusFilter = (status: 'active' | 'inactive' | 'all') => {
+  statusFilter.value = status;
+  currentPage.value = 1; // Reset to first page when changing filter
+  fetchContracts();
+};
+
 // Debounced search
 const debouncedSearch = debounce(() => {
   currentPage.value = 1;
@@ -365,6 +429,11 @@ watch(search, () => {
 });
 
 watch(perPage, () => {
+  currentPage.value = 1;
+  fetchContracts();
+});
+
+watch(statusFilter, () => {
   currentPage.value = 1;
   fetchContracts();
 });

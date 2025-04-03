@@ -27,6 +27,7 @@ export interface ContractListParams {
   client?: string;
   page?: number;
   pageSize?: number;
+  status?: 'active' | 'inactive' | 'all';
 }
 
 export const contractService = {
