@@ -23,7 +23,7 @@
           v-model="contractData.name"
           type="text"
           required
-          class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700"
+          class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
           placeholder="Enter contract name"
         />
       </div>
@@ -36,35 +36,9 @@
           id="description"
           v-model="contractData.description"
           rows="3"
-          class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700"
+          class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
           placeholder="Enter contract description"
         ></textarea>
-      </div>
-      
-      <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-          Status
-        </label>
-        <div class="flex items-center space-x-4">
-          <label class="inline-flex items-center">
-            <input
-              type="radio"
-              v-model="contractData.isActive"
-              :value="true"
-              class="form-radio text-primary focus:ring-primary"
-            />
-            <span class="ml-2">Active</span>
-          </label>
-          <label class="inline-flex items-center">
-            <input
-              type="radio"
-              v-model="contractData.isActive"
-              :value="false"
-              class="form-radio text-primary focus:ring-primary"
-            />
-            <span class="ml-2">Inactive</span>
-          </label>
-        </div>
       </div>
     </div>
   </BaseModal>
@@ -86,7 +60,7 @@ const isLoading = ref(false);
 const contractData = reactive<Partial<Contract>>({
   name: '',
   description: '',
-  isActive: true
+  isActive: true // Set default value but don't show in UI
 });
 
 const closeModal = () => {
@@ -115,6 +89,6 @@ const handleSubmit = async () => {
 const resetForm = () => {
   contractData.name = '';
   contractData.description = '';
-  contractData.isActive = true;
+  // isActive remains true by default
 };
 </script> 
