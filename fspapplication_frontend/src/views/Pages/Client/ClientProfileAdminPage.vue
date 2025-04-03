@@ -15,7 +15,12 @@
         :client="client" 
         @logo-updated="handleLogoUpdate"
         @status-updated="handleStatusUpdate"
-      />    
+      />
+      
+      <ClientInformationCard 
+        :client-id="clientId"
+        @client-updated="handleClientUpdate"
+      />
     </div>
   </AdminLayout>
 </template>
@@ -27,9 +32,10 @@ import { clientService, type Client } from '@/service/clientService';
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import ClientAvatarSection from '@/components/client/ClientAvatarSection.vue';
+import ClientInformationCard from '@/components/client/ClientInformationCard.vue';
 
 const route = useRoute();
-const clientId = computed(() => route.params.id as string); // Use string UUID directly
+const clientId = computed(() => route.params.id as string);
 const currentPageTitle = ref('Client Profile');
 
 const client = ref<Client | null>(null);
@@ -57,8 +63,6 @@ const fetchClientDetails = async () => {
 // Handle logo update events from the avatar component
 const handleLogoUpdate = async (updateData: { id: string, logo: string | null }) => {
   try {
-    // Here you would call your client update service
-    // For now, just update the local client data
     if (client.value) {
       client.value.logo = updateData.logo;
     }
@@ -70,12 +74,21 @@ const handleLogoUpdate = async (updateData: { id: string, logo: string | null })
 // Handle status update events from the avatar component
 const handleStatusUpdate = async (updateData: { id: string, isActive: boolean }) => {
   try {
-    // Update the local client data
     if (client.value) {
       client.value.isActive = updateData.isActive;
     }
   } catch (err) {
     console.error('Error updating client status:', err);
+  }
+};
+
+// Handle client information updates
+const handleClientUpdate = async (updatedClient: Client) => {
+  try {
+    client.value = updatedClient;
+    await fetchClientDetails(); // Refresh the data to ensure consistency
+  } catch (err) {
+    console.error('Error handling client update:', err);
   }
 };
 

@@ -31,7 +31,15 @@
           </button>
         </div>
         
-        <ClientDataTable @refresh="fetchClients" />
+        <ClientDataTable 
+          @refresh="fetchClients" 
+          @client-selected="handleClientSelected"
+        />
+        
+        <!-- Client Information Card -->
+        <div v-if="selectedClientId" class="mt-8">
+          <ClientInformationCard :client-id="selectedClientId" />
+        </div>
         
         <!-- Create Client Modal -->
         <ClientCreateModal 
@@ -43,16 +51,19 @@
     </AdminLayout>
   </template>
   
-  <script setup>
+  <script setup lang="ts">
   import { ref, onMounted } from "vue";
   import AdminLayout from "@/components/layout/AdminLayout.vue";
   import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
   import ClientDataTable from "@/components/client/ClientDataTable.vue";
   import ClientCreateModal from "@/components/client/ClientCreateModal.vue";
+  import ClientInformationCard from "@/components/client/ClientInformationCard.vue";
   import { useClientStore } from "@/stores/clientStore";
+  import type { Client } from "@/service/clientService";
   
   const currentPageTitle = ref("Client Management");
   const showCreateModal = ref(false);
+  const selectedClientId = ref<string | null>(null);
   const clientStore = useClientStore();
   
   const openCreateModal = () => {
@@ -63,10 +74,14 @@
     showCreateModal.value = false;
   };
   
-  const handleClientCreated = (newClient) => {
+  const handleClientCreated = (newClient: Client) => {
     // Refresh the client list to ensure the new client is displayed
     fetchClients();
     closeCreateModal();
+  };
+
+  const handleClientSelected = (clientId: string) => {
+    selectedClientId.value = clientId;
   };
   
   const fetchClients = async () => {
