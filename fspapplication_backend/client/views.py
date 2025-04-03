@@ -88,8 +88,8 @@ class ClientContractListView(generics.ListCreateAPIView):
     def get_queryset(self):
         queryset = ClientContract.objects.all()
         
-        # Filter by client
-        client_id = self.request.query_params.get('client')
+        # Get client_id from URL parameters
+        client_id = self.kwargs.get('client_id')
         if client_id:
             queryset = queryset.filter(client_id=client_id)
         

@@ -83,7 +83,7 @@ class ClientWarehouse(models.Model):
 class ClientContract(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='contacts')
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='contracts')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
