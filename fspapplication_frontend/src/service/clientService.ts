@@ -22,6 +22,7 @@ export interface Client {
   country: string | null;
   latitude: number | null;
   longitude: number | null;
+  googlePlaceId: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -176,12 +177,34 @@ export const clientService = {
   
   async updateClient(clientId: string, data: Partial<Client>): Promise<Client> {
     try {
+      console.log('Updating client with data:', data);
+      
+      // Convert data from camelCase to snake_case for the API
+      const apiData = convertObjectKeysToSnake(data);
+      
+      console.log('Sending to API:', apiData);
       const response: AxiosResponse<Client> = await axios.patch(
         `${API_URL}/client/clients/${clientId}/`,
-        data
+        apiData
       );
-      return response.data;
+      
+      // Convert response data back to camelCase
+      const updatedClient = convertObjectKeysToCamel(response.data);
+      
+      // Clear any cached data for this client
+      const cacheKey = generateCacheKey(`${API_URL}/client/clients/${clientId}/`);
+      cache.delete(cacheKey);
+      
+      // Clear any cached client lists since they might include this client
+      for (const key of cache.keys()) {
+        if (key.startsWith(`${API_URL}/client/clients/:`)) {
+          cache.delete(key);
+        }
+      }
+      
+      return updatedClient;
     } catch (error: any) {
+      console.error('Error updating client:', error);
       throw new Error(error.response?.data?.detail || 'Failed to update client');
     }
   },

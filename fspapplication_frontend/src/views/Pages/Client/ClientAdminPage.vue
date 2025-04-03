@@ -36,11 +36,6 @@
           @client-selected="handleClientSelected"
         />
         
-        <!-- Client Information Card -->
-        <div v-if="selectedClientId" class="mt-8">
-          <ClientInformationCard :client-id="selectedClientId" />
-        </div>
-        
         <!-- Create Client Modal -->
         <ClientCreateModal 
           :show="showCreateModal" 
@@ -57,7 +52,6 @@
   import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
   import ClientDataTable from "@/components/client/ClientDataTable.vue";
   import ClientCreateModal from "@/components/client/ClientCreateModal.vue";
-  import ClientInformationCard from "@/components/client/ClientInformationCard.vue";
   import { useClientStore } from "@/stores/clientStore";
   import type { Client } from "@/service/clientService";
   

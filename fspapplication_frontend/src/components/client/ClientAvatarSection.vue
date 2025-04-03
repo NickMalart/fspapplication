@@ -127,8 +127,6 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
 const uploadError = ref('');
 const tempLogoUrl = ref<string | null>(null);
-const isUpdatingStatus = ref(false);
-const statusError = ref('');
 
 const clientStore = useClientStore();
 

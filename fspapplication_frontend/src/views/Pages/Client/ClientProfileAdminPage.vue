@@ -21,6 +21,11 @@
         :client-id="clientId"
         @client-updated="handleClientUpdate"
       />
+
+      <ClientAddressCard 
+        :client-id="clientId"
+        @client-updated="handleClientUpdate"
+      />
     </div>
   </AdminLayout>
 </template>
@@ -33,6 +38,7 @@ import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import ClientAvatarSection from '@/components/client/ClientAvatarSection.vue';
 import ClientInformationCard from '@/components/client/ClientInformationCard.vue';
+import ClientAddressCard from '@/components/client/ClientAddressCard.vue';
 
 const route = useRoute();
 const clientId = computed(() => route.params.id as string);
