@@ -87,7 +87,7 @@
     </p>
     
     <!-- Client Status Badge -->
-    <div class="mt-2">
+    <div class="mt-2 flex items-center gap-2">
       <span 
         :class="[
           'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
@@ -98,6 +98,37 @@
       >
         {{ client?.isActive ? 'Active' : 'Inactive' }}
       </span>
+      <button
+        @click="toggleClientStatus"
+        class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        :title="client?.isActive ? 'Deactivate Client' : 'Activate Client'"
+      >
+        <svg 
+          v-if="isUpdatingStatus"
+          class="h-4 w-4 animate-spin text-gray-500" 
+          xmlns="http://www.w3.org/2000/svg" 
+          fill="none" 
+          viewBox="0 0 24 24"
+        >
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <svg 
+          v-else
+          class="h-4 w-4 text-gray-500" 
+          xmlns="http://www.w3.org/2000/svg" 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path 
+            stroke-linecap="round" 
+            stroke-linejoin="round" 
+            stroke-width="2" 
+            :d="client?.isActive ? 'M5 13l4 4L19 7' : 'M12 4v16m8-8H4'"
+          />
+        </svg>
+      </button>
     </div>
   </div>
 </template>
@@ -113,12 +144,14 @@ const props = defineProps<{
   client?: Client | null;
 }>();
 
-const emit = defineEmits(['logo-updated']);
+const emit = defineEmits(['logo-updated', 'status-updated']);
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
 const uploadError = ref('');
 const tempLogoUrl = ref<string | null>(null);
+const isUpdatingStatus = ref(false);
+const statusError = ref('');
 
 // Calculate client name
 const clientName = computed(() => {
@@ -258,6 +291,28 @@ const removeLogo = async (event: Event) => {
     uploadError.value = error instanceof Error ? error.message : 'An error occurred while removing logo';
   } finally {
     isUploading.value = false;
+  }
+};
+
+// Toggle client status
+const toggleClientStatus = async () => {
+  if (!props.client?.id) return;
+  
+  isUpdatingStatus.value = true;
+  statusError.value = '';
+  
+  try {
+    const updatedClient = await clientService.updateClientStatus(
+      props.client.id,
+      !props.client.isActive
+    );
+    
+    // Emit the update to parent component
+    emit('status-updated', { id: props.client.id, isActive: updatedClient.isActive });
+  } catch (error) {
+    statusError.value = error instanceof Error ? error.message : 'Failed to update client status';
+  } finally {
+    isUpdatingStatus.value = false;
   }
 };
 </script> 

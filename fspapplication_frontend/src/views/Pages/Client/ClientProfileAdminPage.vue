@@ -14,6 +14,7 @@
       <ClientAvatarSection 
         :client="client" 
         @logo-updated="handleLogoUpdate"
+        @status-updated="handleStatusUpdate"
       />    
     </div>
   </AdminLayout>
@@ -63,6 +64,18 @@ const handleLogoUpdate = async (updateData: { id: string, logo: string | null })
     }
   } catch (err) {
     console.error('Error updating client logo:', err);
+  }
+};
+
+// Handle status update events from the avatar component
+const handleStatusUpdate = async (updateData: { id: string, isActive: boolean }) => {
+  try {
+    // Update the local client data
+    if (client.value) {
+      client.value.isActive = updateData.isActive;
+    }
+  } catch (err) {
+    console.error('Error updating client status:', err);
   }
 };
 
