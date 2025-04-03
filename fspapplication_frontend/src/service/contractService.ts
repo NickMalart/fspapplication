@@ -56,5 +56,16 @@ export const contractService = {
       console.error(`Error fetching contract with ID ${id}:`, error);
       throw error;
     }
+  },
+
+  async createContract(contractData: Partial<Contract>): Promise<Contract> {
+    try {
+      const apiData = convertObjectKeysToSnake(contractData);
+      const response = await axios.post(`${API_URL}/client/clients/${contractData.client}/contracts/`, apiData);
+      return convertObjectKeysToCamel(response.data);
+    } catch (error: any) {
+      console.error('Error creating contract:', error);
+      throw error;
+    }
   }
 }; 

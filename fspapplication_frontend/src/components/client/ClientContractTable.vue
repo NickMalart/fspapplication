@@ -7,6 +7,15 @@
         <h3 class="text-base font-medium text-gray-800 dark:text-white/90 mb-3 sm:mb-0">
           Client Contracts
         </h3>
+        <button
+          @click="showCreateModal = true"
+          class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-900 transition-colors duration-200 border border-transparent"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 stroke-current" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Create Contract
+        </button>
       </div>
     </div>
 
@@ -177,6 +186,15 @@
       </div>
     </div>
   </div>
+
+  <!-- Contract Create Modal -->
+  <ContractCreateModal
+    v-if="showCreateModal"
+    :show="showCreateModal"
+    :client-name="clientName"
+    @close="showCreateModal = false"
+    @contract-created="handleContractCreated"
+  />
 </template>
 
 <script setup lang="ts">
@@ -184,10 +202,12 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { contractService, type Contract } from '@/service/contractService';
 import debounce from 'lodash/debounce';
+import ContractCreateModal from './ContractCreateModal.vue';
 
 const router = useRouter();
 const props = defineProps<{
   clientId: string;
+  clientName: string;
 }>();
 
 // State
@@ -200,6 +220,7 @@ const perPage = ref(10);
 const totalContracts = ref(0);
 const sortColumn = ref('name');
 const sortDirection = ref<'asc' | 'desc'>('asc');
+const showCreateModal = ref(false);
 
 // Computed properties
 const totalPages = computed(() => Math.ceil(totalContracts.value / perPage.value));
@@ -272,6 +293,11 @@ const goToPage = (page: number) => {
 
 const viewContractDetails = (contract: Contract) => {
   router.push(`/client/${props.clientId}/contract/${contract.id}`);
+};
+
+const handleContractCreated = (newContract: Contract) => {
+  // Refresh the contracts list
+  fetchContracts();
 };
 
 // Debounced search
