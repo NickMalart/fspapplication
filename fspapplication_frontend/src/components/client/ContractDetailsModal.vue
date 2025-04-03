@@ -20,6 +20,7 @@
               type="text"
               class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
               placeholder="Enter contract name"
+              @keyup.enter="handleSave"
             />
           </div>
           <p v-else class="mt-1 text-base font-medium text-gray-900 dark:text-white">{{ contract.name }}</p>
@@ -33,6 +34,8 @@
               rows="3"
               class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
               placeholder="Enter contract description"
+              @keyup.enter.exact="handleSave"
+              @keydown.enter.shift.prevent
             ></textarea>
           </div>
           <p v-else class="mt-1 text-base text-gray-900 dark:text-white">
