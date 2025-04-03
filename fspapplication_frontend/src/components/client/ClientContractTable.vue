@@ -8,7 +8,18 @@
           Client Contracts
         </h3>
         
-        <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
+        <div class="flex flex-col items-end space-y-3">
+          <!-- Create Contract Button -->
+          <button
+            @click="showCreateModal = true"
+            class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-900 transition-colors duration-200 border border-transparent whitespace-nowrap"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 stroke-current" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Create Contract
+          </button>
+
           <!-- Status Filter Buttons/Dropdown -->
           <div class="w-full sm:w-auto">
             <!-- Mobile: Dropdown -->
@@ -28,7 +39,7 @@
               <button 
                 @click="setStatusFilter('active')"
                 :class="[
-                  'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                  'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
                   statusFilter === 'active' 
                     ? 'bg-green-500 text-white' 
                     : 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/70'
@@ -39,7 +50,7 @@
               <button 
                 @click="setStatusFilter('inactive')"
                 :class="[
-                  'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                  'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
                   statusFilter === 'inactive' 
                     ? 'bg-red-500 text-white' 
                     : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/70'
@@ -50,7 +61,7 @@
               <button 
                 @click="setStatusFilter('all')"
                 :class="[
-                  'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                  'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
                   statusFilter === 'all' 
                     ? 'bg-blue-500 text-white' 
                     : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/70'
@@ -60,16 +71,6 @@
               </button>
             </div>
           </div>
-
-          <button
-            @click="showCreateModal = true"
-            class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-900 transition-colors duration-200 border border-transparent whitespace-nowrap"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 stroke-current" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Create Contract
-          </button>
         </div>
       </div>
     </div>
