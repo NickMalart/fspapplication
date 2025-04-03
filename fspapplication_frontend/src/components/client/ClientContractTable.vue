@@ -100,7 +100,14 @@
                   {{ contract.name }}
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                  {{ contract.description || 'No description' }}
+                  <div class="max-w-xs">
+                    <span 
+                      :title="contract.description || 'No description'" 
+                      class="block truncate"
+                    >
+                      {{ contract.description || 'No description' }}
+                    </span>
+                  </div>
                 </td>
                 <td class="px-4 py-3">
                   <span 
@@ -320,8 +327,11 @@ const handleStatusUpdated = (updatedContract: Contract) => {
   const index = contracts.value.findIndex(c => c.id === updatedContract.id);
   if (index !== -1) {
     contracts.value[index] = updatedContract;
+    // Update the selected contract in the modal
+    if (selectedContract.value && selectedContract.value.id === updatedContract.id) {
+      selectedContract.value = updatedContract;
+    }
   }
-  closeDetailsModal();
 };
 
 const handleContractUpdated = (updatedContract: Contract) => {
