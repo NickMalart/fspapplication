@@ -66,8 +66,6 @@ const isCacheValid = (entry: CacheEntry): boolean => {
 export const clientService = {
   async getClients(params: ClientListParams = {}): Promise<ClientsResponse> {
     try {
-      console.log('getClients called with params:', params);
-      
       // Convert data from camelCase to snake_case for the API
       const apiParams = convertObjectKeysToSnake({
         ...params,
@@ -77,23 +75,12 @@ export const clientService = {
         is_active: undefined
       });
 
-      console.log('Converted API params:', apiParams);
-
       // Remove undefined or null parameters
       Object.keys(apiParams).forEach(key => 
         (apiParams[key] === undefined || apiParams[key] === null) && delete apiParams[key]
       );
       
-      console.log('Final API params after cleanup:', apiParams);
-      
       const response = await axios.get(`${API_URL}/client/clients/`, { params: apiParams });
-      
-      console.log('API Response:', {
-        count: response.data.count,
-        resultsCount: response.data.results.length,
-        firstResult: response.data.results[0],
-        params: response.config.params
-      });
       
       return {
         count: response.data.count,
@@ -103,11 +90,6 @@ export const clientService = {
       };
     } catch (error: any) {
       console.error('Error fetching clients:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
       throw error;
     }
   },
@@ -186,12 +168,9 @@ export const clientService = {
   
   async updateClient(clientId: string, data: Partial<Client>): Promise<Client> {
     try {
-      console.log('Updating client with data:', data);
-      
       // Convert data from camelCase to snake_case for the API
       const apiData = convertObjectKeysToSnake(data);
       
-      console.log('Sending to API:', apiData);
       const response: AxiosResponse<Client> = await axios.patch(
         `${API_URL}/client/clients/${clientId}/`,
         apiData

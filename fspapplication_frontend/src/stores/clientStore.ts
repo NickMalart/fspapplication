@@ -64,15 +64,6 @@ export const useClientStore = defineStore('client', () => {
 
   // Actions
   const fetchClients = async () => {
-    console.log('Store: Fetching clients with state:', {
-      statusFilter: statusFilter.value,
-      searchTerm: searchTerm.value,
-      currentPage: currentPage.value,
-      perPage: perPage.value,
-      sortColumn: sortColumn.value,
-      sortDirection: sortDirection.value
-    });
-    
     loading.value = true;
     error.value = null;
     try {
@@ -84,16 +75,10 @@ export const useClientStore = defineStore('client', () => {
         pageSize: perPage.value
       });
       
-      console.log('Store: Received clients response:', {
-        count: response.count,
-        resultsCount: response.results.length,
-        firstClientStatus: response.results[0]?.isActive
-      });
-      
       clients.value = response.results;
       totalClients.value = response.count;
     } catch (err: any) {
-      console.error('Store: Error fetching clients:', err);
+      console.error('Error fetching clients:', err);
       error.value = err.message || 'Failed to fetch clients';
       throw error.value;
     } finally {
@@ -187,8 +172,6 @@ export const useClientStore = defineStore('client', () => {
   };
 
   const setStatusFilter = (status: 'active' | 'inactive' | 'all') => {
-    console.log('Store: Setting status filter to:', status);
-    console.log('Store: Previous status filter:', statusFilter.value);
     statusFilter.value = status;
     currentPage.value = 1; // Reset to first page when changing filter
     fetchClients(); // Fetch filtered data
