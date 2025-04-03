@@ -49,9 +49,10 @@ import { ref, reactive } from 'vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import { contractService, type Contract } from '@/service/contractService';
 
-defineProps<{
+const props = defineProps<{
   show: boolean;
   clientName: string;
+  clientId: string;
 }>();
 
 const emit = defineEmits(['close', 'contract-created']);
@@ -60,7 +61,8 @@ const isLoading = ref(false);
 const contractData = reactive<Partial<Contract>>({
   name: '',
   description: '',
-  isActive: true // Set default value but don't show in UI
+  isActive: true, // Set default value but don't show in UI
+  client: props.clientId // Initialize with the client ID
 });
 
 const closeModal = () => {
@@ -70,6 +72,8 @@ const closeModal = () => {
 const handleSubmit = async () => {
   try {
     isLoading.value = true;
+    // Ensure client ID is set before submitting
+    contractData.client = props.clientId;
     const newContract = await contractService.createContract(contractData);
     
     if (newContract) {
@@ -89,6 +93,7 @@ const handleSubmit = async () => {
 const resetForm = () => {
   contractData.name = '';
   contractData.description = '';
-  // isActive remains true by default
+  // Reset while maintaining the client ID
+  contractData.client = props.clientId;
 };
 </script> 

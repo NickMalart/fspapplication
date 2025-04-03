@@ -192,6 +192,7 @@
     v-if="showCreateModal"
     :show="showCreateModal"
     :client-name="clientName"
+    :client-id="clientId"
     @close="showCreateModal = false"
     @contract-created="handleContractCreated"
   />

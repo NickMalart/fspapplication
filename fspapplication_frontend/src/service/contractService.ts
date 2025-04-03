@@ -60,8 +60,12 @@ export const contractService = {
 
   async createContract(contractData: Partial<Contract>): Promise<Contract> {
     try {
+      if (!contractData.client) {
+        throw new Error('Client ID is required to create a contract');
+      }
       const apiData = convertObjectKeysToSnake(contractData);
-      const response = await axios.post(`${API_URL}/client/clients/${contractData.client}/contracts/`, apiData);
+      const clientId = contractData.client;
+      const response = await axios.post(`${API_URL}/client/clients/${clientId}/contracts/`, apiData);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
       console.error('Error creating contract:', error);
