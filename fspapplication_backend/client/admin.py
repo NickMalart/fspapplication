@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Client, ClientWarehouse, ClientContact
+from .models import Client, ClientWarehouse, ClientContract
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
@@ -13,8 +13,8 @@ class ClientWarehouseAdmin(admin.ModelAdmin):
     search_fields = ('name', 'client__name')
     list_filter = ('is_active', 'is_primary')
 
-@admin.register(ClientContact)
-class ClientContactAdmin(admin.ModelAdmin):
+@admin.register(ClientContract)
+class ClientContractAdmin(admin.ModelAdmin):
     list_display = ('name', 'client')
     search_fields = ('name', 'client__name')
     list_filter = ('client',)

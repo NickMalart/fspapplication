@@ -80,10 +80,7 @@ class ClientWarehouse(models.Model):
     def __str__(self):
         return f"{self.name} - {self.client.name}"
 
-class ClientContact(models.Model):
-    """
-    Model to store contact persons for each client.
-    """
+class ClientContract(models.Model):
     # Primary Key
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     

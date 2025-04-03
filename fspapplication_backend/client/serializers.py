@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Client, ClientWarehouse, ClientContact
+from .models import Client, ClientWarehouse, ClientContract
 
 class ClientSerializer(serializers.ModelSerializer):
     """

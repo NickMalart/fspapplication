@@ -26,6 +26,10 @@
         :client-id="clientId"
         @client-updated="handleClientUpdate"
       />
+
+      <ClientContractTable
+        :client-id="clientId"
+      />
     </div>
   </AdminLayout>
 </template>
@@ -39,6 +43,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import ClientAvatarSection from '@/components/client/ClientAvatarSection.vue';
 import ClientInformationCard from '@/components/client/ClientInformationCard.vue';
 import ClientAddressCard from '@/components/client/ClientAddressCard.vue';
+import ClientContractTable from '@/components/client/ClientContractTable.vue';
 
 const route = useRoute();
 const clientId = computed(() => route.params.id as string);
