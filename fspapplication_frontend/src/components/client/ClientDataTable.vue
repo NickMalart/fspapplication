@@ -300,6 +300,7 @@ const viewClientDetails = (client) => {
 
 // Method to set status filter
 const setStatusFilter = (status) => {
+  if (statusFilter.value === status) return // Don't update if already selected
   statusFilter.value = status
   clientStore.setStatusFilter(status)
 }

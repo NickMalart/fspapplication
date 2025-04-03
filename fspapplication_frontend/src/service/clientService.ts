@@ -71,14 +71,10 @@ export const clientService = {
       // Convert data from camelCase to snake_case for the API
       const apiParams = convertObjectKeysToSnake({
         ...params,
-        // Convert status to is_active for the API
-        is_active: params.status === 'all' 
-          ? null 
-          : params.status === 'active' 
-            ? true 
-            : false,
-        // Remove the original status parameter as we've converted it
-        status: undefined
+        // Use status parameter directly like contract service
+        status: params.status,
+        // Remove is_active as we're using status instead
+        is_active: undefined
       });
 
       console.log('Converted API params:', apiParams);
