@@ -106,6 +106,7 @@
 import { computed, ref } from 'vue';
 import { fileService } from '@/service/fileService';
 import { Client } from '@/service/clientService';
+import { clientService } from '@/service/clientService';
 
 // Define props for client data
 const props = defineProps<{
@@ -166,47 +167,34 @@ const triggerFileInput = () => {
   fileInput.value?.click();
 };
 
-// Remove logo function
-const removeLogo = async (event: Event) => {
-  // Prevent the click from triggering the file input
-  event.stopPropagation();
-  
-  // Show loading state
-  isUploading.value = true;
-  uploadError.value = '';
-  
-  try {
-    // Update client with null logo path
-    if (props.client?.id) {
-      // This would require a clientStore for the update operation
-      // For now, just emit that the logo was updated
-      emit('logo-updated', { id: props.client.id, logo: null });
-    }
-    
-    // Clear any temporary logo preview
-    tempLogoUrl.value = null;
-  } catch (error) {
-    uploadError.value = error instanceof Error ? error.message : 'An error occurred while removing logo';
-  } finally {
-    isUploading.value = false;
-  }
-};
-
 // Handle file selection
 const handleFileChange = async (event: Event) => {
   const target = event.target as HTMLInputElement;
-  if (!target.files?.length) return;
+  if (!target.files?.length || !props.client?.id) return;
   
   const file = target.files[0];
   
-  // Basic validation
+  // Enhanced validation
   if (!file.type.startsWith('image/')) {
-    uploadError.value = 'Please select an image file';
+    uploadError.value = 'Please select an image file (JPEG, PNG, GIF)';
     return;
   }
   
   if (file.size > 5 * 1024 * 1024) { // 5MB limit
     uploadError.value = 'Image size must be less than 5MB';
+    return;
+  }
+  
+  // Validate image dimensions
+  const img = new Image();
+  img.src = URL.createObjectURL(file);
+  await new Promise((resolve) => {
+    img.onload = resolve;
+  });
+  
+  if (img.width < 100 || img.height < 100) {
+    uploadError.value = 'Image dimensions must be at least 100x100 pixels';
+    URL.revokeObjectURL(img.src);
     return;
   }
   
@@ -217,7 +205,6 @@ const handleFileChange = async (event: Event) => {
   const reader = new FileReader();
   reader.onload = (e) => {
     if (e.target?.result) {
-      // Preview is temporary, no need to update Pinia yet
       tempLogoUrl.value = e.target.result as string;
     }
   };
@@ -237,22 +224,40 @@ const handleFileChange = async (event: Event) => {
       throw new Error(uploadResult.error || 'Failed to upload logo to S3');
     }
     
-    // Update client with the new logo path
-    if (props.client?.id) {
-      // This would require a clientStore for the update operation
-      // For now, just emit that the logo was updated
-      emit('logo-updated', { id: props.client.id, logo: uploadResult.path });
-    }
+    // Emit the update to parent component
+    emit('logo-updated', { id: props.client.id, logo: uploadResult.path });
+    
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : 'An error occurred while updating logo';
-    
-    // Clear temporary logo
     tempLogoUrl.value = null;
   } finally {
     isUploading.value = false;
+    URL.revokeObjectURL(img.src);
   }
   
   // Reset input value to allow selecting the same file again
   if (fileInput.value) fileInput.value.value = '';
+};
+
+// Remove logo function
+const removeLogo = async (event: Event) => {
+  event.stopPropagation();
+  
+  if (!props.client?.id) return;
+  
+  isUploading.value = true;
+  uploadError.value = '';
+  
+  try {
+    // Emit the update to parent component
+    emit('logo-updated', { id: props.client.id, logo: null });
+    
+    // Clear any temporary logo preview
+    tempLogoUrl.value = null;
+  } catch (error) {
+    uploadError.value = error instanceof Error ? error.message : 'An error occurred while removing logo';
+  } finally {
+    isUploading.value = false;
+  }
 };
 </script> 
