@@ -77,6 +77,21 @@ export const useClientStore = defineStore('client', () => {
     return await updateClient(clientId, { isActive });
   };
 
+  const addClient = async (data: Partial<Client>) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const newClient = await clientService.createClient(data);
+      clients.value.push(newClient);
+      return newClient;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to create client';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const setSelectedClient = (client: Client | null) => {
     selectedClient.value = client;
   };
@@ -95,5 +110,6 @@ export const useClientStore = defineStore('client', () => {
     updateClientLogo,
     updateClientStatus,
     setSelectedClient,
+    addClient,
   };
 }); 

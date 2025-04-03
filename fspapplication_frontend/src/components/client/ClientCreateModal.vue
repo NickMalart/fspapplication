@@ -87,7 +87,12 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
-import { useClientStore, type Client } from '@/stores/clientStore';
+import { useClientStore } from '@/stores/clientStore';
+import type { Client } from '@/service/clientService';
+
+defineProps<{
+  show: boolean
+}>();
 
 const emit = defineEmits(['close', 'client-created']);
 const clientStore = useClientStore();
