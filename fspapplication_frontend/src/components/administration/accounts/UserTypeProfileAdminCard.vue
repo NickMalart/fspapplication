@@ -225,6 +225,7 @@ import { useToast } from '@/composables/useToast';
 import ComponentCard from '@/components/common/ComponentCard.vue';
 import UserTypeProfileEditModal from '@/components/administration/accounts/EditUserTypeProfileAdminModal.vue';
 import { convertObjectKeysToCamel } from '@/utils/caseConverter';
+import { userProfileAdminService } from '@/service/userProfileAdminService';
 
 // Define interfaces for the different profile types
 interface AgentProfileData {
@@ -459,8 +460,40 @@ const changeUserType = async () => {
 const handleAgentSave = async (updatedData: AgentProfileData) => {
   isSaving.value = true;
   try {
-    // API call would go here
-    const updatedUser = { ...props.userData, agentProfile: updatedData };
+    // Create a properly typed agent profile object
+    const agentProfile = {
+      companyName: updatedData.companyName || '',
+      licenseNumber: updatedData.licenseNumber || null,
+      yearsOfExperience: updatedData.yearsOfExperience || 0
+    };
+    
+    // Create the updated user object with the new agent profile data
+    const updatedUser = { 
+      ...props.userData,
+      id: props.userData.id ? String(props.userData.id) : undefined,
+      agentProfile,
+      // Ensure other profiles are properly typed
+      clientProfile: props.userData.clientProfile ? {
+        companyName: props.userData.clientProfile.companyName || '',
+        industry: props.userData.clientProfile.industry || null,
+        clientSince: props.userData.clientProfile.clientSince || new Date().toISOString().split('T')[0]
+      } : undefined,
+      employeeProfile: props.userData.employeeProfile ? {
+        companyName: props.userData.employeeProfile.companyName || '',
+        department: props.userData.employeeProfile.department || '',
+        employeeId: props.userData.employeeProfile.employeeId || null,
+        jobTitle: props.userData.employeeProfile.jobTitle || null,
+        startDate: props.userData.employeeProfile.startDate || new Date().toISOString().split('T')[0],
+        reportsTo: props.userData.employeeProfile.reportsTo || null
+      } : undefined
+    };
+    
+    // Save to the database using the service
+    if (props.userData.id) {
+      await userProfileAdminService.updateUserProfile(String(props.userData.id), updatedUser);
+    }
+    
+    // Emit the update event to update the local state
     emit('update:user', updatedUser);
     showToast('Agent profile updated successfully', 'success');
     showEditForm.value = false;
@@ -475,8 +508,40 @@ const handleAgentSave = async (updatedData: AgentProfileData) => {
 const handleClientSave = async (updatedData: ClientProfileData) => {
   isSaving.value = true;
   try {
-    // API call would go here
-    const updatedUser = { ...props.userData, clientProfile: updatedData };
+    // Create a properly typed client profile object
+    const clientProfile = {
+      companyName: updatedData.companyName || '',
+      industry: updatedData.industry || null,
+      clientSince: updatedData.clientSince || new Date().toISOString().split('T')[0]
+    };
+    
+    // Create the updated user object with the new client profile data
+    const updatedUser = { 
+      ...props.userData,
+      id: props.userData.id ? String(props.userData.id) : undefined,
+      clientProfile,
+      // Ensure other profiles are properly typed
+      agentProfile: props.userData.agentProfile ? {
+        companyName: props.userData.agentProfile.companyName || '',
+        licenseNumber: props.userData.agentProfile.licenseNumber || null,
+        yearsOfExperience: props.userData.agentProfile.yearsOfExperience || 0
+      } : undefined,
+      employeeProfile: props.userData.employeeProfile ? {
+        companyName: props.userData.employeeProfile.companyName || '',
+        department: props.userData.employeeProfile.department || '',
+        employeeId: props.userData.employeeProfile.employeeId || null,
+        jobTitle: props.userData.employeeProfile.jobTitle || null,
+        startDate: props.userData.employeeProfile.startDate || new Date().toISOString().split('T')[0],
+        reportsTo: props.userData.employeeProfile.reportsTo || null
+      } : undefined
+    };
+    
+    // Save to the database using the service
+    if (props.userData.id) {
+      await userProfileAdminService.updateUserProfile(String(props.userData.id), updatedUser);
+    }
+    
+    // Emit the update event to update the local state
     emit('update:user', updatedUser);
     showToast('Client profile updated successfully', 'success');
     showEditForm.value = false;
@@ -491,8 +556,40 @@ const handleClientSave = async (updatedData: ClientProfileData) => {
 const handleEmployeeSave = async (updatedData: EmployeeProfileData) => {
   isSaving.value = true;
   try {
-    // API call would go here
-    const updatedUser = { ...props.userData, employeeProfile: updatedData };
+    // Create a properly typed employee profile object
+    const employeeProfile = {
+      companyName: updatedData.companyName || '',
+      department: updatedData.department || '',
+      employeeId: updatedData.employeeId || null,
+      jobTitle: updatedData.jobTitle || null,
+      startDate: updatedData.startDate || new Date().toISOString().split('T')[0],
+      reportsTo: updatedData.reportsTo || null
+    };
+    
+    // Create the updated user object with the new employee profile data
+    const updatedUser = { 
+      ...props.userData,
+      id: props.userData.id ? String(props.userData.id) : undefined,
+      employeeProfile,
+      // Ensure other profiles are properly typed
+      agentProfile: props.userData.agentProfile ? {
+        companyName: props.userData.agentProfile.companyName || '',
+        licenseNumber: props.userData.agentProfile.licenseNumber || null,
+        yearsOfExperience: props.userData.agentProfile.yearsOfExperience || 0
+      } : undefined,
+      clientProfile: props.userData.clientProfile ? {
+        companyName: props.userData.clientProfile.companyName || '',
+        industry: props.userData.clientProfile.industry || null,
+        clientSince: props.userData.clientProfile.clientSince || new Date().toISOString().split('T')[0]
+      } : undefined
+    };
+    
+    // Save to the database using the service
+    if (props.userData.id) {
+      await userProfileAdminService.updateUserProfile(String(props.userData.id), updatedUser);
+    }
+    
+    // Emit the update event to update the local state
     emit('update:user', updatedUser);
     showToast('Employee profile updated successfully', 'success');
     showEditForm.value = false;

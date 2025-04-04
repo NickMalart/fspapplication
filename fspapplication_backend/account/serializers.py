@@ -92,9 +92,9 @@ class UserProfileAdminSerializer(serializers.ModelSerializer):
     """Comprehensive serializer for admin user profile management"""
     profile = ProfileDataSerializer(required=False)
     functional_groups = FunctionalGroupSerializer(many=True, read_only=True)
-    agent_profile = AgentProfileSerializer(read_only=True, required=False)
-    client_profile = ClientProfileSerializer(read_only=True, required=False)
-    employee_profile = EmployeeProfileSerializer(read_only=True, required=False)
+    agent_profile = AgentProfileSerializer(required=False)
+    client_profile = ClientProfileSerializer(required=False)
+    employee_profile = EmployeeProfileSerializer(required=False)
     
     # IDs for managing functional groups (write operations)
     functional_group_ids = serializers.PrimaryKeyRelatedField(
@@ -116,6 +116,9 @@ class UserProfileAdminSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         profile_data = validated_data.pop('profile', {})
+        agent_profile_data = validated_data.pop('agent_profile', {})
+        client_profile_data = validated_data.pop('client_profile', {})
+        employee_profile_data = validated_data.pop('employee_profile', {})
         
         # Handle functional groups if present
         if 'functional_groups' in validated_data:
@@ -132,6 +135,27 @@ class UserProfileAdminSerializer(serializers.ModelSerializer):
             for attr, value in profile_data.items():
                 setattr(profile, attr, value)
             profile.save()
+        
+        # Update or create AgentProfile
+        if agent_profile_data:
+            agent_profile, created = AgentProfile.objects.get_or_create(user=instance)
+            for attr, value in agent_profile_data.items():
+                setattr(agent_profile, attr, value)
+            agent_profile.save()
+        
+        # Update or create ClientProfile
+        if client_profile_data:
+            client_profile, created = ClientProfile.objects.get_or_create(user=instance)
+            for attr, value in client_profile_data.items():
+                setattr(client_profile, attr, value)
+            client_profile.save()
+        
+        # Update or create EmployeeProfile
+        if employee_profile_data:
+            employee_profile, created = EmployeeProfile.objects.get_or_create(user=instance)
+            for attr, value in employee_profile_data.items():
+                setattr(employee_profile, attr, value)
+            employee_profile.save()
         
         return instance
 
