@@ -76,7 +76,7 @@
         <form v-else-if="isClient" @submit.prevent="handleClientSubmit" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
-              Client <span v-if="isLoadingClients" class="text-xs text-gray-500 dark:text-gray-400">(loading...)</span>
+              Client
             </label>
             <select
               v-model="localClientData.companyNameId"
