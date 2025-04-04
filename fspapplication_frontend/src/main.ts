@@ -11,7 +11,6 @@ import App from './App.vue'
 import router from './router'
 import VueApexCharts from 'vue3-apexcharts'
 import { configureApi } from './utils/api'
-import Multiselect from 'vue-multiselect'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -19,7 +18,6 @@ const pinia = createPinia()
 app.use(pinia) 
 app.use(router)
 app.use(VueApexCharts)
-app.component('Multiselect', Multiselect)
 
 import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
