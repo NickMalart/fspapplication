@@ -180,67 +180,152 @@ class UserProfileAdminSerializer(serializers.ModelSerializer):
             EmployeeProfile.objects.filter(user=instance).delete()
         
         # Update or create AgentProfile only if user is an agent
-        if new_user_type == User.USER_TYPE_AGENT and agent_profile_data:
-            agent_profile, created = AgentProfile.objects.get_or_create(user=instance)
+        if new_user_type == User.USER_TYPE_AGENT:
+            # Try to get existing profile first
+            try:
+                agent_profile = AgentProfile.objects.get(user=instance)
+                existing_profile = True
+            except AgentProfile.DoesNotExist:
+                # Create a new profile only if we have data
+                if agent_profile_data:
+                    agent_profile = AgentProfile(user=instance)
+                    existing_profile = False
+                else:
+                    # No existing profile and no data, nothing to do
+                    return instance
             
-            # Skip validation if we're just changing the user type
-            skip_validation = user_type_changed
-                
-            # Only validate company_name for non-type-change updates
-            if not skip_validation and 'company_name' not in agent_profile_data and created:
+            # If we're just changing user type and no data provided, don't proceed
+            if user_type_changed and not agent_profile_data:
+                # If this is a new profile, we can't continue without company_name
+                if not existing_profile:
+                    # We'll need to handle this on the frontend
+                    return instance
+            
+            # If we have data, apply it
+            if agent_profile_data:
+                for attr, value in agent_profile_data.items():
+                    setattr(agent_profile, attr, value)
+            
+            # For new profiles, we must validate company_name exists
+            if not existing_profile and not agent_profile.company_name_id:
                 raise serializers.ValidationError({
                     'agent_profile': {'company_name': 'This field is required when creating an agent profile.'}
                 })
-            
-            for attr, value in agent_profile_data.items():
-                setattr(agent_profile, attr, value)
-            
-            # Only save if not a user type change or if required fields are present
-            if not user_type_changed or 'company_name' in agent_profile_data:
+                
+            # If it's an existing profile or we have the required data, save it
+            try:
                 agent_profile.save()
+            except Exception as e:
+                # If there's a database constraint violation, raise a validation error
+                if 'violates not-null constraint' in str(e) and 'company_name_id' in str(e):
+                    raise serializers.ValidationError({
+                        'agent_profile': {'company_name': 'Company name is required for agent profiles.'}
+                    })
+                # Re-raise other exceptions
+                raise
         
         # Update or create ClientProfile only if user is a client
-        if new_user_type == User.USER_TYPE_CLIENT and client_profile_data:
-            client_profile, created = ClientProfile.objects.get_or_create(user=instance)
+        if new_user_type == User.USER_TYPE_CLIENT:
+            # Try to get existing profile first
+            try:
+                client_profile = ClientProfile.objects.get(user=instance)
+                existing_profile = True
+            except ClientProfile.DoesNotExist:
+                # Create a new profile only if we have data
+                if client_profile_data:
+                    client_profile = ClientProfile(user=instance)
+                    existing_profile = False
+                else:
+                    # No existing profile and no data, nothing to do
+                    return instance
             
-            # Skip validation if we're just changing the user type
-            skip_validation = user_type_changed
-                
-            # Only validate company_name for non-type-change updates
-            if not skip_validation and 'company_name' not in client_profile_data and created:
+            # If we're just changing user type and no data provided, don't proceed
+            if user_type_changed and not client_profile_data:
+                # If this is a new profile, we can't continue without company_name
+                if not existing_profile:
+                    # We'll need to handle this on the frontend
+                    return instance
+            
+            # If we have company_name in the data, apply it
+            if client_profile_data:
+                for attr, value in client_profile_data.items():
+                    setattr(client_profile, attr, value)
+            
+            # For new profiles, we must validate company_name exists
+            if not existing_profile and not client_profile.company_name_id:
                 raise serializers.ValidationError({
                     'client_profile': {'company_name': 'This field is required when creating a client profile.'}
                 })
-            
-            for attr, value in client_profile_data.items():
-                setattr(client_profile, attr, value)
-            
-            # Always save client profile as string fields can be empty
-            client_profile.save()
+                
+            # If it's an existing profile or we have the required data, save it
+            try:
+                client_profile.save()
+            except Exception as e:
+                # If there's a database constraint violation, raise a validation error
+                if 'violates not-null constraint' in str(e) and 'company_name_id' in str(e):
+                    raise serializers.ValidationError({
+                        'client_profile': {'company_name': 'Company name is required for client profiles.'}
+                    })
+                # Re-raise other exceptions
+                raise
         
         # Update or create EmployeeProfile only if user is an employee
-        if new_user_type == User.USER_TYPE_EMPLOYEE and employee_profile_data:
-            employee_profile, created = EmployeeProfile.objects.get_or_create(user=instance)
+        if new_user_type == User.USER_TYPE_EMPLOYEE:
+            # Try to get existing profile first
+            try:
+                employee_profile = EmployeeProfile.objects.get(user=instance)
+                existing_profile = True
+            except EmployeeProfile.DoesNotExist:
+                # Create a new profile only if we have data
+                if employee_profile_data:
+                    employee_profile = EmployeeProfile(user=instance)
+                    existing_profile = False
+                else:
+                    # No existing profile and no data, nothing to do
+                    return instance
             
-            # Skip validation if we're just changing the user type
-            skip_validation = user_type_changed
+            # If we're just changing user type and no data provided, don't proceed
+            if user_type_changed and not employee_profile_data:
+                # If this is a new profile, we can't continue without required fields
+                if not existing_profile:
+                    # We'll need to handle this on the frontend
+                    return instance
+            
+            # If we have data, apply it
+            if employee_profile_data:
+                for attr, value in employee_profile_data.items():
+                    setattr(employee_profile, attr, value)
+            
+            # For new profiles, we must validate required fields exist
+            if not existing_profile:
+                missing_fields = {}
+                if not employee_profile.company_name_id:
+                    missing_fields['company_name'] = 'This field is required when creating an employee profile.'
+                if not hasattr(employee_profile, 'department') or not employee_profile.department:
+                    missing_fields['department'] = 'This field is required when creating an employee profile.'
                 
-            # Only validate required fields for non-type-change updates
-            if not skip_validation and created:
-                required_fields = ['company_name', 'department']
-                missing_fields = [field for field in required_fields if field not in employee_profile_data]
                 if missing_fields:
                     raise serializers.ValidationError({
-                        'employee_profile': {field: f'This field is required when creating an employee profile.' 
-                                          for field in missing_fields}
+                        'employee_profile': missing_fields
                     })
-            
-            for attr, value in employee_profile_data.items():
-                setattr(employee_profile, attr, value)
-            
-            # Only save if not a user type change or if required fields are present
-            if not user_type_changed or ('company_name' in employee_profile_data and 'department' in employee_profile_data):
+                
+            # If it's an existing profile or we have the required data, save it
+            try:
                 employee_profile.save()
-        
+            except Exception as e:
+                # If there's a database constraint violation, raise a validation error
+                if 'violates not-null constraint' in str(e):
+                    field = 'unknown field'
+                    if 'company_name_id' in str(e):
+                        field = 'company_name'
+                    elif 'department' in str(e):
+                        field = 'department'
+                    
+                    raise serializers.ValidationError({
+                        'employee_profile': {field: f'This field is required for employee profiles.'}
+                    })
+                # Re-raise other exceptions
+                raise
+                
         return instance
 

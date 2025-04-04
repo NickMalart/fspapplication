@@ -118,8 +118,39 @@ class UserProfileAdminView(APIView):
             serializer = UserProfileAdminSerializer(user, data=request.data, partial=True)
             
             if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
+                try:
+                    serializer.save()
+                    return Response(serializer.data)
+                except Exception as e:
+                    if 'violates not-null constraint' in str(e):
+                        # Extract the field name from error message
+                        field_name = None
+                        if 'company_name_id' in str(e):
+                            field_name = 'company_name'
+                        elif 'department' in str(e):
+                            field_name = 'department'
+                        
+                        # Determine which profile has the issue
+                        profile_type = None
+                        if 'account_clientprofile' in str(e):
+                            profile_type = 'client_profile'
+                        elif 'account_agentprofile' in str(e):
+                            profile_type = 'agent_profile'
+                        elif 'account_employeeprofile' in str(e):
+                            profile_type = 'employee_profile'
+                        
+                        if profile_type and field_name:
+                            return Response({
+                                profile_type: {
+                                    field_name: f"This field is required for this profile type."
+                                }
+                            }, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # Re-raise the exception for any other errors
+                    return Response({
+                        "detail": f"Database error: {str(e)}"
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:
             return Response(
