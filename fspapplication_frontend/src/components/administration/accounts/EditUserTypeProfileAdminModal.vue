@@ -197,7 +197,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { convertObjectKeysToCamel } from '@/utils/caseConverter';
 import { clientService, type Client } from '@/service/clientService';
 
 // Define interfaces for the different profile types
