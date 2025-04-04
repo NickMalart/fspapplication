@@ -1,12 +1,12 @@
 <template>
     <div class="address-autocomplete-container">
-      <label :for="id" class="block text-sm font-medium text-gray-700">{{ label }}</label>
+      <label :for="id" class="block text-sm font-medium text-gray-700 dark:text-gray-400">{{ label }}</label>
       <div class="relative">
         <input
           :id="id"
           v-model="searchInput"
           type="text"
-          class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+          class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
           :placeholder="placeholder"
           @input="onInput"
           @focus="onFocus"
@@ -14,11 +14,11 @@
         />
         
         <div v-if="suggestions.length > 0 && showSuggestions" 
-             class="absolute z-[99999] w-full mt-1 bg-white rounded-md shadow-lg border">
+             class="absolute z-[99999] w-full mt-1 bg-white rounded-md shadow-lg border dark:bg-gray-800 dark:border-gray-700">
           <ul class="max-h-60 overflow-auto">
             <li v-for="suggestion in suggestions" 
                 :key="suggestion.placeId" 
-                class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                class="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:text-gray-200 dark:hover:bg-gray-700"
                 @mousedown="selectAddress(suggestion)"
                 @click="selectAddress(suggestion)">
               {{ suggestion.description }}
