@@ -416,29 +416,33 @@ const changeUserType = async () => {
       userType: selectedUserType.value
     };
     
-    // Set empty objects for profile based on user type - backend will handle validation
-    // and skip required fields validation during type changes
+    // First, clear all profile related data completely
+    updatedUser.agentProfile = undefined;
+    updatedUser.clientProfile = undefined;
+    updatedUser.employeeProfile = undefined;
+    
+    // Then set only the new user type's profile to an empty object
     if (selectedUserType.value === 'agent') {
       updatedUser.agentProfile = {} as AgentProfile; // Type assertion for empty object
-      updatedUser.clientProfile = undefined;
-      updatedUser.employeeProfile = undefined;
     } else if (selectedUserType.value === 'client') {
       updatedUser.clientProfile = {} as ClientProfile; // Type assertion for empty object
-      updatedUser.agentProfile = undefined;
-      updatedUser.employeeProfile = undefined;
     } else if (selectedUserType.value === 'employee') {
       updatedUser.employeeProfile = {} as EmployeeProfile; // Type assertion for empty object
-      updatedUser.agentProfile = undefined;
-      updatedUser.clientProfile = undefined;
     }
     
     // Save to the database using the service
     if (props.userData.id) {
       await userProfileAdminService.updateUserProfile(String(props.userData.id), updatedUser);
+      
+      // Fetch the user again to make sure we have the latest data with all profiles cleared
+      const refreshedUser = await userProfileAdminService.getUserProfile(String(props.userData.id));
+      
+      // Emit the refreshed user to parent component to ensure UI is updated correctly
+      emit('update:user', refreshedUser);
+    } else {
+      // If no ID (unlikely), just emit the local update
+      emit('update:user', updatedUser);
     }
-    
-    // Emit the updated user to parent component
-    emit('update:user', updatedUser);
     
     showToast(`User type changed to ${userTypeLabel(selectedUserType.value)}`, 'success');
     showChangeTypeConfirm.value = false;

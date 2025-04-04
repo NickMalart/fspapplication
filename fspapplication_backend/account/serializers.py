@@ -163,17 +163,12 @@ class UserProfileAdminSerializer(serializers.ModelSerializer):
                 setattr(profile, attr, value)
             profile.save()
         
-        # Clear previous profile data if user type changed
+        # Clear ALL profile data if user type changed - no data should be left behind
         if user_type_changed:
-            # Delete any existing profiles that don't match the new user type
-            if new_user_type != User.USER_TYPE_AGENT:
-                AgentProfile.objects.filter(user=instance).delete()
-            
-            if new_user_type != User.USER_TYPE_CLIENT:
-                ClientProfile.objects.filter(user=instance).delete()
-                
-            if new_user_type != User.USER_TYPE_EMPLOYEE:
-                EmployeeProfile.objects.filter(user=instance).delete()
+            # Always delete all specific profiles when type changes
+            AgentProfile.objects.filter(user=instance).delete()
+            ClientProfile.objects.filter(user=instance).delete()
+            EmployeeProfile.objects.filter(user=instance).delete()
         
         # Update or create AgentProfile only if user is an agent
         if new_user_type == User.USER_TYPE_AGENT and agent_profile_data:
