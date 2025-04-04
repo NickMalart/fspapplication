@@ -223,7 +223,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useToast } from '@/composables/useToast';
 import ComponentCard from '@/components/common/ComponentCard.vue';
-import UserTypeProfileEditModal from '@/components/administration/accounts/UserTypeProfileEditAdminModal.vue';
+import UserTypeProfileEditModal from '@/components/administration/accounts/EditUserTypeProfileAdminModal.vue';
 import { convertObjectKeysToCamel } from '@/utils/caseConverter';
 
 // Define interfaces for the different profile types

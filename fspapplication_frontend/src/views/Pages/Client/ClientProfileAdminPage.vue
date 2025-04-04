@@ -27,8 +27,14 @@
         @client-updated="handleClientUpdate"
       />
 
+      <ClientWarehouseTable
+        :client-id="clientId"
+        :client-name="client.name"
+      />
+
       <ClientContractTable
         :client-id="clientId"
+        :client-name="client.name"
       />
     </div>
   </AdminLayout>
@@ -43,6 +49,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import ClientAvatarSection from '@/components/client/ClientAvatarSection.vue';
 import ClientInformationCard from '@/components/client/ClientInformationCard.vue';
 import ClientAddressCard from '@/components/client/ClientAddressCard.vue';
+import ClientWarehouseTable from '@/components/client/ClientWarehouseTable.vue';
 import ClientContractTable from '@/components/client/ClientContractTable.vue';
 
 const route = useRoute();

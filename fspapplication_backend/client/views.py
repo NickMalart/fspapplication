@@ -3,8 +3,8 @@ from rest_framework import viewsets, permissions, generics, filters, status
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Client, ClientContract
-from .serializers import ClientSerializer, ClientContractSerializer
+from .models import Client, ClientContract, ClientWarehouse
+from .serializers import ClientSerializer, ClientContractSerializer, ClientWarehouseSerializer
 
 # Add pagination class
 class StandardResultsPagination(PageNumberPagination):
@@ -133,4 +133,67 @@ class ClientContractDetailView(generics.RetrieveUpdateDestroyAPIView):
     """API view to retrieve, update, or delete a single client contract by ID"""
     queryset = ClientContract.objects.all()
     serializer_class = ClientContractSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class ClientWarehouseListView(generics.ListCreateAPIView):
+    """API view to list and create client warehouses with filtering, sorting and pagination"""
+    serializer_class = ClientWarehouseSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'description', 'city', 'state', 'country']
+    ordering_fields = ['name', 'city', 'state', 'country', 'is_primary', 'is_active', 'created_at']
+    ordering = ['name']
+    
+    def get_queryset(self):
+        queryset = ClientWarehouse.objects.all()
+        
+        # Get client_id from URL parameters
+        client_id = self.kwargs.get('client_id')
+        if client_id:
+            queryset = queryset.filter(client_id=client_id)
+        
+        # Status filter (active, inactive, all)
+        status = self.request.query_params.get('status')
+        if status == 'active':
+            queryset = queryset.filter(is_active=True)
+        elif status == 'inactive':
+            queryset = queryset.filter(is_active=False)
+        
+        # Search for warehouse by name, description, or location
+        search = self.request.query_params.get('search', '')
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) |
+                Q(description__icontains=search) |
+                Q(city__icontains=search) |
+                Q(state__icontains=search) |
+                Q(country__icontains=search)
+            )
+            
+        return queryset
+        
+    def get_ordering(self):
+        """
+        Handle dot notation in field names and convert to Django's double-underscore notation
+        """
+        ordering = self.request.query_params.get('ordering')
+        if ordering:
+            # Handle descending prefix
+            desc_prefix = ''
+            if ordering.startswith('-'):
+                desc_prefix = '-'
+                ordering = ordering[1:]
+            
+            # Convert dot notation to double underscore
+            ordering = ordering.replace('.', '__')
+            
+            return f"{desc_prefix}{ordering}"
+        
+        return super().get_ordering()
+
+class ClientWarehouseDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """API view to retrieve, update, or delete a single client warehouse by ID"""
+    queryset = ClientWarehouse.objects.all()
+    serializer_class = ClientWarehouseSerializer
     permission_classes = [permissions.IsAuthenticated]
