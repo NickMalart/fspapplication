@@ -226,6 +226,7 @@ import ComponentCard from '@/components/common/ComponentCard.vue';
 import UserTypeProfileEditModal from '@/components/administration/accounts/EditUserTypeProfileAdminModal.vue';
 import { convertObjectKeysToCamel } from '@/utils/caseConverter';
 import { userProfileAdminService } from '@/service/userProfileAdminService';
+import { type AgentProfile, type ClientProfile, type EmployeeProfile, type UserProfileAdmin } from '@/stores/userProfileAdminStore';
 
 // Define interfaces for the different profile types
 interface AgentProfileData {
@@ -250,23 +251,9 @@ interface EmployeeProfileData {
 }
 
 // Define user data interface
-interface UserData {
-  id?: number | string;
-  userType?: string;
+interface UserData extends Partial<UserProfileAdmin> {
+  id?: string;
   username?: string;
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  isActive?: boolean;
-  isStaff?: boolean;
-  isTenantOwner?: boolean;
-  dateJoined?: string;
-  lastLogin?: string | null;
-  profile?: any;
-  functionalGroups?: any[];
-  agentProfile?: AgentProfileData;
-  clientProfile?: ClientProfileData;
-  employeeProfile?: EmployeeProfileData;
   [key: string]: any; // Allow for additional properties
 }
 
@@ -423,24 +410,31 @@ const changeUserType = async () => {
   
   try {
     // Create a new user object with updated type and empty profile data
-    const updatedUser = { 
+    const updatedUser: UserData = { 
       ...props.userData,
+      id: props.userData.id ? String(props.userData.id) : undefined, // Ensure ID is string
       userType: selectedUserType.value
     };
     
-    // Remove existing profile data for the old type
+    // Set empty objects for profile based on user type - backend will handle validation
+    // and skip required fields validation during type changes
     if (selectedUserType.value === 'agent') {
-      updatedUser.agentProfile = {}; // Create empty agent profile
+      updatedUser.agentProfile = {} as AgentProfile; // Type assertion for empty object
       updatedUser.clientProfile = undefined;
       updatedUser.employeeProfile = undefined;
     } else if (selectedUserType.value === 'client') {
-      updatedUser.clientProfile = {}; // Create empty client profile
+      updatedUser.clientProfile = {} as ClientProfile; // Type assertion for empty object
       updatedUser.agentProfile = undefined;
       updatedUser.employeeProfile = undefined;
     } else if (selectedUserType.value === 'employee') {
-      updatedUser.employeeProfile = {}; // Create empty employee profile
+      updatedUser.employeeProfile = {} as EmployeeProfile; // Type assertion for empty object
       updatedUser.agentProfile = undefined;
       updatedUser.clientProfile = undefined;
+    }
+    
+    // Save to the database using the service
+    if (props.userData.id) {
+      await userProfileAdminService.updateUserProfile(String(props.userData.id), updatedUser);
     }
     
     // Emit the updated user to parent component

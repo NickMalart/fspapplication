@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.apps import apps as models
 from .models import User, UserProfile, FunctionalGroup, AgentProfile, ClientProfile, EmployeeProfile
 
 class LoginUserSerializer(serializers.ModelSerializer):
@@ -67,7 +68,14 @@ class FunctionalGroupSerializer(serializers.ModelSerializer):
 
 class AgentProfileSerializer(serializers.ModelSerializer):
     """Serializer for agent-specific profile data"""
-    company_name = serializers.StringRelatedField()
+    company_name = serializers.StringRelatedField(read_only=True)
+    # Add a write-only field for the company ID
+    company_name_id = serializers.PrimaryKeyRelatedField(
+        source='company_name',
+        queryset=models.get_model('company', 'Company').objects.all(),
+        write_only=True,
+        required=False
+    )
     
     class Meta:
         model = AgentProfile
@@ -81,8 +89,22 @@ class ClientProfileSerializer(serializers.ModelSerializer):
 
 class EmployeeProfileSerializer(serializers.ModelSerializer):
     """Serializer for employee-specific profile data"""
-    company_name = serializers.StringRelatedField()
-    reports_to = serializers.StringRelatedField()
+    company_name = serializers.StringRelatedField(read_only=True)
+    reports_to = serializers.StringRelatedField(read_only=True)
+    
+    # Add write-only fields for the related objects
+    company_name_id = serializers.PrimaryKeyRelatedField(
+        source='company_name',
+        queryset=models.get_model('company', 'Company').objects.all(),
+        write_only=True,
+        required=False
+    )
+    reports_to_id = serializers.PrimaryKeyRelatedField(
+        source='reports_to',
+        queryset=User.objects.all(),
+        write_only=True,
+        required=False
+    )
     
     class Meta:
         model = EmployeeProfile
@@ -124,6 +146,11 @@ class UserProfileAdminSerializer(serializers.ModelSerializer):
         if 'functional_groups' in validated_data:
             instance.functional_groups.set(validated_data.pop('functional_groups'))
         
+        # Check if user_type is being updated and handle profile type transitions
+        original_user_type = instance.user_type
+        new_user_type = validated_data.get('user_type', original_user_type)
+        user_type_changed = new_user_type != original_user_type
+        
         # Update User fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -136,26 +163,80 @@ class UserProfileAdminSerializer(serializers.ModelSerializer):
                 setattr(profile, attr, value)
             profile.save()
         
-        # Update or create AgentProfile
-        if agent_profile_data:
+        # Clear previous profile data if user type changed
+        if user_type_changed:
+            # Delete any existing profiles that don't match the new user type
+            if new_user_type != User.USER_TYPE_AGENT:
+                AgentProfile.objects.filter(user=instance).delete()
+            
+            if new_user_type != User.USER_TYPE_CLIENT:
+                ClientProfile.objects.filter(user=instance).delete()
+                
+            if new_user_type != User.USER_TYPE_EMPLOYEE:
+                EmployeeProfile.objects.filter(user=instance).delete()
+        
+        # Update or create AgentProfile only if user is an agent
+        if new_user_type == User.USER_TYPE_AGENT and agent_profile_data:
             agent_profile, created = AgentProfile.objects.get_or_create(user=instance)
+            
+            # Skip validation if we're just changing the user type
+            skip_validation = user_type_changed
+                
+            # Only validate company_name for non-type-change updates
+            if not skip_validation and 'company_name' not in agent_profile_data and created:
+                raise serializers.ValidationError({
+                    'agent_profile': {'company_name': 'This field is required when creating an agent profile.'}
+                })
+            
             for attr, value in agent_profile_data.items():
                 setattr(agent_profile, attr, value)
-            agent_profile.save()
+            
+            # Only save if not a user type change or if required fields are present
+            if not user_type_changed or 'company_name' in agent_profile_data:
+                agent_profile.save()
         
-        # Update or create ClientProfile
-        if client_profile_data:
+        # Update or create ClientProfile only if user is a client
+        if new_user_type == User.USER_TYPE_CLIENT and client_profile_data:
             client_profile, created = ClientProfile.objects.get_or_create(user=instance)
+            
+            # Skip validation if we're just changing the user type
+            skip_validation = user_type_changed
+                
+            # Only validate company_name for non-type-change updates
+            if not skip_validation and 'company_name' not in client_profile_data and created:
+                raise serializers.ValidationError({
+                    'client_profile': {'company_name': 'This field is required when creating a client profile.'}
+                })
+            
             for attr, value in client_profile_data.items():
                 setattr(client_profile, attr, value)
+            
+            # Always save client profile as string fields can be empty
             client_profile.save()
         
-        # Update or create EmployeeProfile
-        if employee_profile_data:
+        # Update or create EmployeeProfile only if user is an employee
+        if new_user_type == User.USER_TYPE_EMPLOYEE and employee_profile_data:
             employee_profile, created = EmployeeProfile.objects.get_or_create(user=instance)
+            
+            # Skip validation if we're just changing the user type
+            skip_validation = user_type_changed
+                
+            # Only validate required fields for non-type-change updates
+            if not skip_validation and created:
+                required_fields = ['company_name', 'department']
+                missing_fields = [field for field in required_fields if field not in employee_profile_data]
+                if missing_fields:
+                    raise serializers.ValidationError({
+                        'employee_profile': {field: f'This field is required when creating an employee profile.' 
+                                          for field in missing_fields}
+                    })
+            
             for attr, value in employee_profile_data.items():
                 setattr(employee_profile, attr, value)
-            employee_profile.save()
+            
+            # Only save if not a user type change or if required fields are present
+            if not user_type_changed or ('company_name' in employee_profile_data and 'department' in employee_profile_data):
+                employee_profile.save()
         
         return instance
 
