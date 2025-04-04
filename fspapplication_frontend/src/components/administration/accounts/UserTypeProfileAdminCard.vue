@@ -362,8 +362,13 @@ const getProfileTitle = () => {
 // Initialize profile data based on user type
 const initializeProfileData = () => {
   console.log('Initializing profile data for user type:', props.userData?.userType);
+
+  // Explicitly reset all local profile refs first
+  agentProfileData.value = {};
+  clientProfileData.value = {};
+  employeeProfileData.value = {};
   
-  // Set the selected user type to match current user type
+  // Set the selected user type dropdown to match current user type
   if (props.userData?.userType) {
     selectedUserType.value = props.userData.userType.toLowerCase();
   }
