@@ -75,12 +75,17 @@
         <!-- Client Profile Form -->
         <form v-else-if="isClient" @submit.prevent="handleClientSubmit" class="space-y-6">
           <div class="space-y-2">
-            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Company Name</label>
-            <input
-              type="text"
-              v-model="localClientData.companyName"
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Client</label>
+            <select
+              v-model="localClientData.companyNameId"
               class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-            />
+              :disabled="isSaving"
+            >
+              <option value="" disabled>Select a client</option>
+              <option v-for="client in clients" :key="client.id" :value="client.id">
+                {{ client.name }}
+              </option>
+            </select>
           </div>
           <div class="space-y-2">
             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Industry</label>
@@ -190,6 +195,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { convertObjectKeysToCamel } from '@/utils/caseConverter';
+import { clientService, type Client } from '@/service/clientService';
 
 // Define interfaces for the different profile types
 interface AgentProfileData {
@@ -200,6 +206,7 @@ interface AgentProfileData {
 
 interface ClientProfileData {
   companyName?: string;
+  companyNameId?: string;
   industry?: string | null;
   clientSince?: string; // Date as string in YYYY-MM-DD format
 }
@@ -244,26 +251,45 @@ const emit = defineEmits(['close', 'save:agent', 'save:client', 'save:employee']
 
 // Create local copies for editing
 const localAgentData = ref<AgentProfileData>({ ...props.agentProfileData });
-const localClientData = ref<ClientProfileData>({ ...props.clientProfileData });
+const localClientData = ref<ClientProfileData>({
+  companyName: props.clientProfileData?.companyName || '',
+  companyNameId: props.clientProfileData?.companyNameId || '',
+  industry: props.clientProfileData?.industry || null,
+  clientSince: props.clientProfileData?.clientSince || new Date().toISOString().split('T')[0]
+});
 const localEmployeeData = ref<EmployeeProfileData>({ ...props.employeeProfileData });
 
+// State for available clients
+const clients = ref<Client[]>([]);
+const isLoadingClients = ref(false);
+
+// Function to fetch clients
+const fetchClients = async () => {
+  isLoadingClients.value = true;
+  try {
+    const response = await clientService.getClients({ status: 'active' });
+    clients.value = response.results;
+    
+    // If we have a companyName but not a companyNameId, try to match it
+    if (localClientData.value.companyName && !localClientData.value.companyNameId) {
+      const matchingClient = clients.value.find(c => c.name === localClientData.value.companyName);
+      if (matchingClient) {
+        localClientData.value.companyNameId = matchingClient.id;
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching clients:', error);
+  } finally {
+    isLoadingClients.value = false;
+  }
+};
+
 // Computed properties to check user type
-const isAgent = computed(() => {
-  const userType = props.userType?.toLowerCase();
-  return userType === 'agent';
-});
+const isAgent = computed(() => props.userType === 'agent' || props.userType === 'AGENT');
+const isClient = computed(() => props.userType === 'client' || props.userType === 'CLIENT');
+const isEmployee = computed(() => props.userType === 'employee' || props.userType === 'EMPLOYEE');
 
-const isClient = computed(() => {
-  const userType = props.userType?.toLowerCase();
-  return userType === 'client';
-});
-
-const isEmployee = computed(() => {
-  const userType = props.userType?.toLowerCase();
-  return userType === 'employee';
-});
-
-// Get appropriate title based on user type
+// Get form title
 const getTitle = () => {
   if (isAgent.value) return 'Agent Profile';
   if (isClient.value) return 'Client Profile';
@@ -277,22 +303,32 @@ const handleClose = () => {
 };
 
 const handleAgentSubmit = () => {
-  emit('save:agent', { ...localAgentData.value });
+  emit('save:agent', localAgentData.value);
 };
 
 const handleClientSubmit = () => {
-  emit('save:client', { ...localClientData.value });
+  // Find the selected client to get the name
+  const selectedClient = clients.value.find(c => c.id === localClientData.value.companyNameId);
+  
+  // Create the data to send to the parent component
+  const clientData = {
+    ...localClientData.value,
+    // Include the client name for display purposes
+    companyName: selectedClient ? selectedClient.name : localClientData.value.companyName
+  };
+  
+  emit('save:client', clientData);
 };
 
 const handleEmployeeSubmit = () => {
-  emit('save:employee', { ...localEmployeeData.value });
+  emit('save:employee', localEmployeeData.value);
 };
 
-// Initialize local data when component is mounted
+// Fetch clients when component is mounted
 onMounted(() => {
-  localAgentData.value = { ...props.agentProfileData };
-  localClientData.value = { ...props.clientProfileData };
-  localEmployeeData.value = { ...props.employeeProfileData };
+  if (isClient.value) {
+    fetchClients();
+  }
 });
 </script>
 

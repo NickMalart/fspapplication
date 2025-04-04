@@ -243,7 +243,7 @@ class ClientProfile(models.Model):
         related_name='client_profile',
         limit_choices_to={'user_type': User.USER_TYPE_CLIENT}
     )
-    company_name = models.CharField(max_length=255)
+    company_name = models.ForeignKey('client.Client', on_delete=models.CASCADE, related_name='client_profiles')
     industry = models.CharField(max_length=100, blank=True, null=True)
     client_since = models.DateField(default=timezone.now)
     

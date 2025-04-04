@@ -237,6 +237,7 @@ interface AgentProfileData {
 
 interface ClientProfileData {
   companyName?: string;
+  companyNameId?: string;
   industry?: string | null;
   clientSince?: string; // Date as string in YYYY-MM-DD format
 }
@@ -382,6 +383,7 @@ const initializeProfileData = () => {
     const profile = convertObjectKeysToCamel(props.userData.clientProfile);
     clientProfileData.value = { 
       companyName: profile.companyName || '',
+      companyNameId: profile.companyNameId || '',
       industry: profile.industry || null,
       clientSince: profile.clientSince || ''
     };
@@ -509,6 +511,7 @@ const handleClientSave = async (updatedData: ClientProfileData) => {
     // Create a properly typed client profile object
     const clientProfile = {
       companyName: updatedData.companyName || '',
+      companyNameId: updatedData.companyNameId || '',
       industry: updatedData.industry || null,
       clientSince: updatedData.clientSince || new Date().toISOString().split('T')[0]
     };

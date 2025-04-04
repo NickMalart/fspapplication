@@ -83,6 +83,15 @@ class AgentProfileSerializer(serializers.ModelSerializer):
 
 class ClientProfileSerializer(serializers.ModelSerializer):
     """Serializer for client-specific profile data"""
+    company_name = serializers.StringRelatedField(read_only=True)
+    # Add a write-only field for the client ID
+    company_name_id = serializers.PrimaryKeyRelatedField(
+        source='company_name',
+        queryset=models.get_model('client', 'Client').objects.all(),
+        write_only=True,
+        required=False
+    )
+    
     class Meta:
         model = ClientProfile
         exclude = ('user',)
