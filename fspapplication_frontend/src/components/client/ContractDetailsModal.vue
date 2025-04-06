@@ -111,7 +111,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
-import { contractService, type Contract } from '@/service/contractService';
+import { clientContractService, type Contract } from '@/service/clientContractService';
 
 const props = defineProps<{
   show: boolean;
@@ -135,7 +135,7 @@ const closeModal = () => {
 const toggleStatus = async () => {
   try {
     isLoading.value = true;
-    const updatedContract = await contractService.updateContractStatus(
+    const updatedContract = await clientContractService.updateContractStatus(
       props.contract.id,
       !props.contract.isActive
     );
@@ -160,7 +160,7 @@ const cancelEditing = () => {
 const handleSave = async () => {
   try {
     isLoading.value = true;
-    const updatedContract = await contractService.updateContract(
+    const updatedContract = await clientContractService.updateContract(
       props.contract.id,
       editedContract
     );

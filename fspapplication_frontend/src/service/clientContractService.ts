@@ -30,7 +30,7 @@ export interface ContractListParams {
   status?: 'active' | 'inactive' | 'all';
 }
 
-export const contractService = {
+export const clientContractService = {
   async getContracts(params: ContractListParams = {}): Promise<ContractsResponse> {
     try {
       const apiParams = convertObjectKeysToSnake(params);

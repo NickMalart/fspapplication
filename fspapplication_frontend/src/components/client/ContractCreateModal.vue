@@ -45,9 +45,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, type PropType } from 'vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
-import { contractService, type Contract } from '@/service/contractService';
+import { clientContractService, type Contract } from '@/service/clientContractService';
 
 const props = defineProps<{
   show: boolean;
@@ -74,7 +74,7 @@ const handleSubmit = async () => {
     isLoading.value = true;
     // Ensure client ID is set before submitting
     contractData.client = props.clientId;
-    const newContract = await contractService.createContract(contractData);
+    const newContract = await clientContractService.createContract(contractData);
     
     if (newContract) {
       emit('contract-created', newContract);

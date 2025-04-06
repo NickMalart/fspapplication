@@ -274,10 +274,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { contractService, type Contract } from '@/service/contractService';
-import debounce from 'lodash/debounce';
-import ContractCreateModal from './ContractCreateModal.vue';
+import ClientBreadcrumb from '@/components/client/ClientBreadcrumb.vue';
 import ContractDetailsModal from './ContractDetailsModal.vue';
+import ContractCreateModal from './ContractCreateModal.vue';
+import { clientContractService, type Contract } from '@/service/clientContractService';
+import { type Client } from '@/service/clientService';
+import debounce from 'lodash/debounce';
 
 const router = useRouter();
 const props = defineProps<{
@@ -324,7 +326,7 @@ const pageNumbers = computed(() => {
 const fetchContracts = async () => {
   loading.value = true;
   try {
-    const response = await contractService.getContracts({
+    const response = await clientContractService.getContracts({
       client: props.clientId,
       search: search.value,
       ordering: `${sortDirection.value === 'desc' ? '-' : ''}${sortColumn.value}`,

@@ -221,7 +221,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useToast } from '@/composables/useToast';
 import ComponentCard from '@/components/common/ComponentCard.vue';
 import UserTypeProfileEditModal from '@/components/administration/accounts/EditUserTypeProfileAdminModal.vue';
 import { convertObjectKeysToCamel } from '@/utils/caseConverter';
@@ -274,7 +273,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:user']);
-const { showToast } = useToast();
 const isSaving = ref(false);
 const showEditForm = ref(false);
 
@@ -451,10 +449,8 @@ const changeUserType = async () => {
       emit('update:user', updatedUser);
     }
     
-    showToast(`User type changed to ${userTypeLabel(selectedUserType.value)}`, 'success');
     showChangeTypeConfirm.value = false;
   } catch (error) {
-    showToast('Failed to change user type', 'error');
     console.error('Error changing user type:', error);
   } finally {
     isChangingType.value = false;
@@ -500,10 +496,8 @@ const handleAgentSave = async (updatedData: AgentProfileData) => {
     
     // Emit the update event to update the local state
     emit('update:user', updatedUser);
-    showToast('Agent profile updated successfully', 'success');
     showEditForm.value = false;
   } catch (error) {
-    showToast('Failed to update agent profile', 'error');
     console.error('Error updating agent profile:', error);
   } finally {
     isSaving.value = false;
@@ -549,10 +543,8 @@ const handleClientSave = async (updatedData: ClientProfileData) => {
     
     // Emit the update event to update the local state
     emit('update:user', updatedUser);
-    showToast('Client profile updated successfully', 'success');
     showEditForm.value = false;
   } catch (error) {
-    showToast('Failed to update client profile', 'error');
     console.error('Error updating client profile:', error);
   } finally {
     isSaving.value = false;
@@ -597,10 +589,8 @@ const handleEmployeeSave = async (updatedData: EmployeeProfileData) => {
     
     // Emit the update event to update the local state
     emit('update:user', updatedUser);
-    showToast('Employee profile updated successfully', 'success');
     showEditForm.value = false;
   } catch (error) {
-    showToast('Failed to update employee profile', 'error');
     console.error('Error updating employee profile:', error);
   } finally {
     isSaving.value = false;
