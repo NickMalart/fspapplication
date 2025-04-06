@@ -11,282 +11,285 @@
     @close="closeModal"
     @save="handleSave"
   >
-    <!-- Scrollable Content Area with fixed height to maintain size -->
-    <div class="h-[calc(100vh-15rem)] overflow-y-auto pr-2 custom-scrollbar">
-      <!-- Warehouse Information -->
-      <div class="space-y-4">
-        <!-- Basic Information -->
-        <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
-          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Basic Information</h4>
+    <!-- Two-part layout: scrollable content + fixed footer -->
+    <div class="flex flex-col h-[calc(100vh-15rem)]">
+      <!-- Scrollable Content Area with fixed height to maintain size -->
+      <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-4">
+        <!-- Warehouse Information -->
+        <div class="space-y-4">
+          <!-- Basic Information -->
+          <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
+            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Basic Information</h4>
+            
+            <div>
+              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Name</h5>
+              <div v-if="isEditing" class="mt-1">
+                <input
+                  v-model="editedWarehouse.name"
+                  type="text"
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                  placeholder="Enter warehouse name"
+                />
+              </div>
+              <p v-else class="mt-1 text-base font-medium text-gray-900 dark:text-white">{{ warehouse.name }}</p>
+            </div>
+            
+            <div class="mt-3">
+              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Description</h5>
+              <div v-if="isEditing" class="mt-1">
+                <textarea
+                  v-model="editedWarehouse.description"
+                  rows="3"
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                  placeholder="Enter warehouse description"
+                ></textarea>
+              </div>
+              <p v-else class="mt-1 text-base text-gray-900 dark:text-white min-h-[4.5rem]">
+                {{ warehouse.description || 'No description provided' }}
+              </p>
+            </div>
+            
+            <div class="mt-3">
+              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Type</h5>
+              <div v-if="isEditing" class="mt-1">
+                <select
+                  v-model="editedWarehouse.isPrimary"
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                >
+                  <option :value="true">Primary Warehouse</option>
+                  <option :value="false">Secondary Warehouse</option>
+                </select>
+              </div>
+              <p v-else class="mt-1 text-base text-gray-900 dark:text-white min-h-[2.5rem]">
+                {{ warehouse.isPrimary ? 'Primary Warehouse' : 'Secondary Warehouse' }}
+              </p>
+            </div>
+            
+            <div class="mt-3">
+              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h5>
+              <span 
+                :class="[
+                  'mt-1 inline-flex px-2.5 py-0.5 rounded-full text-sm font-medium min-h-[2rem]',
+                  warehouse.isActive 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400' 
+                    : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400'
+                ]"
+              >
+                {{ warehouse.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+          </div>
+          
+          <!-- Location Information -->
+          <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
+            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Location</h4>
+            
+            <div v-if="isEditing" class="min-h-[10rem]">
+              <!-- Address Autocomplete -->
+              <div class="mb-4">
+                <AddressAutocomplete 
+                  label="Search Address"
+                  placeholder="Start typing to search..."
+                  id="warehouse-address-autocomplete"
+                  @update:modelValue="handleAddressUpdate"
+                />
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Street Number</h5>
+                  <input
+                    v-model="editedWarehouse.streetNumber"
+                    type="text"
+                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                  />
+                </div>
+                <div>
+                  <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Street Name</h5>
+                  <input
+                    v-model="editedWarehouse.streetName"
+                    type="text"
+                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                  />
+                </div>
+                <div>
+                  <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Suburb</h5>
+                  <input
+                    v-model="editedWarehouse.suburb"
+                    type="text"
+                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                  />
+                </div>
+                <div>
+                  <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">City</h5>
+                  <input
+                    v-model="editedWarehouse.city"
+                    type="text"
+                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                  />
+                </div>
+                <div>
+                  <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">State/Province</h5>
+                  <input
+                    v-model="editedWarehouse.state"
+                    type="text"
+                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                  />
+                </div>
+                <div>
+                  <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Postal Code</h5>
+                  <input
+                    v-model="editedWarehouse.postalCode"
+                    type="text"
+                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                  />
+                </div>
+                <div>
+                  <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Country</h5>
+                  <input
+                    v-model="editedWarehouse.country"
+                    type="text"
+                    class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                  />
+                </div>
+              </div>
+            </div>
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[10rem]">
+              <div>
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Address</h5>
+                <p class="mt-1 text-base text-gray-900 dark:text-white">
+                  {{ formatAddress(warehouse) }}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Contact Information -->
+          <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
+            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Contact Information</h4>
+            
+            <div v-if="isEditing" class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[10rem]">
+              <div>
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">First Name</h5>
+                <input
+                  v-model="editedWarehouse.firstName"
+                  type="text"
+                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                />
+              </div>
+              <div>
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Last Name</h5>
+                <input
+                  v-model="editedWarehouse.lastName"
+                  type="text"
+                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                />
+              </div>
+              <div>
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Phone</h5>
+                <input
+                  v-model="editedWarehouse.contactPhone"
+                  type="tel"
+                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                />
+              </div>
+              <div>
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Email</h5>
+                <input
+                  v-model="editedWarehouse.contactEmail"
+                  type="email"
+                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                />
+              </div>
+            </div>
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[10rem]">
+              <div>
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Name</h5>
+                <p class="mt-1 text-base text-gray-900 dark:text-white">
+                  {{ warehouse.contactName || formatNameFromParts(warehouse.firstName, warehouse.lastName) || 'Not specified' }}
+                </p>
+              </div>
+              <div>
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Phone</h5>
+                <p class="mt-1 text-base text-gray-900 dark:text-white">
+                  {{ warehouse.contactPhone || 'Not specified' }}
+                </p>
+              </div>
+              <div>
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Email</h5>
+                <p class="mt-1 text-base text-gray-900 dark:text-white">
+                  {{ warehouse.contactEmail || 'Not specified' }}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Warehouse Details -->
+          <div>
+            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Warehouse Details</h4>
+            
+            <div v-if="isEditing" class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[10rem]">
+              <div>
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Operating Hours</h5>
+                <input
+                  v-model="editedWarehouse.operatingHours"
+                  type="text"
+                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                  placeholder="e.g. Mon-Fri 9am-5pm"
+                />
+              </div>
+              <div>
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Storage Capacity</h5>
+                <input
+                  v-model="editedWarehouse.storageCapacity"
+                  type="text"
+                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                  placeholder="e.g. 1000 pallets / 500 sqm"
+                />
+              </div>
+              <div class="md:col-span-2">
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Special Instructions</h5>
+                <textarea
+                  v-model="editedWarehouse.specialInstructions"
+                  rows="3"
+                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+                  placeholder="Enter special instructions"
+                ></textarea>
+              </div>
+            </div>
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[10rem]">
+              <div>
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Operating Hours</h5>
+                <p class="mt-1 text-base text-gray-900 dark:text-white">
+                  {{ warehouse.operatingHours || 'Not specified' }}
+                </p>
+              </div>
+              <div>
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Storage Capacity</h5>
+                <p class="mt-1 text-base text-gray-900 dark:text-white">
+                  {{ warehouse.storageCapacity || 'Not specified' }}
+                </p>
+              </div>
+              <div class="md:col-span-2">
+                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Special Instructions</h5>
+                <p class="mt-1 text-base text-gray-900 dark:text-white min-h-[4.5rem]">
+                  {{ warehouse.specialInstructions || 'Not specified' }}
+                </p>
+              </div>
+            </div>
+          </div>
           
           <div>
-            <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Name</h5>
-            <div v-if="isEditing" class="mt-1">
-              <input
-                v-model="editedWarehouse.name"
-                type="text"
-                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-                placeholder="Enter warehouse name"
-              />
-            </div>
-            <p v-else class="mt-1 text-base font-medium text-gray-900 dark:text-white">{{ warehouse.name }}</p>
-          </div>
-          
-          <div class="mt-3">
-            <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Description</h5>
-            <div v-if="isEditing" class="mt-1">
-              <textarea
-                v-model="editedWarehouse.description"
-                rows="3"
-                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-                placeholder="Enter warehouse description"
-              ></textarea>
-            </div>
-            <p v-else class="mt-1 text-base text-gray-900 dark:text-white min-h-[4.5rem]">
-              {{ warehouse.description || 'No description provided' }}
+            <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</h5>
+            <p class="mt-1 text-base text-gray-900 dark:text-white">
+              {{ warehouse.updatedAt ? new Date(warehouse.updatedAt).toLocaleDateString() : 'Unknown' }}
             </p>
           </div>
-          
-          <div class="mt-3">
-            <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Type</h5>
-            <div v-if="isEditing" class="mt-1">
-              <select
-                v-model="editedWarehouse.isPrimary"
-                class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-              >
-                <option :value="true">Primary Warehouse</option>
-                <option :value="false">Secondary Warehouse</option>
-              </select>
-            </div>
-            <p v-else class="mt-1 text-base text-gray-900 dark:text-white min-h-[2.5rem]">
-              {{ warehouse.isPrimary ? 'Primary Warehouse' : 'Secondary Warehouse' }}
-            </p>
-          </div>
-          
-          <div class="mt-3">
-            <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h5>
-            <span 
-              :class="[
-                'mt-1 inline-flex px-2.5 py-0.5 rounded-full text-sm font-medium min-h-[2rem]',
-                warehouse.isActive 
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400' 
-                  : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400'
-              ]"
-            >
-              {{ warehouse.isActive ? 'Active' : 'Inactive' }}
-            </span>
-          </div>
-        </div>
-        
-        <!-- Location Information -->
-        <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
-          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Location</h4>
-          
-          <div v-if="isEditing" class="min-h-[10rem]">
-            <!-- Address Autocomplete -->
-            <div class="mb-4">
-              <AddressAutocomplete 
-                label="Search Address"
-                placeholder="Start typing to search..."
-                id="warehouse-address-autocomplete"
-                @update:modelValue="handleAddressUpdate"
-              />
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Street Number</h5>
-                <input
-                  v-model="editedWarehouse.streetNumber"
-                  type="text"
-                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-                />
-              </div>
-              <div>
-                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Street Name</h5>
-                <input
-                  v-model="editedWarehouse.streetName"
-                  type="text"
-                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-                />
-              </div>
-              <div>
-                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Suburb</h5>
-                <input
-                  v-model="editedWarehouse.suburb"
-                  type="text"
-                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-                />
-              </div>
-              <div>
-                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">City</h5>
-                <input
-                  v-model="editedWarehouse.city"
-                  type="text"
-                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-                />
-              </div>
-              <div>
-                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">State/Province</h5>
-                <input
-                  v-model="editedWarehouse.state"
-                  type="text"
-                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-                />
-              </div>
-              <div>
-                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Postal Code</h5>
-                <input
-                  v-model="editedWarehouse.postalCode"
-                  type="text"
-                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-                />
-              </div>
-              <div>
-                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Country</h5>
-                <input
-                  v-model="editedWarehouse.country"
-                  type="text"
-                  class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-                />
-              </div>
-            </div>
-          </div>
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[10rem]">
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Address</h5>
-              <p class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ formatAddress(warehouse) }}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Contact Information -->
-        <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
-          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Contact Information</h4>
-          
-          <div v-if="isEditing" class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[10rem]">
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">First Name</h5>
-              <input
-                v-model="editedWarehouse.firstName"
-                type="text"
-                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-              />
-            </div>
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Last Name</h5>
-              <input
-                v-model="editedWarehouse.lastName"
-                type="text"
-                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-              />
-            </div>
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Phone</h5>
-              <input
-                v-model="editedWarehouse.contactPhone"
-                type="tel"
-                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-              />
-            </div>
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Email</h5>
-              <input
-                v-model="editedWarehouse.contactEmail"
-                type="email"
-                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-              />
-            </div>
-          </div>
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[10rem]">
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Name</h5>
-              <p class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ warehouse.contactName || formatNameFromParts(warehouse.firstName, warehouse.lastName) || 'Not specified' }}
-              </p>
-            </div>
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Phone</h5>
-              <p class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ warehouse.contactPhone || 'Not specified' }}
-              </p>
-            </div>
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Email</h5>
-              <p class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ warehouse.contactEmail || 'Not specified' }}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Warehouse Details -->
-        <div>
-          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Warehouse Details</h4>
-          
-          <div v-if="isEditing" class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[10rem]">
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Operating Hours</h5>
-              <input
-                v-model="editedWarehouse.operatingHours"
-                type="text"
-                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-                placeholder="e.g. Mon-Fri 9am-5pm"
-              />
-            </div>
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Storage Capacity</h5>
-              <input
-                v-model="editedWarehouse.storageCapacity"
-                type="text"
-                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-                placeholder="e.g. 1000 pallets / 500 sqm"
-              />
-            </div>
-            <div class="md:col-span-2">
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Special Instructions</h5>
-              <textarea
-                v-model="editedWarehouse.specialInstructions"
-                rows="3"
-                class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
-                placeholder="Enter special instructions"
-              ></textarea>
-            </div>
-          </div>
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[10rem]">
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Operating Hours</h5>
-              <p class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ warehouse.operatingHours || 'Not specified' }}
-              </p>
-            </div>
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Storage Capacity</h5>
-              <p class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ warehouse.storageCapacity || 'Not specified' }}
-              </p>
-            </div>
-            <div class="md:col-span-2">
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Special Instructions</h5>
-              <p class="mt-1 text-base text-gray-900 dark:text-white min-h-[4.5rem]">
-                {{ warehouse.specialInstructions || 'Not specified' }}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</h5>
-          <p class="mt-1 text-base text-gray-900 dark:text-white">
-            {{ warehouse.updatedAt ? new Date(warehouse.updatedAt).toLocaleDateString() : 'Unknown' }}
-          </p>
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+      <!-- Fixed Action Buttons Footer -->
+      <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-2 bg-white dark:bg-gray-800 py-3">
         <button
           v-if="!isEditing"
           @click="toggleStatus"
