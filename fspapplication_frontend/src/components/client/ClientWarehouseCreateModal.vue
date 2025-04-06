@@ -34,9 +34,9 @@
               />
             </div>
             <div>
-              <label for="is_primary" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
+              <label for="isPrimary" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
               <select 
-                id="is_primary" 
+                id="isPrimary" 
                 v-model="formData.isPrimary"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
               >
@@ -72,19 +72,19 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label for="street_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Street Number</label>
+              <label for="streetNumber" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Street Number</label>
               <input 
                 type="text" 
-                id="street_number" 
+                id="streetNumber" 
                 v-model="formData.streetNumber"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
               />
             </div>
             <div>
-              <label for="street_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Street Name</label>
+              <label for="streetName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Street Name</label>
               <input 
                 type="text" 
-                id="street_name" 
+                id="streetName" 
                 v-model="formData.streetName"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
               />
@@ -117,10 +117,10 @@
               />
             </div>
             <div>
-              <label for="postal_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Postal Code</label>
+              <label for="postalCode" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Postal Code</label>
               <input 
                 type="text" 
-                id="postal_code" 
+                id="postalCode" 
                 v-model="formData.postalCode"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
               />
@@ -165,28 +165,28 @@
           <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Contact Information</h4>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label for="contact_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Name</label>
+              <label for="contactName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Name</label>
               <input 
                 type="text" 
-                id="contact_name" 
+                id="contactName" 
                 v-model="formData.contactName"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
               />
             </div>
             <div>
-              <label for="contact_phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Phone</label>
+              <label for="contactPhone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Phone</label>
               <input 
                 type="tel" 
-                id="contact_phone" 
+                id="contactPhone" 
                 v-model="formData.contactPhone"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
               />
             </div>
             <div>
-              <label for="contact_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Email</label>
+              <label for="contactEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Email</label>
               <input 
                 type="email" 
-                id="contact_email" 
+                id="contactEmail" 
                 v-model="formData.contactEmail"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
               />
@@ -199,29 +199,29 @@
           <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Warehouse Details</h4>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label for="operating_hours" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Operating Hours</label>
+              <label for="operatingHours" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Operating Hours</label>
               <input 
                 type="text" 
-                id="operating_hours" 
+                id="operatingHours" 
                 v-model="formData.operatingHours"
                 placeholder="e.g. Mon-Fri 9am-5pm"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
               />
             </div>
             <div>
-              <label for="storage_capacity" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Storage Capacity</label>
+              <label for="storageCapacity" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Storage Capacity</label>
               <input 
                 type="text" 
-                id="storage_capacity" 
+                id="storageCapacity" 
                 v-model="formData.storageCapacity"
                 placeholder="e.g. 1000 sq ft, 500 pallets"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
               />
             </div>
             <div class="md:col-span-2">
-              <label for="special_instructions" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Special Instructions</label>
+              <label for="specialInstructions" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Special Instructions</label>
               <textarea 
-                id="special_instructions" 
+                id="specialInstructions" 
                 v-model="formData.specialInstructions" 
                 rows="3"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
@@ -237,7 +237,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import axios from 'axios';
-import { convertObjectKeysToCamel } from '@/utils/caseConverter';
+import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
 import BaseModal from '@/components/ui/BaseModal.vue'; // Import BaseModal
 import AddressAutocomplete from '@/components/common/AddressAutocomplete.vue'; // Import AddressAutocomplete
 
@@ -279,41 +279,29 @@ const formData = ref({
 
 // Type for the address data received from AddressAutocomplete
 interface AddressData {
-  formatted_address?: string; // Added for consistency
+  formattedAddress?: string;
   components?: { 
-    street_number?: string;
+    streetNumber?: string;
     route?: string; // Often used for street name
     locality?: string; // Often used for city
     sublocality?: string; // Often used for suburb
-    administrative_area_level_1?: string; // Often used for state
+    administrativeAreaLevel1?: string; // Often used for state
     country?: string;
-    postal_code?: string;
+    postalCode?: string;
     [key: string]: string | undefined; // Allow other component types
   };
   street?: string; // Potentially formatted street
   city?: string;
   state?: string;
   country?: string;
-  postal_code?: string; // Use snake_case if emitted like this
+  postalCode?: string;
   lat?: number | null;
   lng?: number | null;
   placeId?: string; 
 }
 
-const isLoading = ref(false); // Renamed from isSubmitting
+const isLoading = ref(false);
 const error = ref('');
-
-// Function to convert camelCase to snake_case for API
-const convertToSnakeCase = (data: Record<string, any>): Record<string, any> => {
-  const result: Record<string, any> = {};
-  
-  for (const key in data) {
-    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-    result[snakeKey] = data[key];
-  }
-  
-  return result;
-};
 
 // Reset form when modal is opened
 watch(() => props.show, (newVal) => {
@@ -364,8 +352,8 @@ const handleAddressUpdate = (addressData: AddressData) => {
   formData.value.country = '';
 
   // Populate fields from components if available (using camelCase internally)
-  if (components.street_number) {
-    formData.value.streetNumber = components.street_number;
+  if (components.streetNumber) {
+    formData.value.streetNumber = components.streetNumber;
   }
   
   if (components.route) {
@@ -373,7 +361,7 @@ const handleAddressUpdate = (addressData: AddressData) => {
   }
   
   // Extract from street if components aren't available
-  if (addressData.street && !components.street_number && !components.route) {
+  if (addressData.street && !components.streetNumber && !components.route) {
     // Try to split the street into number and name
     const streetParts = addressData.street.trim().split(' ');
     if (streetParts.length > 1 && /^\d+$/.test(streetParts[0])) {
@@ -433,11 +421,11 @@ const handleAddressUpdate = (addressData: AddressData) => {
   
   // Prefer components for state and postal code if they're still empty
   if (!formData.value.state) {
-    formData.value.state = addressData.state || components.administrative_area_level_1 || '';
+    formData.value.state = addressData.state || components.administrativeAreaLevel1 || '';
   }
   
   if (!formData.value.postalCode) {
-    formData.value.postalCode = addressData.postal_code || components.postal_code || '';
+    formData.value.postalCode = addressData.postalCode || components.postalCode || '';
   }
   
   // Handle country
@@ -457,12 +445,12 @@ const handleSubmit = async () => {
     return;
   }
   
-  isLoading.value = true; // Use isLoading
+  isLoading.value = true;
   error.value = '';
   
   try {
-    // Convert form data to snake_case for API
-    const apiData = convertToSnakeCase(formData.value);
+    // Convert form data to snake_case for API using the utility
+    const apiData = convertObjectKeysToSnake(formData.value);
     
     // Add client ID to the data
     apiData.client = props.clientId;
@@ -485,7 +473,7 @@ const handleSubmit = async () => {
     console.error('Error creating warehouse:', err);
     error.value = err.response?.data?.detail || 'Failed to create warehouse. Please try again.';
   } finally {
-    isLoading.value = false; // Use isLoading
+    isLoading.value = false;
   }
 };
 </script> 
