@@ -165,11 +165,20 @@
           <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Contact Information</h4>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label for="contactName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Name</label>
+              <label for="firstName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">First Name</label>
               <input 
                 type="text" 
-                id="contactName" 
-                v-model="formData.contactName"
+                id="firstName" 
+                v-model="formData.firstName"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="lastName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
+              <input 
+                type="text" 
+                id="lastName" 
+                v-model="formData.lastName"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
               />
             </div>
@@ -267,7 +276,8 @@ const formData = ref({
   country: '',
   latitude: null as number | null,
   longitude: null as number | null,
-  contactName: '',
+  firstName: '',
+  lastName: '',
   contactPhone: '',
   contactEmail: '',
   isPrimary: true,
@@ -323,7 +333,8 @@ const resetForm = () => {
     country: '',
     latitude: null,
     longitude: null,
-    contactName: '',
+    firstName: '',
+    lastName: '',
     contactPhone: '',
     contactEmail: '',
     isPrimary: true,
@@ -449,8 +460,22 @@ const handleSubmit = async () => {
   error.value = '';
   
   try {
+    // Create a copy of the form data to modify coordinates if needed
+    const formDataToSubmit = { ...formData.value };
+    
+    // Format coordinates to ensure they don't exceed database limits
+    if (formDataToSubmit.latitude !== null) {
+      // Ensure latitude has max 9 digits total with 6 decimal places
+      formDataToSubmit.latitude = parseFloat(formDataToSubmit.latitude.toFixed(6));
+    }
+    
+    if (formDataToSubmit.longitude !== null) {
+      // Ensure longitude has max 12 digits total with 9 decimal places
+      formDataToSubmit.longitude = parseFloat(formDataToSubmit.longitude.toFixed(9));
+    }
+    
     // Convert form data to snake_case for API using the utility
-    const apiData = convertObjectKeysToSnake(formData.value);
+    const apiData = convertObjectKeysToSnake(formDataToSubmit);
     
     // Add client ID to the data
     apiData.client = props.clientId;

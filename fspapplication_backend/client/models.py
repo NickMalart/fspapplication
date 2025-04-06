@@ -28,7 +28,7 @@ class Client(models.Model):
     postal_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="Postal/Zip Code")
     country = models.CharField(max_length=100, blank=True, null=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitude = models.DecimalField(max_digits=12, decimal_places=9, blank=True, null=True)
     
     # Metadata
     is_active = models.BooleanField(default=True)
@@ -59,10 +59,12 @@ class ClientWarehouse(models.Model):
     postal_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="Postal/Zip Code")
     country = models.CharField(max_length=100, blank=True, null=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitude = models.DecimalField(max_digits=12, decimal_places=9, blank=True, null=True)
     
     # Contact Information
-    contact_name = models.CharField(max_length=255, blank=True, null=True)
+    first_name = models.CharField(max_length=100, blank=True, null=True)
+    last_name = models.CharField(max_length=100, blank=True, null=True)
+    contact_name = models.CharField(max_length=255, blank=True, null=True)  # Keeping for backward compatibility
     contact_phone = models.CharField(max_length=20, blank=True, null=True)
     contact_email = models.EmailField(blank=True, null=True)
     
@@ -79,6 +81,17 @@ class ClientWarehouse(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.client.name}"
+    
+    def save(self, *args, **kwargs):
+        # Generate full contact_name from first_name and last_name if provided
+        if self.first_name or self.last_name:
+            full_name_parts = []
+            if self.first_name:
+                full_name_parts.append(self.first_name)
+            if self.last_name:
+                full_name_parts.append(self.last_name)
+            self.contact_name = " ".join(full_name_parts) if full_name_parts else None
+        super().save(*args, **kwargs)
 
 class ClientContract(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
