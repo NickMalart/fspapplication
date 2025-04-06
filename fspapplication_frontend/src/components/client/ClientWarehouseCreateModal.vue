@@ -1,49 +1,350 @@
 <!-- Warehouse Create Modal -->
 <template>
-  <div v-if="show" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <!-- Background overlay -->
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-
-      <!-- Modal panel -->
-      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full dark:bg-gray-800">
-        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div class="sm:flex sm:items-start">
-            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-              <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="modal-title">
-                Create New Warehouse for {{ clientName }}
-              </h3>
-              <div class="mt-4">
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  This feature is coming soon. The warehouse creation form will be implemented in the next phase.
-                </p>
-              </div>
+  <BaseModal 
+    v-if="show"
+    :title="`Create New Warehouse for ${clientName}`"
+    :isLoading="isLoading"
+    :submitButtonText="'Create Warehouse'"
+    :loadingText="'Creating...'"
+    :modalSize="'max-w-2xl'"  
+    @close="$emit('close')"
+    @save="handleSubmit"
+  >
+    <!-- Scrollable Content Area -->
+    <div class="max-h-[calc(100vh-15rem)] overflow-y-auto pr-2"> 
+      <!-- Form starts here -->
+      <form @submit.prevent="handleSubmit" class="space-y-6">
+        <!-- Error alert -->
+        <div v-if="error" class="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-900 text-red-700 dark:text-red-300 px-4 py-3 rounded relative mb-4">
+          {{ error }}
+        </div>
+        
+        <!-- Basic Information -->
+        <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
+          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Basic Information</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name*</label>
+              <input 
+                type="text" 
+                id="name" 
+                v-model="formData.name" 
+                required
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="is_primary" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
+              <select 
+                id="is_primary" 
+                v-model="formData.isPrimary"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              >
+                <option :value="false">Secondary Warehouse</option>
+                <option :value="true">Primary Warehouse</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <textarea 
+                id="description" 
+                v-model="formData.description" 
+                rows="3"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              ></textarea>
             </div>
           </div>
         </div>
-        <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-          <button 
-            type="button" 
-            @click="$emit('close')"
-            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-700"
-          >
-            Close
-          </button>
+        
+        <!-- Location Information -->
+        <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
+          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Location Information</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="street_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Street Number</label>
+              <input 
+                type="text" 
+                id="street_number" 
+                v-model="formData.streetNumber"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="street_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Street Name</label>
+              <input 
+                type="text" 
+                id="street_name" 
+                v-model="formData.streetName"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="suburb" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Suburb</label>
+              <input 
+                type="text" 
+                id="suburb" 
+                v-model="formData.suburb"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="city" class="block text-sm font-medium text-gray-700 dark:text-gray-300">City</label>
+              <input 
+                type="text" 
+                id="city" 
+                v-model="formData.city"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="state" class="block text-sm font-medium text-gray-700 dark:text-gray-300">State/Province</label>
+              <input 
+                type="text" 
+                id="state" 
+                v-model="formData.state"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="postal_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Postal Code</label>
+              <input 
+                type="text" 
+                id="postal_code" 
+                v-model="formData.postalCode"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="country" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Country</label>
+              <input 
+                type="text" 
+                id="country" 
+                v-model="formData.country"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="latitude" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Latitude</label>
+              <input 
+                type="number" 
+                step="0.000001"
+                id="latitude" 
+                v-model="formData.latitude"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="longitude" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Longitude</label>
+              <input 
+                type="number" 
+                step="0.000001"
+                id="longitude" 
+                v-model="formData.longitude"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+          </div>
         </div>
-      </div>
+        
+        <!-- Contact Information -->
+        <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
+          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Contact Information</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="contact_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Name</label>
+              <input 
+                type="text" 
+                id="contact_name" 
+                v-model="formData.contactName"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="contact_phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Phone</label>
+              <input 
+                type="tel" 
+                id="contact_phone" 
+                v-model="formData.contactPhone"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="contact_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Email</label>
+              <input 
+                type="email" 
+                id="contact_email" 
+                v-model="formData.contactEmail"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <!-- Warehouse Details -->
+        <div>
+          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Warehouse Details</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="operating_hours" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Operating Hours</label>
+              <input 
+                type="text" 
+                id="operating_hours" 
+                v-model="formData.operatingHours"
+                placeholder="e.g. Mon-Fri 9am-5pm"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div>
+              <label for="storage_capacity" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Storage Capacity</label>
+              <input 
+                type="text" 
+                id="storage_capacity" 
+                v-model="formData.storageCapacity"
+                placeholder="e.g. 1000 sq ft, 500 pallets"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+            <div class="md:col-span-2">
+              <label for="special_instructions" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Special Instructions</label>
+              <textarea 
+                id="special_instructions" 
+                v-model="formData.specialInstructions" 
+                rows="3"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </form>
     </div>
-  </div>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { ref, watch } from 'vue';
+import axios from 'axios';
+import { convertObjectKeysToCamel } from '@/utils/caseConverter';
+import BaseModal from '@/components/ui/BaseModal.vue'; // Import BaseModal
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+const props = defineProps<{
   show: boolean;
   clientId: string;
   clientName: string;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'warehouse-created', warehouse: any): void;
 }>();
+
+// Form data state
+const formData = ref({
+  name: '',
+  description: '',
+  streetNumber: '',
+  streetName: '',
+  suburb: '',
+  city: '',
+  state: '',
+  postalCode: '',
+  country: '',
+  latitude: null as number | null,
+  longitude: null as number | null,
+  contactName: '',
+  contactPhone: '',
+  contactEmail: '',
+  isPrimary: true,
+  operatingHours: '',
+  storageCapacity: '',
+  specialInstructions: '',
+  isActive: true
+});
+
+const isLoading = ref(false); // Renamed from isSubmitting
+const error = ref('');
+
+// Function to convert camelCase to snake_case for API
+const convertToSnakeCase = (data: Record<string, any>): Record<string, any> => {
+  const result: Record<string, any> = {};
+  
+  for (const key in data) {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    result[snakeKey] = data[key];
+  }
+  
+  return result;
+};
+
+// Reset form when modal is opened
+watch(() => props.show, (newVal) => {
+  if (newVal) {
+    resetForm();
+  }
+});
+
+const resetForm = () => {
+  formData.value = {
+    name: '',
+    description: '',
+    streetNumber: '',
+    streetName: '',
+    suburb: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: '',
+    latitude: null,
+    longitude: null,
+    contactName: '',
+    contactPhone: '',
+    contactEmail: '',
+    isPrimary: true,
+    operatingHours: '',
+    storageCapacity: '',
+    specialInstructions: '',
+    isActive: true
+  };
+  error.value = '';
+};
+
+// Handle form submission (triggered by BaseModal @save event)
+const handleSubmit = async () => {
+  if (!formData.value.name) {
+    error.value = 'Warehouse name is required';
+    return;
+  }
+  
+  isLoading.value = true; // Use isLoading
+  error.value = '';
+  
+  try {
+    // Convert form data to snake_case for API
+    const apiData = convertToSnakeCase(formData.value);
+    
+    // Add client ID to the data
+    apiData.client = props.clientId;
+    
+    // Submit data to API
+    const response = await axios.post(
+      `${API_URL}/client/clients/${props.clientId}/warehouses/`,
+      apiData
+    );
+    
+    // Convert response to camelCase
+    const createdWarehouse = convertObjectKeysToCamel(response.data);
+    
+    // Emit event with created warehouse data
+    emit('warehouse-created', createdWarehouse);
+    
+    // Close modal
+    emit('close');
+  } catch (err: any) {
+    console.error('Error creating warehouse:', err);
+    error.value = err.response?.data?.detail || 'Failed to create warehouse. Please try again.';
+  } finally {
+    isLoading.value = false; // Use isLoading
+  }
+};
 </script> 
