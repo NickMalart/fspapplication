@@ -159,14 +159,6 @@
                 {{ formatAddress(warehouse) }}
               </p>
             </div>
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400">Coordinates</h5>
-              <p class="mt-1 text-base text-gray-900 dark:text-white">
-                {{ warehouse.latitude && warehouse.longitude 
-                  ? `${warehouse.latitude}, ${warehouse.longitude}` 
-                  : 'Not specified' }}
-              </p>
-            </div>
           </div>
         </div>
         
