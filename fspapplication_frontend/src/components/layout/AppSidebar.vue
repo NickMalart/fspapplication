@@ -242,15 +242,15 @@ const menuGroups = [
         icon: HelpdeskIcon,
         subItems: [
           // Helpdesk Group
-          { name: "Workorder Search", path: "/workorder-search", pro: false },
-          { name: "Warehouse Search", path: "/warehouse-search", pro: false },
+          { name: "Workorder Search - Not Finished", path: "/workorder-search", pro: false },
+          { name: "Warehouse Search - Not Finished", path: "/warehouse-search", pro: false },
 
           // Divider 
           { type: "divider", label: "Helpdesk Admin" },
 
           // Helpdesk Admin Group
-          { name: "Create Workorder", path: "/create-workorder", pro: false },
-          { name: "Settings", path: "/helpdesk-settings", pro: false },
+          { name: "Create Workorder - Not Finished", path: "/create-workorder", pro: false },
+          { name: "Settings - Not Finished", path: "/helpdesk-settings", pro: false },
         ],
       },
       {
@@ -258,15 +258,15 @@ const menuGroups = [
           icon: EmployeeIcon,
           subItems: [
             // Employee Group
-            { name: "My Workorders", path: "/my-workorder-list", pro: false },
-            { name: "Workorder Search", path: "/workorder-search", pro: false },
-            { name: "Warehouse Search", path: "/warehouse-list", pro: false },
+            { name: "My Workorders - Not Finished", path: "/my-workorder-list", pro: false },
+            { name: "Workorder Search - Not Finished", path: "/workorder-search", pro: false },
+            { name: "Warehouse Search - Not Finished", path: "/warehouse-list", pro: false },
 
             // Divider
             { type: "divider", label: "Employee Admin" },
 
             // Employee Admin Group
-            { name: "Settings", path: "/employee-settings", pro: false },
+            { name: "Settings - Not Finished", path: "/employee-settings", pro: false },
           ],
         },      
         {
@@ -274,16 +274,16 @@ const menuGroups = [
           icon: AgentIcon,
           subItems: [
             // Agent Group
-            { name: "My Workorders", path: "/my-workorder-list", pro: false },
-            { name: "Workorder Search", path: "/workorder-search", pro: false },
-            { name: "Warehouse Search", path: "/warehouse-list", pro: false },
+            { name: "My Workorders - Not Finished", path: "/my-workorder-list", pro: false },
+            { name: "Workorder Search - Not Finished", path: "/workorder-search", pro: false },
+            { name: "Warehouse Search - Not Finished", path: "/warehouse-list", pro: false },
 
             // Divider
             { type: "divider", label: "Agent Admin" },
 
             // Agent Admin Group
-            { name: "Billing", path: "/billing-list", pro: false },
-            { name: "Settings", path: "/agent-settings", pro: false },
+            { name: "Billing - Not Finished", path: "/billing-list", pro: false },
+            { name: "Settings - Not Finished", path: "/agent-settings", pro: false },
           ],
         },      
         {
@@ -291,15 +291,15 @@ const menuGroups = [
           icon: ClientIcon,
           subItems: [
             // Client Group
-            { name: "Workorder Search", path: "/workorder-search", pro: false },
-            { name: "Warehouse Search", path: "/warehouse-list", pro: false },
+            { name: "Workorder Search - Not Finished", path: "/workorder-search", pro: false },
+            { name: "Warehouse Search - Not Finished", path: "/warehouse-list", pro: false },
 
             // Divider
             { type: "divider", label: "Client Admin" },
 
             // Client Admin Group
             { name: "Clients", path: "/client-admin", pro: false },
-            { name: "Settings", path: "/agent-settings", pro: false },            
+            { name: "Settings - Not Finished", path: "/agent-settings", pro: false },            
           ],
         },      
         {
