@@ -1,9 +1,9 @@
 from django.db import models
 import uuid
 
-class Client(models.Model):
+class Agent(models.Model):
     """
-    Model to store client information including business details, 
+    Model to store agent information including business details, 
     location, contacts, and logistics information.
     """
     # Primary Key
@@ -11,7 +11,7 @@ class Client(models.Model):
     
     # Basic Information
     name = models.CharField(max_length=255)
-    logo = models.CharField(max_length=255, blank=True, null=True, verbose_name="Client Logo", help_text="S3 path to client logo")
+    logo = models.CharField(max_length=255, blank=True, null=True, verbose_name="Agent Logo", help_text="S3 path to agent logo")
     abn = models.CharField(max_length=50, blank=True, null=True)
     website = models.URLField(blank=True, null=True)
     
@@ -19,7 +19,7 @@ class Client(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=20, blank=True, null=True)
     
-    # Location Information (matching Company model)
+    # Location Information
     street_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Street Number")
     street_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Street Name")
     suburb = models.CharField(max_length=100, blank=True, null=True)
@@ -30,6 +30,12 @@ class Client(models.Model):
     latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     longitude = models.DecimalField(max_digits=12, decimal_places=9, blank=True, null=True)
     
+    # Agent Specific Information
+    agent_type = models.CharField(max_length=50, blank=True, null=True, help_text="Type of agent (e.g., Freight Forwarder, Customs Broker)")
+    license_number = models.CharField(max_length=100, blank=True, null=True)
+    service_areas = models.TextField(blank=True, null=True, help_text="Geographic areas served")
+    specialties = models.TextField(blank=True, null=True, help_text="Special services or expertise")
+    
     # Metadata
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -38,19 +44,19 @@ class Client(models.Model):
     def __str__(self):
         return self.name
 
-class ClientWarehouse(models.Model):
+class AgentWarehouse(models.Model):
     """
-    Model to store warehouse information for clients.
-    A client can have multiple warehouses.
+    Model to store location information for agents.
+    An agent can have multiple locations.
     """
     # Primary Key
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='warehouses')
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='locations')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     
-    # Address Information (matching Company model)
+    # Address Information
     street_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Street Number")
     street_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Street Name")
     suburb = models.CharField(max_length=100, blank=True, null=True)
@@ -67,10 +73,10 @@ class ClientWarehouse(models.Model):
     contact_phone = models.CharField(max_length=20, blank=True, null=True)
     contact_email = models.EmailField(blank=True, null=True)
     
-    # Warehouse Details
+    # Location Details
     is_primary = models.BooleanField(default=False)
     operating_hours = models.TextField(blank=True, null=True)
-    storage_capacity = models.CharField(max_length=100, blank=True, null=True)
+    facility_type = models.CharField(max_length=100, blank=True, null=True, help_text="Type of facility (e.g., Office, Warehouse, Terminal)")
     special_instructions = models.TextField(blank=True, null=True)
     
     # Metadata
@@ -79,7 +85,7 @@ class ClientWarehouse(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.name} - {self.client.name}"
+        return f"{self.name} - {self.agent.name}"
     
     def save(self, *args, **kwargs):
         # Generate full contact_name from first_name and last_name if provided
@@ -91,16 +97,3 @@ class ClientWarehouse(models.Model):
                 full_name_parts.append(self.last_name)
             self.contact_name = " ".join(full_name_parts) if full_name_parts else None
         super().save(*args, **kwargs)
-
-class ClientContract(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='contracts')
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    def __str__(self):
-        return f"{self.name} ({self.client.name})"

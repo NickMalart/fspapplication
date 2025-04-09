@@ -79,6 +79,7 @@ SHARED_APPS = (
     'company',
     'dashboard',
     'client',
+    'agent',
     'common_utils',
     'files',
     'corsheaders',
@@ -98,6 +99,7 @@ TENANT_APPS = (
     'company',
     'dashboard',
     'client',
+    'agent',
     'common_utils',
     'files',
 )
