@@ -30,12 +30,6 @@ class Agent(models.Model):
     latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     longitude = models.DecimalField(max_digits=12, decimal_places=9, blank=True, null=True)
     
-    # Agent Specific Information
-    agent_type = models.CharField(max_length=50, blank=True, null=True, help_text="Type of agent (e.g., Freight Forwarder, Customs Broker)")
-    license_number = models.CharField(max_length=100, blank=True, null=True)
-    service_areas = models.TextField(blank=True, null=True, help_text="Geographic areas served")
-    specialties = models.TextField(blank=True, null=True, help_text="Special services or expertise")
-    
     # Metadata
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

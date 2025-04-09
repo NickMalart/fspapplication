@@ -282,6 +282,7 @@ const menuGroups = [
             { type: "divider", label: "Agent Admin" },
 
             // Agent Admin Group
+            { name: "Agents", path: "/agent-admin", pro: false },
             { name: "Billing - Not Finished", path: "/billing-list", pro: false },
             { name: "Settings - Not Finished", path: "/agent-settings", pro: false },
           ],

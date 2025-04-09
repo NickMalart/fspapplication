@@ -66,6 +66,15 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: '/agent-admin',
+    name: 'Agent Admin',
+    component: () => import('../views/Pages/Agent/AgentAdminPage.vue'),
+    meta: {
+      title: 'Agent Admin',
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/form-elements',
     name: 'Form Elements',
     component: () => import('../views/Forms/FormElements.vue'),

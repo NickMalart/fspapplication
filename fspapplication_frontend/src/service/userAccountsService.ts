@@ -131,6 +131,26 @@ export const userAccountsService = {
     }
   },
   
+  async createUser(userData: Partial<UserAccount>): Promise<UserAccount> {
+    try {
+      const data = convertObjectKeysToSnake(userData);
+      const response = await axios.post(`${API_URL}/account/users/`, data);
+      const newUser = convertObjectKeysToCamel(response.data);
+      
+      // Clear any cached user lists since they might include this user
+      for (const key of cache.keys()) {
+        if (key.startsWith(`${API_URL}/account/users/:`)) {
+          cache.delete(key);
+        }
+      }
+      
+      return newUser;
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  },
+  
   // Method to clear cache if needed
   clearCache(): void {
     cache.clear();
