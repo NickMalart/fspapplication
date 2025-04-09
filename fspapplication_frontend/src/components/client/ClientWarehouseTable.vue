@@ -113,97 +113,99 @@
 
         <!-- Warehouses Table -->
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-800/50">
-              <tr>
-                <th @click="sortBy('name')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  NAME
-                </th>
-                <th @click="sortBy('city')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  LOCATION
-                </th>
-                <th @click="sortBy('isPrimary')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  TYPE
-                </th>
-                <th @click="sortBy('isActive')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  STATUS
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  ACTIONS
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-if="loading" class="text-center">
-                <td colspan="5" class="px-4 py-3">
-                  <div class="flex justify-center">
-                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                  </div>
-                </td>
-              </tr>
-              <tr v-else-if="warehouses.length === 0" class="text-center">
-                <td colspan="5" class="px-4 py-3 text-gray-500 dark:text-gray-400">
-                  No warehouses found
-                </td>
-              </tr>
-              <tr 
-                v-else
-                v-for="warehouse in warehouses" 
-                :key="warehouse.id" 
-                class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
-              >
-                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white/90">
-                  {{ warehouse.name }}
-                </td>
-                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                  <div class="max-w-xs">
+          <div class="max-h-[500px] overflow-y-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-800/50">
+                <tr>
+                  <th @click="sortBy('name')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                    NAME
+                  </th>
+                  <th @click="sortBy('city')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                    LOCATION
+                  </th>
+                  <th @click="sortBy('isPrimary')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                    TYPE
+                  </th>
+                  <th @click="sortBy('isActive')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                    STATUS
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    ACTIONS
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-if="loading" class="text-center">
+                  <td colspan="5" class="px-4 py-3">
+                    <div class="flex justify-center">
+                      <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  </td>
+                </tr>
+                <tr v-else-if="warehouses.length === 0" class="text-center">
+                  <td colspan="5" class="px-4 py-3 text-gray-500 dark:text-gray-400">
+                    No warehouses found
+                  </td>
+                </tr>
+                <tr 
+                  v-else
+                  v-for="warehouse in warehouses" 
+                  :key="warehouse.id" 
+                  class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
+                >
+                  <td class="px-4 py-3 text-sm text-gray-900 dark:text-white/90">
+                    {{ warehouse.name }}
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                    <div class="max-w-xs">
+                      <span 
+                        :title="formatLocation(warehouse)" 
+                        class="block truncate"
+                      >
+                        {{ formatLocation(warehouse) }}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3">
                     <span 
-                      :title="formatLocation(warehouse)" 
-                      class="block truncate"
+                      :class="[
+                        'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
+                        warehouse.isPrimary 
+                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-400' 
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-400'
+                      ]"
                     >
-                      {{ formatLocation(warehouse) }}
+                      {{ warehouse.isPrimary ? 'Primary' : 'Secondary' }}
                     </span>
-                  </div>
-                </td>
-                <td class="px-4 py-3">
-                  <span 
-                    :class="[
-                      'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
-                      warehouse.isPrimary 
-                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-400' 
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-400'
-                    ]"
-                  >
-                    {{ warehouse.isPrimary ? 'Primary' : 'Secondary' }}
-                  </span>
-                </td>
-                <td class="px-4 py-3">
-                  <span 
-                    :class="[
-                      'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
-                      warehouse.isActive 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400' 
-                        : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400'
-                    ]"
-                  >
-                    {{ warehouse.isActive ? 'Active' : 'Inactive' }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-sm whitespace-nowrap">
-                  <button 
-                    @click="viewWarehouseDetails(warehouse)" 
-                    class="flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    View Details
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span 
+                      :class="[
+                        'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
+                        warehouse.isActive 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400' 
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400'
+                      ]"
+                    >
+                      {{ warehouse.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm whitespace-nowrap">
+                    <button 
+                      @click="viewWarehouseDetails(warehouse)" 
+                      class="flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Pagination -->

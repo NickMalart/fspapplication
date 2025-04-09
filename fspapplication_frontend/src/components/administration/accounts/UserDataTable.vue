@@ -99,109 +99,111 @@
 
         <!-- User Table -->
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-800/50">
-              <tr>
-                <th @click="sortBy('avatar')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-24">
-                  Avatar
-                  <span v-if="sortColumn === 'avatar'">
-                    {{ sortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
-                </th>
-                <th @click="sortBy('firstName')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  Name
-                  <span v-if="sortColumn === 'firstName'">
-                    {{ sortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
-                </th>
-                <th @click="sortBy('email')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  Email
-                  <span v-if="sortColumn === 'email'">
-                    {{ sortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
-                </th>
-                <th @click="sortBy('employeeProfile.jobTitle')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  Job Title
-                  <span v-if="sortColumn === 'employeeProfile.jobTitle'">
-                    {{ sortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
-                </th>
-                <th @click="sortBy('employeeProfile.department')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  Department
-                  <span v-if="sortColumn === 'employeeProfile.department'">
-                    {{ sortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
-                </th>
-                <th @click="sortBy('isActive')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
-                  Status
-                  <span v-if="sortColumn === 'isActive'">
-                    {{ sortDirection === 'asc' ? '▲' : '▼' }}
-                  </span>
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  User Profile
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-if="paginatedUsers.length === 0" class="text-center">
-                <td colspan="7" class="px-6 py-4 text-gray-500 dark:text-gray-400">
-                  No users found
-                </td>
-              </tr>
-              <tr v-else v-for="user in paginatedUsers" :key="user.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
-                <td class="px-6 py-4 whitespace-nowrap w-24">
-                  <img 
-                    class="h-10 w-10 rounded-full object-cover mx-auto" 
-                    :src="getCachedAvatarUrl(user)" 
-                    :alt="`${user.firstName} ${user.lastName}'s avatar`"
-                    @error="handleAvatarError($event, user)"
-                  />
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-medium text-gray-900 dark:text-white/90">
-                    {{ user.firstName }} {{ user.lastName }}
-                  </div>
-                  <div class="text-sm text-gray-500 dark:text-gray-400">
-                    {{ user.userType }}
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {{ user.email }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {{ getUserJobTitle(user) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {{ getUserDepartment(user) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span 
-                    :class="[
-                      'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                      user.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    ]"
-                  >
-                    {{ user.isActive ? 'Active' : 'Inactive' }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button 
-                    @click="viewUserDetails(user)" 
-                    class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors duration-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    View Profile
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="max-h-[500px] overflow-y-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-800/50">
+                <tr>
+                  <th @click="sortBy('avatar')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-24">
+                    Avatar
+                    <span v-if="sortColumn === 'avatar'">
+                      {{ sortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th @click="sortBy('firstName')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                    Name
+                    <span v-if="sortColumn === 'firstName'">
+                      {{ sortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th @click="sortBy('email')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                    Email
+                    <span v-if="sortColumn === 'email'">
+                      {{ sortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th @click="sortBy('employeeProfile.jobTitle')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                    Job Title
+                    <span v-if="sortColumn === 'employeeProfile.jobTitle'">
+                      {{ sortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th @click="sortBy('employeeProfile.department')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                    Department
+                    <span v-if="sortColumn === 'employeeProfile.department'">
+                      {{ sortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th @click="sortBy('isActive')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer">
+                    Status
+                    <span v-if="sortColumn === 'isActive'">
+                      {{ sortDirection === 'asc' ? '▲' : '▼' }}
+                    </span>
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    User Profile
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-if="paginatedUsers.length === 0" class="text-center">
+                  <td colspan="7" class="px-6 py-4 text-gray-500 dark:text-gray-400">
+                    No users found
+                  </td>
+                </tr>
+                <tr v-else v-for="user in paginatedUsers" :key="user.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
+                  <td class="px-6 py-4 whitespace-nowrap w-24">
+                    <img 
+                      class="h-10 w-10 rounded-full object-cover mx-auto" 
+                      :src="getCachedAvatarUrl(user)" 
+                      :alt="`${user.firstName} ${user.lastName}'s avatar`"
+                      @error="handleAvatarError($event, user)"
+                    />
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900 dark:text-white/90">
+                      {{ user.firstName }} {{ user.lastName }}
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                      {{ user.userType }}
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {{ user.email }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {{ getUserJobTitle(user) }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {{ getUserDepartment(user) }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span 
+                      :class="[
+                        'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                        user.isActive 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      ]"
+                    >
+                      {{ user.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button 
+                      @click="viewUserDetails(user)" 
+                      class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors duration-200"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      View Profile
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Pagination -->

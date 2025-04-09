@@ -99,86 +99,88 @@
 
         <!-- Client Table -->
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-800/50">
-              <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-16">
-                  LOGO
-                </th>
-                <th @click="sortBy('name')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/6">
-                  NAME
-                </th>
-                <th @click="sortBy('abn')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/6">
-                  ABN
-                </th>
-                <th @click="sortBy('email')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/5">
-                  EMAIL
-                </th>
-                <th @click="sortBy('phone')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/6">
-                  PHONE
-                </th>
-                <th @click="sortBy('isActive')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-[80px]">
-                  STATUS
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[120px]">
-                  ACTIONS
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-if="paginatedClients.length === 0" class="text-center">
-                <td colspan="7" class="px-4 py-3 text-gray-500 dark:text-gray-400">
-                  No clients found
-                </td>
-              </tr>
-              <tr v-else v-for="client in paginatedClients" :key="client.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
-                <td class="px-4 py-3 w-16">
-                  <img 
-                    :src="getLogoUrl(client)" 
-                    :alt="`${client.name} logo`"
-                    class="h-10 w-10 rounded-full object-cover mx-auto border border-gray-200 dark:border-gray-700"
-                    @error="$event.target.src = generateDefaultLogo(client.name)"
-                  />
-                </td>
-                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white/90">
-                  {{ client.name }}
-                </td>
-                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {{ client.abn || 'Not provided' }}
-                </td>
-                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 overflow-hidden text-ellipsis">
-                  {{ client.email }}
-                </td>
-                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  {{ client.phone || 'Not provided' }}
-                </td>
-                <td class="px-4 py-3">
-                  <span 
-                    :class="[
-                      'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
-                      client.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    ]"
-                  >
-                    {{ client.isActive ? 'Active' : 'Inactive' }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-sm whitespace-nowrap">
-                  <button 
-                    @click="viewClientDetails(client)" 
-                    class="flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    View Profile
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="max-h-[500px] overflow-y-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-800/50">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-16">
+                    LOGO
+                  </th>
+                  <th @click="sortBy('name')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/6">
+                    NAME
+                  </th>
+                  <th @click="sortBy('abn')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/6">
+                    ABN
+                  </th>
+                  <th @click="sortBy('email')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/5">
+                    EMAIL
+                  </th>
+                  <th @click="sortBy('phone')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/6">
+                    PHONE
+                  </th>
+                  <th @click="sortBy('isActive')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-[80px]">
+                    STATUS
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[120px]">
+                    ACTIONS
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-if="paginatedClients.length === 0" class="text-center">
+                  <td colspan="7" class="px-4 py-3 text-gray-500 dark:text-gray-400">
+                    No clients found
+                  </td>
+                </tr>
+                <tr v-else v-for="client in paginatedClients" :key="client.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
+                  <td class="px-4 py-3 w-16">
+                    <img 
+                      :src="getLogoUrl(client)" 
+                      :alt="`${client.name} logo`"
+                      class="h-10 w-10 rounded-full object-cover mx-auto border border-gray-200 dark:border-gray-700"
+                      @error="$event.target.src = generateDefaultLogo(client.name)"
+                    />
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-900 dark:text-white/90">
+                    {{ client.name }}
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    {{ client.abn || 'Not provided' }}
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 overflow-hidden text-ellipsis">
+                    {{ client.email }}
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    {{ client.phone || 'Not provided' }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <span 
+                      :class="[
+                        'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
+                        client.isActive 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      ]"
+                    >
+                      {{ client.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm whitespace-nowrap">
+                    <button 
+                      @click="viewClientDetails(client)" 
+                      class="flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      View Profile
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Pagination -->
