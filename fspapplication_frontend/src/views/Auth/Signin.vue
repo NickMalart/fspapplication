@@ -139,6 +139,7 @@ export default {
           access: response.data.access,
           refresh: response.data.refresh
         })
+        localStorage.setItem('accessToken', response.data.access);
 
         // Save tenant info in auth store
         auth.setTenant(tenant)

@@ -80,9 +80,9 @@ def create_dev_tenant():
     
     # Create the tenant
     tenant, created = Client.objects.get_or_create(
-        name='Dev Tenant',
+        name='Dev Tenant Fly',
         defaults={
-            'schema_name': 'dev',
+            'schema_name': 'fspapplication-dev',
             'subscription_plan': basic_plan,
             'subscription_start_date': timezone.now().date(),
             'subscription_end_date': timezone.now().date().replace(year=timezone.now().date().year + 1),
@@ -94,7 +94,7 @@ def create_dev_tenant():
     
     # Create domain
     Domain.objects.get_or_create(
-        domain='dev.localhost',
+        domain='fspapplication-dev.fly',
         tenant=tenant,
         defaults={'is_primary': True}
     )

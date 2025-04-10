@@ -195,7 +195,6 @@ def create_fake_warehouses(tenant_schema='dev', client_name='Baldwin Group Servi
                 longitude=longitude,
                 first_name=first_name,
                 last_name=last_name,
-                contact_name=f"{first_name} {last_name}",  # Automatically generated
                 contact_phone=contact_phone,
                 contact_email=contact_email,
                 is_primary=is_primary,
@@ -217,4 +216,4 @@ def create_fake_warehouses(tenant_schema='dev', client_name='Baldwin Group Servi
     print(f'Successfully created {warehouses_created} fake warehouses for {client_name}')
 
 if __name__ == '__main__':
-    create_fake_warehouses('dev', 'Baldwin Group Services', 100) 
+    create_fake_warehouses('dev', 'Adams Group', 100) 
