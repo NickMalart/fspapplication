@@ -79,7 +79,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
-import { ProfileData } from '@/service/userProfileService';
+import type { ProfileData } from '@/service/userProfileService';
 
 const props = defineProps<{
   userData: ProfileData;

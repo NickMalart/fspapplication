@@ -63,7 +63,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, computed, watch } from 'vue';
-import { fileService, FileUploadResponse } from '@/service/fileService';
+import { fileService, type FileUploadResponse } from '@/service/fileService';
 
 export default defineComponent({
   name: 'FileUploader',

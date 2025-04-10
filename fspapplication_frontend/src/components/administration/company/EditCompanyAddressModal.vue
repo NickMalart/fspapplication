@@ -139,7 +139,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import AddressAutocomplete from '@/components/common/AddressAutocomplete.vue';
-import { CompanyProfile } from '@/service/companyService';
+import type { CompanyProfile } from '@/service/companyService';
 
 // Extend CompanyProfile to include any additional fields we need for Google Place
 interface ExtendedCompanyProfile extends CompanyProfile {

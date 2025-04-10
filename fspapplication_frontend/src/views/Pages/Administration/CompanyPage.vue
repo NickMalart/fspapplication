@@ -23,7 +23,7 @@ import CompanyAvatarSection from "@/components/administration/company/CompanyAva
 import CompanyInformationCard from "@/components/administration/company/CompanyInformationCard.vue";
 import CompanyAddressCard from "@/components/administration/company/CompanyAddressCard.vue";
 import { usecompanyStore } from "@/stores/companyStore";
-import { CompanyProfile } from "@/service/companyService";
+import type { CompanyProfile } from "@/service/companyService";
 
 const currentPageTitle = ref("Company Settings");
 const companyStore = usecompanyStore();

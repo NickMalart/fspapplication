@@ -137,7 +137,7 @@
 import { computed, ref } from 'vue';
 import { usecompanyStore } from '@/stores/companyStore';
 import { fileService } from '@/service/fileService';
-import { CompanyProfile } from '@/service/companyService';
+import type { CompanyProfile } from '@/service/companyService';
 
 // Define props for company data
 const props = defineProps<{

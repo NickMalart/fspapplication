@@ -78,7 +78,7 @@ import ComponentCard from '@/components/common/ComponentCard.vue';
 import UserPersonalInformationAdminModal from '@/components/administration/accounts/UserPersonalInformationAdminmodal.vue';
 import { useUserProfileAdminStore } from '@/stores/userProfileAdminStore';
 import type { UserProfileAdmin } from '@/stores/userProfileAdminStore';
-import { PropType } from 'vue';
+import type { PropType } from 'vue';
 
 const props = defineProps({
   userData: {

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { userService, UserLogin, CompleteUser, ProfileData } from '@/service/userProfileService';
+import { userService } from '@/service/userProfileService';
+import type { UserLogin, CompleteUser, ProfileData } from '@/service/userProfileService';
 
 interface UserState {
   currentUser: UserLogin | null;

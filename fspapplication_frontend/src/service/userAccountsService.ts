@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
-import { CompleteUser } from '@/service/userProfileService';
+import type { CompleteUser } from '@/service/userProfileService';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 

@@ -112,7 +112,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { fileService } from '@/service/fileService';
-import { Agent } from '@/service/agentService';
+import type { Agent } from '@/service/agentService';
 import { agentService } from '@/service/agentService';
 import { useAgentStore } from '@/stores/agentStore';
 

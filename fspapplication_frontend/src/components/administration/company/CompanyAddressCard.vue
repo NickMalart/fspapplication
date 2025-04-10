@@ -87,7 +87,7 @@ import { usecompanyStore } from '@/stores/companyStore';
 import { storeToRefs } from 'pinia';
 import ComponentCard from '@/components/common/ComponentCard.vue';
 import EditCompanyAddressModal from '@/components/administration/company/EditCompanyAddressModal.vue';
-import { CompanyProfile } from '@/service/companyService';
+import type { CompanyProfile } from '@/service/companyService';
 
 // Extend CompanyProfile to include any additional fields we need for Google Place
 interface ExtendedCompanyProfile extends CompanyProfile {

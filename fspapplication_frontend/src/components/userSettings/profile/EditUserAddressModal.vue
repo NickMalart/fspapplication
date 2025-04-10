@@ -138,7 +138,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
-import { ProfileData } from '@/service/userProfileService';
+import type { ProfileData } from '@/service/userProfileService';
 import AddressAutocomplete from '@/components/common/AddressAutocomplete.vue';
 
 const props = defineProps<{

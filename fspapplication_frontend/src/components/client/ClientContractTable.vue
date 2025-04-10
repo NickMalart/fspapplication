@@ -276,7 +276,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import ClientBreadcrumb from '@/components/client/ClientBreadcrumb.vue';
 import ContractDetailsModal from './ContractDetailsModal.vue';
 import ContractCreateModal from './ContractCreateModal.vue';
 import { clientContractService, type Contract } from '@/service/clientContractService';

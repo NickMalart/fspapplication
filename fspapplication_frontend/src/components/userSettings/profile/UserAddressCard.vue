@@ -87,7 +87,7 @@ import { useUserStore } from '@/stores/userProfileStore';
 import { storeToRefs } from 'pinia';
 import ComponentCard from '@/components/common/ComponentCard.vue';
 import EditUserAddressModal from './EditUserAddressModal.vue';
-import { ProfileData } from '@/service/userProfileService';
+import type { ProfileData } from '@/service/userProfileService';
 
 const userStore = useUserStore();
 const { completeUser, loading, error } = storeToRefs(userStore);

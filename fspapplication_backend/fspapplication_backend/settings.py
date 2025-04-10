@@ -19,7 +19,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-$ubqr)l_jiei9@h!jd!h&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,.localhost,127.0.0.1,.127.0.0.1,.fly.dev').split(',')
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=30),
@@ -43,7 +43,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://dev.localhost:8000", 
     "http://dev2.127.0.0.1:5173",
     "http://dev2.localhost:5173",
-    "http://dev2.localhost:8000", 
+    "http://dev2.localhost:8000",
+    "https://fspapplication-dev.fly.dev",
+    "https://dev.fspapplication-dev.fly.dev",
 ]
 
 CORS_ALLOW_HEADERS = [
@@ -66,7 +68,9 @@ CSRF_TRUSTED_ORIGINS = [
     "http://dev.localhost:8000", 
     "http://dev2.127.0.0.1:5173",
     "http://dev2.localhost:5173",
-    "http://dev2.localhost:8000", 
+    "http://dev2.localhost:8000",
+    "https://fspapplication-dev.fly.dev",
+    "https://dev.fspapplication-dev.fly.dev",
 ]
 
 
@@ -217,7 +221,22 @@ LOGGING = {
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Add configuration to use local static files in production
+# This is needed for the Vue.js frontend in Fly.io deployment
+USE_LOCAL_STATIC_STORAGE = os.environ.get('USE_LOCAL_STATIC_STORAGE', 'True') == 'True'
+
+if USE_LOCAL_STATIC_STORAGE:
+    # Use local storage for static files
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'static'),
+    ]
+else:
+    # Use S3 for static files
+    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
 
 # AWS S3 configuration using environment variables
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')

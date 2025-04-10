@@ -112,7 +112,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { fileService } from '@/service/fileService';
-import { Client } from '@/service/clientService';
+import type { Client } from '@/service/clientService';
 import { clientService } from '@/service/clientService';
 import { useClientStore } from '@/stores/clientStore';
 

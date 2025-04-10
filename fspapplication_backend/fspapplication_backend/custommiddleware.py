@@ -78,3 +78,4 @@ class CustomTenantMiddleware(TenantMainMiddleware):
         conn = connection_obj or default_connection
         conn.set_tenant(tenant)
         logger.info(f"Activated tenant: {tenant.schema_name}")
+

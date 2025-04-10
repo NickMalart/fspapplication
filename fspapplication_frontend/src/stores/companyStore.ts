@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { companyService, CompanyProfile } from '@/service/companyService';
+import { companyService } from '@/service/companyService';
+import type { CompanyProfile } from '@/service/companyService';
 
 export const usecompanyStore = defineStore('companyProfile', () => {
   // State

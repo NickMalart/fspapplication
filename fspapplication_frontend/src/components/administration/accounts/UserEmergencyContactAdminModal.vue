@@ -79,7 +79,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
-import { PropType } from 'vue';
+import type { PropType } from 'vue';
 import type { UserProfileAdmin } from '@/stores/userProfileAdminStore';
 
 const props = defineProps({

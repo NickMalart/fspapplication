@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { userAccountsService, UserAccount, UserListParams } from '@/service/userAccountsService';
+import { userAccountsService } from '@/service/userAccountsService';
+import type { UserAccount, UserListParams } from '@/service/userAccountsService';
 
 interface UserAccountsState {
   users: UserAccount[];

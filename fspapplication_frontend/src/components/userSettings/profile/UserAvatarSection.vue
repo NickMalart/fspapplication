@@ -94,7 +94,7 @@
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useUserStore } from '@/stores/userProfileStore';
 import { fileService } from '@/service/fileService';
-import { CompleteUser } from '@/service/userProfileService';
+import type { CompleteUser } from '@/service/userProfileService';
 
 // Define props for user data
 const props = defineProps<{

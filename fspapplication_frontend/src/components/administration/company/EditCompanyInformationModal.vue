@@ -111,7 +111,7 @@
 
 <script setup lang="ts">
 import { reactive, defineEmits, onMounted, watch } from 'vue';
-import { CompanyProfile } from '@/service/companyService';
+import type { CompanyProfile } from '@/service/companyService';
 
 const props = defineProps({
   companyData: {

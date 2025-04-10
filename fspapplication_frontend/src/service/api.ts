@@ -1,4 +1,5 @@
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
+import type { AxiosInstance } from 'axios';
 
 // Get the API URL from environment variables or use a default
 const API_URL = import.meta.env.VITE_API_URL || '/api';
