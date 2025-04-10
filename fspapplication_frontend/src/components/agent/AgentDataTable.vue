@@ -109,7 +109,7 @@
                   <th @click="sortBy('name')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/4">
                     NAME
                   </th>
-                  <th @click="sortBy('agentType')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/4">
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/4">
                     ROLE
                   </th>
                   <th @click="sortBy('isActive')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/4">
@@ -234,7 +234,7 @@ import { fileService } from '@/service/fileService'
 import type { Agent } from '@/service/agentService'
 
 type StatusFilter = 'active' | 'inactive' | 'all';
-type SortColumn = 'name' | 'email' | 'phone' | 'isActive' | 'agentType';
+type SortColumn = 'name' | 'email' | 'phone' | 'isActive';
 
 const router = useRouter()
 const agentStore = useAgentStore()
@@ -376,5 +376,5 @@ const handleImageError = (event: Event, name: string) => {
 
 // Update the template to use the correct field names
 const getFullName = (agent: Agent) => agent.name;
-const getRole = (agent: Agent) => agent.agentType || 'Agent';
+const getRole = (agent: Agent) => 'Agent';
 </script>

@@ -17,6 +17,11 @@
         @status-updated="handleStatusUpdate"
       />
       
+      <AgentInformationCard 
+        :agent-id="agentId"
+        @agent-updated="handleAgentUpdate"
+      />
+      
       <!-- Additional agent sections to be added later -->
       
     </div>
@@ -30,6 +35,7 @@ import { agentService, type Agent } from '@/service/agentService';
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import AgentAvatarSection from '@/components/agent/AgentAvatarSection.vue';
+import AgentInformationCard from '@/components/agent/AgentInformationCard.vue';
 
 const route = useRoute();
 const agentId = computed(() => route.params.id as string);

@@ -86,11 +86,6 @@
       </a>
     </p>
     
-    <!-- Agent Type -->
-    <p v-if="agent?.agentType" class="text-sm text-gray-500 dark:text-gray-400">
-      Type: {{ agent.agentType }}
-    </p>
-    
     <!-- Agent Status Badge -->
     <div class="mt-2 flex items-center">
       <span class="h-2 w-2 rounded-full mr-1" :class="agent?.isActive ? 'bg-green-500' : 'bg-red-500'"></span>
