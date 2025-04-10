@@ -78,7 +78,10 @@ export const fileService = {
     const maxWidth = options.maxWidth || 800;
     const maxHeight = options.maxHeight || 800;
     const quality = options.quality || 0.85;
-    const outputFormat = options.outputFormat || 'image/jpeg';
+    
+    // Preserve original format for PNG to maintain transparency
+    const outputFormat = options.outputFormat || 
+                         (file.type === 'image/png' ? 'image/png' : 'image/jpeg');
     
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -119,6 +122,11 @@ export const fileService = {
         if (!ctx) {
           reject(new Error('Could not get canvas context'));
           return;
+        }
+        
+        // For PNG files, ensure the canvas is transparent before drawing
+        if (outputFormat === 'image/png') {
+          ctx.clearRect(0, 0, width, height);
         }
         
         ctx.drawImage(img, 0, 0, width, height);
