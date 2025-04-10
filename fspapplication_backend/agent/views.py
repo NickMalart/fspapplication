@@ -5,12 +5,29 @@ from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Agent, AgentWarehouse
 from .serializers import AgentSerializer, AgentWarehouseSerializer
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 # Add pagination class
 class StandardResultsPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
+
+
+class CreateAgentView(APIView):
+    """API view to create an agent directly"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        """Create a new agent directly"""
+        serializer = AgentSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            agent = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AgentListView(generics.ListCreateAPIView):

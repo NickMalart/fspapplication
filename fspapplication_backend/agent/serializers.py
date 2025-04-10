@@ -12,7 +12,6 @@ class AgentSerializer(serializers.ModelSerializer):
             'id', 'name', 'logo', 'abn', 'website',
             'email', 'phone', 'street_number', 'street_name', 'suburb', 
             'city', 'state', 'postal_code', 'country', 'latitude', 'longitude',
-            'agent_type', 'license_number', 'service_areas', 'specialties',
             'is_active', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']

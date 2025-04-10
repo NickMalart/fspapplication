@@ -32,9 +32,9 @@
           </p>
         </div>
         <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">License Number</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">ABN</p>
           <p class="font-medium text-gray-800 dark:text-white/90">
-            {{ agentProfileData.licenseNumber || 'Not provided' }}
+            {{ agentProfileData.abn || 'Not provided' }}
           </p>
         </div>
         <div class="space-y-2">
@@ -230,7 +230,7 @@ import { type AgentProfile, type ClientProfile, type EmployeeProfile, type UserP
 // Define interfaces for the different profile types
 interface AgentProfileData {
   companyName?: string;
-  licenseNumber?: string | null;
+  abn?: string | null;
   yearsOfExperience?: number;
 }
 
@@ -377,7 +377,7 @@ const initializeProfileData = () => {
     const profile = convertObjectKeysToCamel(props.userData.agentProfile);
     agentProfileData.value = { 
       companyName: profile.companyName || '',
-      licenseNumber: profile.licenseNumber || null,
+      abn: profile.abn || null,
       yearsOfExperience: profile.yearsOfExperience || 0
     };
   } else if (isClient.value && props.userData.clientProfile) {
@@ -464,7 +464,7 @@ const handleAgentSave = async (updatedData: AgentProfileData) => {
     // Create a properly typed agent profile object
     const agentProfile = {
       companyName: updatedData.companyName || '',
-      licenseNumber: updatedData.licenseNumber || null,
+      abn: updatedData.abn || null,
       yearsOfExperience: updatedData.yearsOfExperience || 0
     };
     
@@ -523,7 +523,7 @@ const handleClientSave = async (updatedData: ClientProfileData) => {
       // Ensure other profiles are properly typed
       agentProfile: props.userData.agentProfile ? {
         companyName: props.userData.agentProfile.companyName || '',
-        licenseNumber: props.userData.agentProfile.licenseNumber || null,
+        abn: props.userData.agentProfile.abn || null,
         yearsOfExperience: props.userData.agentProfile.yearsOfExperience || 0
       } : undefined,
       employeeProfile: props.userData.employeeProfile ? {
@@ -572,7 +572,7 @@ const handleEmployeeSave = async (updatedData: EmployeeProfileData) => {
       // Ensure other profiles are properly typed
       agentProfile: props.userData.agentProfile ? {
         companyName: props.userData.agentProfile.companyName || '',
-        licenseNumber: props.userData.agentProfile.licenseNumber || null,
+        abn: props.userData.agentProfile.abn || null,
         yearsOfExperience: props.userData.agentProfile.yearsOfExperience || 0
       } : undefined,
       clientProfile: props.userData.clientProfile ? {

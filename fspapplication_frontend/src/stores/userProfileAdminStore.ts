@@ -10,9 +10,9 @@ export interface FunctionalGroup {
   color: string;
 }
 
-export interface AgentProfile {
+export interface AgentProfileAdmin {
   companyName: string;
-  licenseNumber: string | null;
+  abn: string;
   yearsOfExperience: number;
 }
 
@@ -64,7 +64,7 @@ export interface UserProfileAdmin {
     updatedAt: string;
   };
   functionalGroups: FunctionalGroup[];
-  agentProfile?: AgentProfile;
+  agentProfile?: AgentProfileAdmin;
   clientProfile?: ClientProfile;
   employeeProfile?: EmployeeProfile;
 }

@@ -36,10 +36,10 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">License Number</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">ABN</label>
             <input
               type="text"
-              v-model="localAgentData.licenseNumber"
+              v-model="localAgentData.abn"
               class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:bg-gray-800 dark:text-white dark:border-gray-700"
             />
           </div>
@@ -202,7 +202,7 @@ import { clientService, type Client } from '@/service/clientService';
 // Define interfaces for the different profile types
 interface AgentProfileData {
   companyName?: string;
-  licenseNumber?: string | null;
+  abn?: string | null;
   yearsOfExperience?: number;
 }
 

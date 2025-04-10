@@ -23,7 +23,6 @@ export interface Agent {
   latitude: number | null;
   longitude: number | null;
   agentType: string | null;
-  licenseNumber: string | null;
   serviceAreas: string | null;
   specialties: string | null;
   isActive: boolean;

@@ -20,7 +20,7 @@
         </label>
         <input
           id="companyName"
-          v-model="agentData.agentProfile!.companyName"
+          v-model="agentData.name"
           type="text"
           required
           class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700"
@@ -42,77 +42,34 @@
           placeholder="Enter email address"
         />
       </div>
-
-      <!-- ABN -->
-      <div>
-        <label for="abn" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-          ABN <span class="text-red-500">*</span>
-        </label>
-        <input
-          id="abn"
-          v-model="agentData.agentProfile!.abn"
-          type="text"
-          required
-          class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700"
-          placeholder="Enter Australian Business Number"
-        />
-      </div>
     </div>
   </BaseModal>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref } from 'vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
-import { userAccountsService } from '@/service/userAccountsService';
-import type { UserAccount } from '@/service/userAccountsService';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 defineProps<{
   show: boolean
 }>();
 
-const emit = defineEmits(['close', 'user-created']);
+const emit = defineEmits(['close', 'agent-created']);
 const isLoading = ref(false);
 
-interface AgentProfile {
-  companyName: string;
-  abn: string | null;
-  yearsOfExperience: number;
+interface AgentData {
+  name: string;
+  email: string;
+  phone: string;
 }
 
-interface ExtendedUserAccount extends UserAccount {
-  agentProfile?: AgentProfile;
-}
-
-const agentData = ref<Partial<ExtendedUserAccount>>({
+const agentData = ref<AgentData>({
+  name: '',
   email: '',
-  userType: 'agent',
-  isActive: true,
-  profile: {
-    id: '',
-    phoneNumber: '',
-    emergencyContact: null,
-    emergencyContactFirstName: null,
-    emergencyContactLastName: null,
-    streetNumber: null,
-    streetName: null,
-    suburb: null,
-    city: null,
-    state: null,
-    postalCode: null,
-    country: null,
-    latitude: null,
-    longitude: null,
-    googlePlaceId: null,
-    dateOfBirth: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  agentProfile: {
-    companyName: '',
-    abn: null,
-    yearsOfExperience: 0
-  }
+  phone: ''
 });
 
 const closeModal = () => {
@@ -121,26 +78,25 @@ const closeModal = () => {
 
 const handleSubmit = async () => {
   try {
-    const userData: Partial<ExtendedUserAccount> = {
-      email: agentData.value.email,
-      userType: 'agent',
-      isActive: true,
-      profile: agentData.value.profile,
-      agentProfile: agentData.value.agentProfile
-    };
-
-    const newUser = await userAccountsService.createUser(userData);
-    emit('user-created', newUser);
+    isLoading.value = true;
+    
+    // Use axios directly or create a dedicated agentService
+    const response = await axios.post(`${API_URL}/agent/create-agent/`, agentData.value);
+    
+    emit('agent-created', response.data);
+    resetForm();
     closeModal();
   } catch (error) {
     console.error('Error creating agent:', error);
     // Handle error appropriately
+  } finally {
+    isLoading.value = false;
   }
 };
 
 const resetForm = () => {
+  agentData.value.name = '';
   agentData.value.email = '';
-  agentData.value.agentProfile!.companyName = '';
-  agentData.value.agentProfile!.abn = null;
+  agentData.value.phone = '';
 };
 </script> 

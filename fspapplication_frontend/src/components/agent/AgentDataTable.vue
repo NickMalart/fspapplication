@@ -104,31 +104,25 @@
               <thead class="bg-gray-50 dark:bg-gray-800/50">
                 <tr>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-16">
-                    AVATAR
+                    LOGO
                   </th>
-                  <th @click="sortBy('firstName')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/6">
+                  <th @click="sortBy('name')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/4">
                     NAME
                   </th>
-                  <th @click="sortBy('email')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/5">
-                    EMAIL
-                  </th>
-                  <th @click="sortBy('phoneNumber')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/6">
-                    PHONE
-                  </th>
-                  <th @click="sortBy('userType')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/6">
+                  <th @click="sortBy('agentType')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/4">
                     ROLE
                   </th>
-                  <th @click="sortBy('isActive')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-[80px]">
+                  <th @click="sortBy('isActive')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-1/4">
                     STATUS
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[120px]">
-                    ACTIONS
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/4">
+                    VIEW PROFILE
                   </th>
                 </tr>
               </thead>
               <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 <tr v-if="paginatedAgents.length === 0" class="text-center">
-                  <td colspan="7" class="px-4 py-3 text-gray-500 dark:text-gray-400">
+                  <td colspan="5" class="px-4 py-3 text-gray-500 dark:text-gray-400">
                     No agents found
                   </td>
                 </tr>
@@ -136,19 +130,13 @@
                   <td class="px-4 py-3 w-16">
                     <img 
                       :src="getAvatarUrl(agent)" 
-                      :alt="`${agent.firstName} ${agent.lastName} avatar`"
+                      :alt="`${agent.name} logo`"
                       class="h-10 w-10 rounded-full object-cover mx-auto border border-gray-200 dark:border-gray-700"
-                      @error="(e: Event) => handleImageError(e, `${agent.firstName} ${agent.lastName}`)"
+                      @error="(e: Event) => handleImageError(e, agent.name)"
                     />
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-900 dark:text-white/90">
                     {{ getFullName(agent) }}
-                  </td>
-                  <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 overflow-hidden text-ellipsis">
-                    {{ agent.email }}
-                  </td>
-                  <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                    {{ getPhoneNumber(agent) }}
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                     {{ getRole(agent) }}
@@ -243,54 +231,10 @@ import debounce from 'lodash/debounce'
 import { useRouter } from 'vue-router'
 import { useAgentStore } from '@/stores/agentStore'
 import { fileService } from '@/service/fileService'
-
-interface Agent {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  userType: string;
-  avatar: string | null;
-  isActive: boolean;
-  isStaff: boolean;
-  isTenantOwner: boolean;
-  dateJoined: string;
-  lastLogin: string | null;
-  profile: {
-    id: string;
-    phoneNumber: string | null;
-    emergencyContact: string | null;
-    emergencyContactFirstName: string | null;
-    emergencyContactLastName: string | null;
-    streetNumber: string | null;
-    streetName: string | null;
-    suburb: string | null;
-    city: string | null;
-    state: string | null;
-    postalCode: string | null;
-    country: string | null;
-    latitude: number | null;
-    longitude: number | null;
-    googlePlaceId: string | null;
-    dateOfBirth: string | null;
-    createdAt: string;
-    updatedAt: string;
-  };
-  agentProfile?: {
-    companyName: string;
-    licenseNumber: string | null;
-    yearsOfExperience: number;
-  };
-  functionalGroups: Array<{
-    id: string;
-    code: string;
-    name: string;
-    color: string;
-  }>;
-}
+import type { Agent } from '@/service/agentService'
 
 type StatusFilter = 'active' | 'inactive' | 'all';
-type SortColumn = 'firstName' | 'lastName' | 'email' | 'phoneNumber' | 'userType' | 'isActive';
+type SortColumn = 'name' | 'email' | 'phone' | 'isActive' | 'agentType';
 
 const router = useRouter()
 const agentStore = useAgentStore()
@@ -409,17 +353,17 @@ const generateDefaultAvatar = (name: string) => {
 
 // Function to get proper avatar URL
 const getAvatarUrl = (agent: Agent) => {
-  if (!agent.avatar) {
-    return generateDefaultAvatar(agent.firstName + ' ' + agent.lastName)
+  if (!agent.logo) {
+    return generateDefaultAvatar(agent.name)
   }
   
   // If it's already a full CloudFront URL, use it as-is
-  if (agent.avatar.startsWith('https://')) {
-    return agent.avatar
+  if (agent.logo.startsWith('https://')) {
+    return agent.logo
   }
   
   // Otherwise, construct the CloudFront URL
-  return fileService.getCloudFrontUrl(agent.avatar)
+  return fileService.getCloudFrontUrl(agent.logo)
 }
 
 // Handle image error
@@ -431,7 +375,6 @@ const handleImageError = (event: Event, name: string) => {
 };
 
 // Update the template to use the correct field names
-const getFullName = (agent: Agent) => `${agent.firstName} ${agent.lastName}`.trim();
-const getPhoneNumber = (agent: Agent) => agent.profile?.phoneNumber || 'Not provided';
-const getRole = (agent: Agent) => agent.userType || 'Agent';
+const getFullName = (agent: Agent) => agent.name;
+const getRole = (agent: Agent) => agent.agentType || 'Agent';
 </script>

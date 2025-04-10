@@ -225,7 +225,7 @@ class AgentProfile(models.Model):
         limit_choices_to={'user_type': User.USER_TYPE_AGENT}
     )
     company_name = models.ForeignKey('company.Company', on_delete=models.CASCADE, related_name='agents')
-    license_number = models.CharField(max_length=100, blank=True, null=True)
+    abn = models.CharField(max_length=50, blank=True, null=True)
     years_of_experience = models.PositiveIntegerField(default=0)
     
     def __str__(self):

@@ -79,7 +79,7 @@ class AgentProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = AgentProfile
-        exclude = ('user',)
+        fields = ['company_name', 'abn', 'years_of_experience']
 
 class ClientProfileSerializer(serializers.ModelSerializer):
     """Serializer for client-specific profile data"""
