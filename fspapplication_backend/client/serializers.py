@@ -27,7 +27,7 @@ class ClientWarehouseSerializer(serializers.ModelSerializer):
             'id', 'client', 'name', 'description', 
             'street_number', 'street_name', 'suburb', 'city', 'state', 
             'postal_code', 'country', 'latitude', 'longitude',
-            'contact_name', 'contact_phone', 'contact_email',
+            'first_name', 'last_name', 'contact_phone', 'contact_email',
             'is_primary', 'operating_hours', 'storage_capacity', 'special_instructions',
             'is_active', 'created_at', 'updated_at'
         ]

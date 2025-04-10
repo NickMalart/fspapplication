@@ -374,7 +374,8 @@ const handleFileChange = async (event: Event) => {
     const uploadResult = await fileService.uploadFile(
       file,
       'images',
-      'profiles'
+      'profiles',
+      { maxWidth: 800, maxHeight: 800, quality: 0.85 }
     );
     
     if (!uploadResult.success || !uploadResult.path) {

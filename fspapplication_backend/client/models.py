@@ -81,16 +81,15 @@ class ClientWarehouse(models.Model):
     def __str__(self):
         return f"{self.name} - {self.client.name}"
     
-    def save(self, *args, **kwargs):
-        # Generate full contact_name from first_name and last_name if provided
-        if self.first_name or self.last_name:
-            full_name_parts = []
-            if self.first_name:
-                full_name_parts.append(self.first_name)
-            if self.last_name:
-                full_name_parts.append(self.last_name)
-            self.contact_name = " ".join(full_name_parts) if full_name_parts else None
-        super().save(*args, **kwargs)
+    @property
+    def contact_name(self):
+        """Generate full contact name from first_name and last_name"""
+        full_name_parts = []
+        if self.first_name:
+            full_name_parts.append(self.first_name)
+        if self.last_name:
+            full_name_parts.append(self.last_name)
+        return " ".join(full_name_parts) if full_name_parts else None
 
 class ClientContract(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

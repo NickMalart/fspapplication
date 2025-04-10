@@ -27,6 +27,14 @@ export interface FileDownloadResponse {
   error?: string;
 }
 
+// Interface for image resize options
+export interface ImageResizeOptions {
+  maxWidth?: number;
+  maxHeight?: number;
+  quality?: number;
+  outputFormat?: string;
+}
+
 export const fileService = {
   /**
    * Normalizes a file path to be used with CloudFront
@@ -55,28 +63,149 @@ export const fileService = {
   },
 
   /**
-   * Upload a file to the server
+   * Resizes an image client-side before upload to reduce server load and bandwidth
+   * 
+   * @param file The original file to resize
+   * @param options Resize options (width, height, quality)
+   * @returns Promise that resolves to the resized file
+   */
+  async resizeImage(file: File, options: ImageResizeOptions = {}): Promise<File> {
+    // Skip resizing if not an image
+    if (!file.type.startsWith('image/')) {
+      return file;
+    }
+    
+    const maxWidth = options.maxWidth || 800;
+    const maxHeight = options.maxHeight || 800;
+    const quality = options.quality || 0.85;
+    const outputFormat = options.outputFormat || 'image/jpeg';
+    
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        // Release object URL
+        URL.revokeObjectURL(img.src);
+        
+        // Calculate new dimensions while maintaining aspect ratio
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+        
+        // Skip resizing if image is already smaller than target dimensions
+        if (img.width <= maxWidth && img.height <= maxHeight && file.type === outputFormat) {
+          console.log('Image already smaller than target size, skipping resize');
+          resolve(file);
+          return;
+        }
+        
+        // Create canvas for resizing
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and resize image on canvas
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to blob with reduced quality
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Canvas to Blob conversion failed'));
+              return;
+            }
+            
+            // Create new file from blob
+            const resizedFile = new File(
+              [blob],
+              file.name,
+              { type: outputFormat, lastModified: Date.now() }
+            );
+            
+            // Use the formatFileSize method from this object
+            const formatSize = fileService.formatFileSize;
+            console.log(`Resized image from ${formatSize(file.size)} to ${formatSize(resizedFile.size)}`);
+            resolve(resizedFile);
+          },
+          outputFormat,
+          quality
+        );
+      };
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src);
+        reject(new Error('Error loading image'));
+      };
+    });
+  },
+  
+  /**
+   * Format file size in a human-readable format
+   * @param bytes File size in bytes
+   * @returns Formatted string (e.g., "2.5 MB")
+   */
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  },
+
+  /**
+   * Upload a file to the server with automatic image resizing
    * @param file The file to upload
-   * @param fileType The type of file (images, documents, etc.)
-   * @param module The module the file belongs to (profiles, posts, etc.)
-   * @returns Promise with upload result
+   * @param fileType The type category for the file
+   * @param module The module the file belongs to
+   * @param resizeOptions Optional image resize options (if it's an image)
+   * @returns Promise with the upload response
    */
   async uploadFile(
     file: File,
     fileType: string,
-    module: string
+    module: string,
+    resizeOptions?: ImageResizeOptions
   ): Promise<FileUploadResponse> {
     try {
+      // Automatically resize images before upload
+      let fileToUpload = file;
+      
+      if (file.type.startsWith('image/') && resizeOptions !== null) {
+        try {
+          fileToUpload = await this.resizeImage(file, resizeOptions || undefined);
+        } catch (err) {
+          console.error('Error resizing image:', err);
+          // Continue with original file if resize fails
+        }
+      }
+      
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', fileToUpload);
       formData.append('file_type', fileType);
       formData.append('module', module);
+      formData.append('use_chunked_upload', 'true');
 
       const response = await apiClient.post('/files/upload/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        withCredentials: true,
+        withCredentials: true
       });
 
       return response.data;

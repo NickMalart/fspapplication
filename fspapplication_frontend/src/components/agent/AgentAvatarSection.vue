@@ -137,8 +137,7 @@ const agentName = computed(() => {
 
 // Get agent initial for placeholder
 const agentInitial = computed(() => {
-  if (!props.agent?.name) return 'A';
-  return props.agent.name.charAt(0).toUpperCase();
+  return props.agent?.name ? props.agent.name.charAt(0).toUpperCase() : 'A';
 });
 
 // Function to generate consistent color based on agent name
@@ -195,11 +194,12 @@ const handleFileChange = async (event: Event) => {
   // Upload to S3
   isUploading.value = true;
   try {
-    // First upload the file to S3
+    // Upload the file to S3 with automatic resizing
     const uploadResult = await fileService.uploadFile(
       file,
       'images',
-      'agent'
+      'agent',
+      { maxWidth: 800, maxHeight: 800, quality: 0.85 }
     );
     
     if (!uploadResult.success || !uploadResult.path) {

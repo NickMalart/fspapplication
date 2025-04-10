@@ -126,9 +126,72 @@ class S3Client:
             args = extra_args or {}
             logger.debug(f"Uploading file to S3: {object_name} with args: {args}")
             
-            self.s3_client.upload_fileobj(file_obj, self.bucket_name, object_name, ExtraArgs=args)
-            logger.info(f"File {object_name} uploaded to S3 bucket {self.bucket_name}")
-            return True
+            # Use multipart upload for improved memory efficiency
+            # This prevents loading the entire file into memory at once
+            chunk_size = 5 * 1024 * 1024  # 5MB chunks (S3 minimum is 5MB)
+            
+            # Create a multipart upload
+            mpu = self.s3_client.create_multipart_upload(
+                Bucket=self.bucket_name,
+                Key=object_name,
+                **args
+            )
+            
+            upload_id = mpu['UploadId']
+            parts = []
+            
+            # Upload file in chunks
+            part_number = 1
+            
+            try:
+                # Handle both file-like objects and Django's UploadedFile
+                file_obj.seek(0)
+                
+                while True:
+                    # Read a chunk of data
+                    chunk = file_obj.read(chunk_size)
+                    if not chunk:
+                        break
+                    
+                    # Upload the part
+                    response = self.s3_client.upload_part(
+                        Body=chunk,
+                        Bucket=self.bucket_name,
+                        Key=object_name,
+                        PartNumber=part_number,
+                        UploadId=upload_id
+                    )
+                    
+                    # Add the part to our parts list
+                    parts.append({
+                        'PartNumber': part_number,
+                        'ETag': response['ETag']
+                    })
+                    
+                    part_number += 1
+                    logger.debug(f"Uploaded part {part_number-1} of file {object_name}")
+                
+                # Complete the multipart upload
+                self.s3_client.complete_multipart_upload(
+                    Bucket=self.bucket_name,
+                    Key=object_name,
+                    UploadId=upload_id,
+                    MultipartUpload={'Parts': parts}
+                )
+                
+                logger.info(f"File {object_name} uploaded to S3 bucket {self.bucket_name} in {part_number-1} parts")
+                return True
+                
+            except Exception as e:
+                # Abort the multipart upload if something goes wrong
+                logger.error(f"Error during multipart upload: {str(e)}")
+                self.s3_client.abort_multipart_upload(
+                    Bucket=self.bucket_name,
+                    Key=object_name,
+                    UploadId=upload_id
+                )
+                raise
+                
         except ClientError as e:
             logger.error(f"S3 ClientError uploading file: {e}")
             logger.error(traceback.format_exc())
@@ -284,4 +347,44 @@ class S3Client:
                 if len(path_parts) >= 3 and not module:
                     file['module'] = path_parts[2]
         
-        return files 
+        return files
+
+    def simple_upload(self, file_obj, object_name, extra_args=None):
+        """A simpler upload method for small files that doesn't use multipart upload"""
+        if object_name.startswith('/'):
+            object_name = object_name[1:]
+            
+        try:
+            args = extra_args or {}
+            logger.info(f"Using simple upload for small file: {object_name}")
+            
+            # Reset file pointer to beginning
+            file_obj.seek(0)
+            
+            # Get file size to log progress
+            try:
+                file_size = file_obj.size
+                logger.info(f"File size: {file_size/1024/1024:.2f}MB")
+            except AttributeError:
+                file_size = None
+                logger.info("File size unknown")
+            
+            # Stream directly to S3 using put_object to avoid loading entire file into memory
+            logger.info(f"Uploading file directly to S3 using streaming")
+            
+            # Upload directly using the file object as a streaming body
+            # This avoids reading the entire file content into memory
+            self.s3_client.upload_fileobj(
+                file_obj,
+                self.bucket_name,
+                object_name,
+                ExtraArgs=args
+            )
+            
+            logger.info(f"Simple upload successful for {object_name}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error during simple upload: {str(e)}")
+            logger.error(traceback.format_exc())
+            return False 

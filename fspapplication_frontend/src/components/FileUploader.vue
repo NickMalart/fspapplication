@@ -92,6 +92,22 @@ export default defineComponent({
     disabled: {
       type: Boolean,
       default: false
+    },
+    resizeImages: {
+      type: Boolean,
+      default: true
+    },
+    maxImageWidth: {
+      type: Number,
+      default: 1200
+    },
+    maxImageHeight: {
+      type: Number,
+      default: 1200
+    },
+    imageQuality: {
+      type: Number,
+      default: 0.8
     }
   },
   emits: ['upload-success', 'upload-error', 'file-change'],
@@ -167,8 +183,20 @@ export default defineComponent({
       // Create temporary preview
       createPreview(file);
       
+      // If it's an image and resizing is enabled, resize it first
+      let fileToUpload = file;
+      if (props.resizeImages && isImageFile(file)) {
+        try {
+          fileToUpload = await resizeImage(file);
+          console.log(`Resized image from ${formatFileSize(file.size)} to ${formatFileSize(fileToUpload.size)}`);
+        } catch (err) {
+          console.error('Error resizing image:', err);
+          // Continue with original file if resize fails
+        }
+      }
+      
       // Upload file
-      await uploadFile(file);
+      await uploadFile(fileToUpload);
     };
     
     const isAcceptedFileType = (file: File, accept: string): boolean => {
@@ -251,6 +279,76 @@ export default defineComponent({
     const isImage = (file: {name: string}) => {
       const ext = file.name.split('.').pop()?.toLowerCase();
       return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '');
+    };
+    
+    const isImageFile = (file: File): boolean => {
+      return file.type.startsWith('image/');
+    };
+    
+    const resizeImage = (file: File): Promise<File> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        
+        img.onload = () => {
+          // Release object URL
+          URL.revokeObjectURL(img.src);
+          
+          // Calculate new dimensions while maintaining aspect ratio
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > props.maxImageWidth) {
+            height = (height * props.maxImageWidth) / width;
+            width = props.maxImageWidth;
+          }
+          
+          if (height > props.maxImageHeight) {
+            width = (width * props.maxImageHeight) / height;
+            height = props.maxImageHeight;
+          }
+          
+          // Create canvas for resizing
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Draw and resize image on canvas
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Could not get canvas context'));
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to blob with reduced quality
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('Canvas to Blob conversion failed'));
+                return;
+              }
+              
+              // Create new file from blob
+              const resizedFile = new File(
+                [blob],
+                file.name,
+                { type: file.type, lastModified: Date.now() }
+              );
+              
+              resolve(resizedFile);
+            },
+            file.type,
+            props.imageQuality
+          );
+        };
+        
+        img.onerror = () => {
+          URL.revokeObjectURL(img.src);
+          reject(new Error('Error loading image'));
+        };
+      });
     };
     
     watch(() => props.disabled, (newVal) => {

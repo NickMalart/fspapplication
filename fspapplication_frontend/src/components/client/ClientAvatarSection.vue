@@ -195,11 +195,12 @@ const handleFileChange = async (event: Event) => {
   // Upload to S3
   isUploading.value = true;
   try {
-    // First upload the file to S3
+    // First upload the file to S3 with automatic resizing
     const uploadResult = await fileService.uploadFile(
       file,
       'images',
-      'client'
+      'client',
+      { maxWidth: 800, maxHeight: 800, quality: 0.85 }
     );
     
     if (!uploadResult.success || !uploadResult.path) {
