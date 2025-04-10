@@ -284,7 +284,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { convertObjectKeysToCamel } from '@/utils/caseConverter';
 import debounce from 'lodash/debounce';
@@ -306,6 +305,8 @@ interface Warehouse {
   country: string | null;
   latitude: number | null;
   longitude: number | null;
+  firstName: string | null;
+  lastName: string | null;
   contactName: string | null;
   contactPhone: string | null;
   contactEmail: string | null;
@@ -319,7 +320,6 @@ interface Warehouse {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
-const router = useRouter();
 const props = defineProps<{
   clientId: string;
   clientName: string;
@@ -453,7 +453,7 @@ const handleWarehouseUpdated = (updatedWarehouse: Warehouse) => {
   closeDetailsModal();
 };
 
-const handleWarehouseCreated = (newWarehouse: Warehouse) => {
+const handleWarehouseCreated = () => {
   // Refresh the warehouses list
   fetchWarehouses();
 };

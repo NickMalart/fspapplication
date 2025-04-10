@@ -225,12 +225,12 @@ import ComponentCard from '@/components/common/ComponentCard.vue';
 import UserTypeProfileEditModal from '@/components/administration/accounts/EditUserTypeProfileAdminModal.vue';
 import { convertObjectKeysToCamel } from '@/utils/caseConverter';
 import { userProfileAdminService } from '@/service/userProfileAdminService';
-import { type AgentProfile, type ClientProfile, type EmployeeProfile, type UserProfileAdmin } from '@/stores/userProfileAdminStore';
+import { type AgentProfileAdmin, type ClientProfile, type EmployeeProfile, type UserProfileAdmin } from '@/stores/userProfileAdminStore';
 
 // Define interfaces for the different profile types
 interface AgentProfileData {
   companyName?: string;
-  abn?: string | null;
+  abn?: string;
   yearsOfExperience?: number;
 }
 
@@ -317,15 +317,6 @@ const formatDate = (dateString?: string) => {
   }
 };
 
-// Check if in development mode - safe to use in script section
-const isDevelopment = computed(() => {
-  try {
-    return import.meta.env.DEV === true;
-  } catch (e) {
-    return false;
-  }
-});
-
 // For debugging
 const userTypeDebug = computed(() => {
   console.log('User data:', props.userData);
@@ -377,7 +368,7 @@ const initializeProfileData = () => {
     const profile = convertObjectKeysToCamel(props.userData.agentProfile);
     agentProfileData.value = { 
       companyName: profile.companyName || '',
-      abn: profile.abn || null,
+      abn: profile.abn || '',
       yearsOfExperience: profile.yearsOfExperience || 0
     };
   } else if (isClient.value && props.userData.clientProfile) {
@@ -428,7 +419,7 @@ const changeUserType = async () => {
     
     // Then set only the new user type's profile to an empty object
     if (selectedUserType.value === 'agent') {
-      updatedUser.agentProfile = {} as AgentProfile; // Type assertion for empty object
+      updatedUser.agentProfile = {} as AgentProfileAdmin; // Type assertion for empty object
     } else if (selectedUserType.value === 'client') {
       updatedUser.clientProfile = {} as ClientProfile; // Type assertion for empty object
     } else if (selectedUserType.value === 'employee') {
@@ -464,7 +455,7 @@ const handleAgentSave = async (updatedData: AgentProfileData) => {
     // Create a properly typed agent profile object
     const agentProfile = {
       companyName: updatedData.companyName || '',
-      abn: updatedData.abn || null,
+      abn: updatedData.abn || '', // Ensure abn is never null
       yearsOfExperience: updatedData.yearsOfExperience || 0
     };
     
@@ -523,7 +514,7 @@ const handleClientSave = async (updatedData: ClientProfileData) => {
       // Ensure other profiles are properly typed
       agentProfile: props.userData.agentProfile ? {
         companyName: props.userData.agentProfile.companyName || '',
-        abn: props.userData.agentProfile.abn || null,
+        abn: props.userData.agentProfile.abn || '', // Ensure abn is never null
         yearsOfExperience: props.userData.agentProfile.yearsOfExperience || 0
       } : undefined,
       employeeProfile: props.userData.employeeProfile ? {
@@ -572,7 +563,7 @@ const handleEmployeeSave = async (updatedData: EmployeeProfileData) => {
       // Ensure other profiles are properly typed
       agentProfile: props.userData.agentProfile ? {
         companyName: props.userData.agentProfile.companyName || '',
-        abn: props.userData.agentProfile.abn || null,
+        abn: props.userData.agentProfile.abn || '', // Ensure abn is never null
         yearsOfExperience: props.userData.agentProfile.yearsOfExperience || 0
       } : undefined,
       clientProfile: props.userData.clientProfile ? {
