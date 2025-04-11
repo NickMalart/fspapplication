@@ -362,15 +362,10 @@ const generateDefaultLogo = (name) => {
 // Function to get proper logo URL
 const getLogoUrl = (client) => {
   if (!client.logo) {
-    return generateDefaultLogo(client.name)
+    // Return a default or placeholder if no logo path exists
+    return '/images/logo/default-company-logo.png';
   }
-  
-  // If it's already a full CloudFront URL, use it as-is
-  if (client.logo.startsWith('https://')) {
-    return client.logo
-  }
-  
-  // Otherwise, construct the CloudFront URL
-  return fileService.getCloudFrontUrl(client.logo)
+  // Use the correct file service method
+  return fileService.getPublicFileUrl(client.logo);
 }
 </script> 

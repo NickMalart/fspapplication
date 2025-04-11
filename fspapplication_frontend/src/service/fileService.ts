@@ -303,12 +303,23 @@ export const fileService = {
   },
 
   /**
-   * Get CloudFront URL for a file path
-   * @param path The file path
-   * @returns Full CloudFront URL
+   * Get the public URL for a file stored in Tigris using the custom asset domain.
+   * @param path The relative path of the file as stored (e.g., 'images/company/logo.png')
+   * @returns The full public URL (e.g., 'https://frosty-bird-4733.fly.storage.tigris.dev/dev/images/company/logo.png')
    */
-  getCloudFrontUrl(path: string): string {
-    const cleanPath = this.normalizePath(path);
-    return `https://d1elaz1f509qmb.cloudfront.net/${cleanPath}`;
+  getPublicFileUrl(path: string): string {
+    if (!path) {
+      // Return a default or placeholder image URL if the path is empty
+      return '/images/logo/default-company-logo.png'; 
+    }
+
+    // Use the base Tigris domain from environment
+    const baseDomain = import.meta.env.VITE_TIGRIS_ENDPOINT || 'https://frosty-bird-4733.fly.storage.tigris.dev';
+
+    // Ensure the base path includes 'dev' if it's not already present
+    const cleanPath = path.startsWith('dev/') ? path : `dev/${path}`;
+
+    // Construct the full URL
+    return `${baseDomain}/${cleanPath}`;
   }
 }; 

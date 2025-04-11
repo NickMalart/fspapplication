@@ -164,19 +164,15 @@ const companyInitial = computed(() => {
   return props.company.name.charAt(0).toUpperCase();
 });
 
-// Create a computed property for the logo URL
+// Create a computed property for the logo URL using Tigris
 const logoUrl = computed(() => {
   if (!props.company?.logo) return null;
   
   const logoPath = props.company.logo;
   
-  // If it's already a CloudFront URL, use it as-is
-  if (logoPath.startsWith('https://d1elaz1f509qmb.cloudfront.net/')) {
-    return logoPath;
-  }
-  
-  // Otherwise, construct the CloudFront URL directly
-  return fileService.getCloudFrontUrl(logoPath);
+  // Assuming company.logo stores the relative path in Tigris
+  // and fileService.getPublicFileUrl constructs the full URL with the custom domain
+  return fileService.getPublicFileUrl(logoPath); 
 });
 
 // Trigger file input click
@@ -204,7 +200,7 @@ const removeLogo = async (event: Event) => {
     tempLogoUrl.value = null;
     
     // Update favicon to default
-    updateFavicon(null);
+    updateFavicon(null); // This will now use the updated updateFavicon logic
     
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : 'An error occurred while removing logo';
@@ -213,16 +209,16 @@ const removeLogo = async (event: Event) => {
   }
 };
 
-// Function to update favicon
+// Function to update favicon using Tigris URL
 const updateFavicon = (logoPath: string | null) => {
   const favicon = document.getElementById('favicon') as HTMLLinkElement;
   if (favicon) {
     if (logoPath) {
-      // Use the company logo
-      favicon.href = fileService.getCloudFrontUrl(logoPath);
+      // Use the company logo URL from Tigris with custom domain
+      favicon.href = fileService.getPublicFileUrl(logoPath); // Use the updated service method
     } else {
       // Reset to default logo
-      favicon.href = '/images/logo/default-company-logo.png';
+      favicon.href = '/images/logo/default-company-logo.png'; // Keep default as is
     }
   }
 };
@@ -245,52 +241,47 @@ const handleFileChange = async (event: Event) => {
     return;
   }
   
-  // Clear any previous errors
   uploadError.value = '';
   
-  // Create a temporary preview
+  // Temporary preview logic remains the same
   const reader = new FileReader();
   reader.onload = (e) => {
     if (e.target?.result) {
-      // Preview is temporary, no need to update Pinia yet
       tempLogoUrl.value = e.target.result as string;
     }
   };
   reader.readAsDataURL(file);
   
-  // Upload to S3
+  // Upload to Tigris via fileService
   isUploading.value = true;
   try {
-    // First upload the file to S3
+    // fileService.uploadFile should now handle Tigris upload
     const uploadResult = await fileService.uploadFile(
       file,
-      'images',
-      'company',
-      { maxWidth: 800, maxHeight: 800, quality: 0.85 }
+      'images', // Adjust bucket/prefix as needed for Tigris
+      'company', // Adjust sub-path as needed
+      { maxWidth: 800, maxHeight: 800, quality: 0.85 } 
     );
     
     if (!uploadResult.success || !uploadResult.path) {
-      throw new Error(uploadResult.error || 'Failed to upload logo to S3');
+      throw new Error(uploadResult.error || 'Failed to upload logo to Tigris');
     }
     
-    // Then update the company profile with the S3 path
+    // Update the company profile with the Tigris path
     await companyStore.updateCompanyProfile({
-      logo: uploadResult.path // Store the path in the database
+      logo: uploadResult.path // Store the relative path from Tigris
     });
     
-    // Update favicon immediately
-    updateFavicon(uploadResult.path);
+    // Update favicon immediately using the new path
+    updateFavicon(uploadResult.path); // Uses the updated updateFavicon
     
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : 'An error occurred while updating logo';
-    
-    // Clear temporary logo
     tempLogoUrl.value = null;
   } finally {
     isUploading.value = false;
   }
   
-  // Reset input value to allow selecting the same file again
   if (fileInput.value) fileInput.value.value = '';
 };
 

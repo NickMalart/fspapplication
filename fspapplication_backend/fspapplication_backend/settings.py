@@ -244,13 +244,8 @@ TIGRIS_ACCESS_KEY_ID = os.environ.get('TIGRIS_ACCESS_KEY_ID')
 TIGRIS_SECRET_ACCESS_KEY = os.environ.get('TIGRIS_SECRET_ACCESS_KEY')
 TIGRIS_STORAGE_BUCKET_NAME = os.environ.get('TIGRIS_STORAGE_BUCKET_NAME')
 TIGRIS_REGION_NAME = os.environ.get('TIGRIS_REGION_NAME')
-TIGRIS_ENDPOINT_URL = os.environ.get('TIGRIS_ENDPOINT_URL_S3') # Using TIGRIS_ prefix
-# Custom domain format as requested: bucket_name.endpoint_url
-TIGRIS_ENDPOINT_URL_S3_VAL = os.environ.get('TIGRIS_ENDPOINT_URL_S3', '') # Get endpoint value
-if TIGRIS_ENDPOINT_URL_S3_VAL and TIGRIS_STORAGE_BUCKET_NAME: # Using TIGRIS_ prefix
-    TIGRIS_S3_CUSTOM_DOMAIN = f'{TIGRIS_STORAGE_BUCKET_NAME}.{TIGRIS_ENDPOINT_URL_S3_VAL}' # Using TIGRIS_ prefix
-else:
-    TIGRIS_S3_CUSTOM_DOMAIN = '' # Handle case where env vars might be missing
+TIGRIS_ENDPOINT_URL = os.environ.get('TIGRIS_ENDPOINT_URL_S3') 
+TIGRIS_ENDPOINT_URL_CUSTOM_DOMAIN = os.environ.get('TIGRIS_ENDPOINT_URL_CUSTOM_DOMAIN')
 TIGRIS_DEFAULT_ACL = os.environ.get('TIGRIS_DEFAULT_ACL', 'private') # Using TIGRIS_ prefix
 TIGRIS_S3_OBJECT_PARAMETERS = { # Using TIGRIS_ prefix
     'CacheControl': 'max-age=86400',

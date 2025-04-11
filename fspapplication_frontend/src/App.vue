@@ -26,7 +26,7 @@ const updateFaviconAndTitle = () => {
     
     // Update favicon if company has a logo
     if (company.logo) {
-      const logoUrl = fileService.getCloudFrontUrl(company.logo);
+      const logoUrl = fileService.getPublicFileUrl(company.logo);
       const favicon = document.getElementById('favicon') as HTMLLinkElement;
       if (favicon) {
         favicon.href = logoUrl;

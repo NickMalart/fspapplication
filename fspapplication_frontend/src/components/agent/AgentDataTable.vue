@@ -129,7 +129,7 @@
                 <tr v-else v-for="agent in paginatedAgents" :key="agent.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
                   <td class="px-4 py-3 w-16">
                     <img 
-                      :src="getAvatarUrl(agent)" 
+                      :src="getLogoUrl(agent)" 
                       :alt="`${agent.name} logo`"
                       class="h-10 w-10 rounded-full object-cover mx-auto border border-gray-200 dark:border-gray-700"
                       @error="(e: Event) => handleImageError(e, agent.name)"
@@ -352,19 +352,14 @@ const generateDefaultAvatar = (name: string) => {
 }
 
 // Function to get proper avatar URL
-const getAvatarUrl = (agent: Agent) => {
+const getLogoUrl = (agent: Agent) => {
   if (!agent.logo) {
-    return generateDefaultAvatar(agent.name)
+    // Return a default or placeholder if no logo path exists
+    return '/images/logo/default-company-logo.png'; // Adjust the path as needed
   }
-  
-  // If it's already a full CloudFront URL, use it as-is
-  if (agent.logo.startsWith('https://')) {
-    return agent.logo
-  }
-  
-  // Otherwise, construct the CloudFront URL
-  return fileService.getCloudFrontUrl(agent.logo)
-}
+  // Use the correct file service method for public URLs
+  return fileService.getPublicFileUrl(agent.logo);
+};
 
 // Handle image error
 const handleImageError = (event: Event, name: string) => {

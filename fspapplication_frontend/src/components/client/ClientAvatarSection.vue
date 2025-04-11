@@ -14,7 +14,7 @@
         />
         <img
           v-else-if="client?.logo"
-          :src="fileService.getCloudFrontUrl(client.logo)"
+          :src="fileService.getPublicFileUrl(client.logo)"
           :alt="`${clientName}'s logo`"
           class="h-full w-full object-cover transition-opacity group-hover:opacity-80"
         />

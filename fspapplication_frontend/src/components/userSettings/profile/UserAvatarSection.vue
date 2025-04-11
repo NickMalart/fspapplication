@@ -163,19 +163,15 @@ const fullName = computed(() => {
   return `${props.user.firstName} ${props.user.lastName}`.trim() || 'User';
 });
 
-// Create a computed property for the avatar URL
+// Computed property to get the avatar URL
 const avatarUrl = computed(() => {
-  if (!props.user?.avatar) return null;
-  
-  const avatarPath = props.user.avatar;
-  
-  // If it's already a CloudFront URL, use it as-is
-  if (avatarPath.startsWith('https://d1elaz1f509qmb.cloudfront.net/')) {
-    return avatarPath;
+  const avatarPath = props.user?.avatar;
+  if (!avatarPath) {
+    // Return a default avatar path or null
+    return '/images/user/user-avatar.png'; // Adjust the path as needed
   }
-  
-  // Otherwise, construct the CloudFront URL directly
-  return fileService.getCloudFrontUrl(avatarPath);
+  // Use the file service to get the public URL
+  return fileService.getPublicFileUrl(avatarPath);
 });
 
 // Trigger file input click

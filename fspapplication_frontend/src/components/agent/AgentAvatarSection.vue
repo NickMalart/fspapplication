@@ -14,7 +14,7 @@
         />
         <img
           v-else-if="agent?.logo"
-          :src="fileService.getCloudFrontUrl(agent.logo)"
+          :src="fileService.getPublicFileUrl(agent.logo)"
           :alt="`${agentName}'s logo`"
           class="h-full w-full object-cover transition-opacity group-hover:opacity-80"
         />

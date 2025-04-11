@@ -72,8 +72,11 @@ export function useSidebarProvider() {
   const companyStore = usecompanyStore()
 
   const companyLogoUrl = computed(() => {
-    if (!companyStore.companyProfile?.logo) return '/images/logo/default-company-logo.png'
-    return fileService.getCloudFrontUrl(companyStore.companyProfile.logo)
+    if (companyStore.companyProfile?.logo) {
+      return fileService.getPublicFileUrl(companyStore.companyProfile.logo)
+    } else {
+      return '/images/logo/default-company-logo.png'
+    }
   })
 
   const companyName = computed(() => {

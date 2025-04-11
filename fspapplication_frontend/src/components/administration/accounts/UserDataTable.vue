@@ -329,7 +329,7 @@ const preloadCustomAvatars = (usersWithAvatars) => {
     if (avatarPath.startsWith('https://d1elaz1f509qmb.cloudfront.net/')) {
       avatarUrl = avatarPath
     } else {
-      avatarUrl = fileService.getCloudFrontUrl(avatarPath)
+      avatarUrl = fileService.getPublicFileUrl(avatarPath)
     }
     
     // Initialize with the URL even before loading completes
@@ -373,7 +373,7 @@ const getAvatarUrl = (user) => {
     avatarUrl = avatarPath
   } else {
     // Otherwise, construct the CloudFront URL
-    avatarUrl = fileService.getCloudFrontUrl(avatarPath)
+    avatarUrl = fileService.getPublicFileUrl(avatarPath)
   }
   
   // Cache for future use

@@ -24,10 +24,16 @@ import { fileService } from '@/service/fileService';
 
 const companyStore = usecompanyStore();
 
-// Get the company logo URL or null if not available
-const companyLogoUrl = computed(() => {
-  if (!companyStore.companyProfile?.logo) return null;
-  return fileService.getCloudFrontUrl(companyStore.companyProfile.logo);
+// Computed property for the logo URL
+const logoUrl = computed(() => {
+  // Use the tenant-specific logo if available, otherwise fallback to default
+  if (companyStore.companyProfile?.logo) {
+    // Use the file service to get the correct URL
+    return fileService.getPublicFileUrl(companyStore.companyProfile.logo);
+  } else {
+    // Provide a fallback path to a default logo in the public directory
+    return '/images/logo/default-company-logo.png';
+  }
 });
 
 // Get company name

@@ -83,19 +83,15 @@ const auth = useAuthStore()
 const userStore = useUserStore()
 const { completeUser } = storeToRefs(userStore)
 
-// Create a computed property for the avatar URL
+// Computed property to get the avatar URL
 const avatarUrl = computed(() => {
-  if (!completeUser.value?.avatar) return null;
-  
-  const avatarPath = completeUser.value.avatar;
-  
-  // If it's already a CloudFront URL, use it as-is
-  if (avatarPath.startsWith('https://d1elaz1f509qmb.cloudfront.net/')) {
-    return avatarPath;
+  const avatarPath = userStore.user?.profile?.avatar;
+  if (!avatarPath) {
+    // Use a default avatar if none is set
+    return '/images/user/user-avatar.png';
   }
-  
-  // Otherwise, construct the CloudFront URL directly
-  return fileService.getCloudFrontUrl(avatarPath);
+  // Get the public URL using the file service
+  return fileService.getPublicFileUrl(avatarPath);
 });
 
 const menuItems = [
