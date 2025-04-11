@@ -138,7 +138,7 @@
                       :src="getLogoUrl(client)" 
                       :alt="`${client.name} logo`"
                       class="h-10 w-10 rounded-full object-cover mx-auto border border-gray-200 dark:border-gray-700"
-                      @error="$event.target.src = generateDefaultLogo(client.name)"
+                      referrerpolicy="no-referrer" 
                     />
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-900 dark:text-white/90">
@@ -361,11 +361,11 @@ const generateDefaultLogo = (name) => {
 
 // Function to get proper logo URL
 const getLogoUrl = (client) => {
-  if (!client.logo) {
-    // Return a default or placeholder if no logo path exists
-    return '/images/logo/default-company-logo.png';
+  if (client.logo) {
+    // If logo path exists, use the file service to get the public URL
+    return fileService.getPublicFileUrl(client.logo);
   }
-  // Use the correct file service method
-  return fileService.getPublicFileUrl(client.logo);
+  // Otherwise, generate the default SVG logo directly
+  return generateDefaultLogo(client.name || 'Client');
 }
 </script> 

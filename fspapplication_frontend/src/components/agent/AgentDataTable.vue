@@ -132,7 +132,7 @@
                       :src="getLogoUrl(agent)" 
                       :alt="`${agent.name} logo`"
                       class="h-10 w-10 rounded-full object-cover mx-auto border border-gray-200 dark:border-gray-700"
-                      @error="(e: Event) => handleImageError(e, agent.name)"
+                      referrerpolicy="no-referrer"
                     />
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-900 dark:text-white/90">
@@ -353,20 +353,12 @@ const generateDefaultAvatar = (name: string) => {
 
 // Function to get proper avatar URL
 const getLogoUrl = (agent: Agent) => {
-  if (!agent.logo) {
-    // Return a default or placeholder if no logo path exists
-    return '/images/logo/default-company-logo.png'; // Adjust the path as needed
+  if (agent.logo) {
+    // If logo path exists, use the file service to get the public URL
+    return fileService.getPublicFileUrl(agent.logo);
   }
-  // Use the correct file service method for public URLs
-  return fileService.getPublicFileUrl(agent.logo);
-};
-
-// Handle image error
-const handleImageError = (event: Event, name: string) => {
-  const imgElement = event.target as HTMLImageElement;
-  if (imgElement) {
-    imgElement.src = generateDefaultAvatar(name);
-  }
+  // Otherwise, generate the default SVG avatar directly
+  return generateDefaultAvatar(agent.name || 'Agent');
 };
 
 // Update the template to use the correct field names
