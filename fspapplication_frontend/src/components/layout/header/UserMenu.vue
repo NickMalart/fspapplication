@@ -85,10 +85,10 @@ const { completeUser } = storeToRefs(userStore)
 
 // Computed property to get the avatar URL
 const avatarUrl = computed(() => {
-  const avatarPath = userStore.user?.profile?.avatar;
+  const avatarPath = completeUser.value?.avatar;
   if (!avatarPath) {
-    // Use a default avatar if none is set
-    return '/images/user/user-avatar.png';
+    // Return null instead of a default path to trigger the v-else fallback
+    return null;
   }
   // Get the public URL using the file service
   return fileService.getPublicFileUrl(avatarPath);

@@ -313,10 +313,29 @@ export const fileService = {
       return '/images/logo/default-company-logo.png'; 
     }
 
-    // Use the base Tigris domain from environment
-    const baseDomain = import.meta.env.VITE_TIGRIS_ENDPOINT || 'https://frosty-bird-4733.fly.storage.tigris.dev';
+    // Use the correct environment variables
+    const endpointUrl = import.meta.env.VITE_AWS_ENDPOINT_URL_S3; // e.g., https://fly.storage.tigris.dev
+    const bucketName = import.meta.env.VITE_AWS_STORAGE_BUCKET_NAME; // e.g., frosty-bird-4733
 
-    // Ensure the base path includes 'dev' if it's not already present
+    if (!endpointUrl || !bucketName) {
+      console.error('Tigris environment variables (VITE_AWS_ENDPOINT_URL_S3, VITE_AWS_STORAGE_BUCKET_NAME) are not set.');
+      // Fallback or return an error indicator
+      return '/images/error-loading.png'; // Or some other appropriate fallback
+    }
+
+    // Extract hostname from the endpoint URL
+    let endpointHostname = '';
+    try {
+      endpointHostname = new URL(endpointUrl).hostname;
+    } catch (e) {
+      console.error('Invalid VITE_AWS_ENDPOINT_URL_S3 format:', endpointUrl);
+      return '/images/error-loading.png';
+    }
+
+    // Construct the base domain in the format: https://{bucket}.{hostname}
+    const baseDomain = `https://${bucketName}.${endpointHostname}`;
+    
+    // Ensure the path starts with 'dev/' (assuming this is still required by your storage structure)
     const cleanPath = path.startsWith('dev/') ? path : `dev/${path}`;
 
     // Construct the full URL
