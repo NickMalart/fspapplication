@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import FileUpload
-from .s3_utils import S3Client
+from .tigris_utils import TigrisClient
 
 class FileUploadSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
@@ -17,8 +17,8 @@ class FileUploadSerializer(serializers.ModelSerializer):
     
     def get_url(self, obj):
         """Generate a presigned URL for the file"""
-        s3_client = S3Client()
-        return s3_client.generate_presigned_url(obj.path)
+        tigris_client = TigrisClient()
+        return tigris_client.generate_presigned_url(obj.path)
     
     def get_filename(self, obj):
         """Extract just the filename from the path"""

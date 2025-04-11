@@ -14,7 +14,7 @@ from django.conf import settings
 
 from .models import FileUpload
 from .serializers import FileUploadSerializer, FileUploadCreateSerializer
-from .s3_utils import S3Client, print_aws_settings
+from .tigris_utils import TigrisClient, print_tigris_settings
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -64,24 +64,24 @@ class FileUploadView(APIView):
                 logger.debug(f"Tenant ID: {tenant_id}, File type: {file_type}, Module: {module}")
                 logger.debug(f"File details - Name: {file_obj.name}, Size: {file_obj.size}, Content type: {getattr(file_obj, 'content_type', None)}")
                 
-                # Upload to S3
-                s3_client = S3Client()
-                logger.info("Initialized S3Client")
+                # Upload using renamed client
+                tigris_client = TigrisClient()
+                logger.info("Initialized TigrisClient")
                 
                 try:
-                    result = s3_client.tenant_upload(
+                    result = tigris_client.tenant_upload(
                         file_obj=file_obj,
                         tenant_slug=tenant_id,  # Use tenant_id instead of tenant.slug
                         file_type=file_type,
                         module=module
                     )
-                    logger.info(f"S3 upload result: {result}")
+                    logger.info(f"Tigris upload result: {result}")
                 except Exception as e:
-                    logger.error(f"S3 upload error: {str(e)}")
+                    logger.error(f"Tigris upload error: {str(e)}")
                     logger.error(traceback.format_exc())
                     return Response({
                         'success': False,
-                        'error': f"S3 upload error: {str(e)}"
+                        'error': f"Storage upload error: {str(e)}"
                     }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 
                 if result['success']:
@@ -116,7 +116,7 @@ class FileUploadView(APIView):
                     logger.info("File upload successful")
                     return Response(response_data, status=status.HTTP_201_CREATED)
                 else:
-                    logger.error(f"S3 upload failed: {result.get('error', 'Unknown error')}")
+                    logger.error(f"Tigris upload failed: {result.get('error', 'Unknown error')}")
                     return Response({
                         'success': False,
                         'error': result.get('error', 'Upload failed')
@@ -176,10 +176,10 @@ class FileDeleteView(APIView):
                 'error': 'File not found'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        # Delete from S3
+        # Delete using renamed client
         try:
-            s3_client = S3Client()
-            result = s3_client.delete_file(path)
+            tigris_client = TigrisClient()
+            result = tigris_client.delete_file(path)
             
             if result:
                 # Delete the database record
@@ -188,7 +188,7 @@ class FileDeleteView(APIView):
             else:
                 return Response({
                     'success': False,
-                    'error': 'Failed to delete file from S3'
+                    'error': 'Failed to delete file from storage'
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             logger.error(f"Error deleting file: {str(e)}")
@@ -216,17 +216,14 @@ class FileDownloadView(APIView):
                 'error': 'Path is required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Generate URL (CloudFront if configured, otherwise S3)
-        s3_client = S3Client()
+        # Generate URL using renamed client
+        tigris_client = TigrisClient()
         expiration = int(request.query_params.get('expiration', 3600))  # Default 1 hour
-        url = s3_client.generate_presigned_url(path, expiration)
+        url = tigris_client.generate_presigned_url(path, expiration)
         
         if url:
-            # Log which URL type we're using
-            if hasattr(s3_client, 'use_cloudfront') and s3_client.use_cloudfront:
-                logger.info(f"Serving file via CloudFront: {path}")
-            else:
-                logger.info(f"Serving file via S3 presigned URL: {path}")
+            # Log which URL type we're using (Always Tigris presigned now)
+            logger.info(f"Serving file via Tigris presigned URL: {path}")
                 
             response = Response({
                 'success': True,
@@ -247,30 +244,31 @@ class FileDownloadView(APIView):
 
 
 class DiagnosticView(APIView):
-    """View for diagnosing AWS S3 issues"""
+    """View for diagnosing Tigris S3 compatible storage issues"""
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
         try:
-            # Get environment variables 
+            # Get environment variables (using TIGRIS_ prefixes)
             env_vars = {
-                'AWS_ACCESS_KEY_ID': os.environ.get('AWS_ACCESS_KEY_ID', 'Not set in env'),
-                'AWS_SECRET_ACCESS_KEY': os.environ.get('AWS_SECRET_ACCESS_KEY', 'Not set in env') 
+                'TIGRIS_ACCESS_KEY_ID': os.environ.get('TIGRIS_ACCESS_KEY_ID', 'Not set in env'),
+                'TIGRIS_SECRET_ACCESS_KEY': os.environ.get('TIGRIS_SECRET_ACCESS_KEY', 'Not set in env') 
                                          and '****' or 'Not set in env',
-                'AWS_STORAGE_BUCKET_NAME': os.environ.get('AWS_STORAGE_BUCKET_NAME', 'Not set in env'),
-                'AWS_S3_REGION_NAME': os.environ.get('AWS_S3_REGION_NAME', 'Not set in env'),
-                'CLOUDFRONT_DOMAIN': os.environ.get('CLOUDFRONT_DOMAIN', 'Not set in env'),
+                'TIGRIS_STORAGE_BUCKET_NAME': os.environ.get('TIGRIS_STORAGE_BUCKET_NAME', 'Not set in env'),
+                'TIGRIS_REGION_NAME': os.environ.get('TIGRIS_REGION_NAME', 'Not set in env'),
+                'TIGRIS_ENDPOINT_URL': os.environ.get('TIGRIS_ENDPOINT_URL', 'Not set in env'),
             }
             
-            # Get settings
+            # Get settings (using TIGRIS_ prefixes)
             settings_vars = {
-                'AWS_ACCESS_KEY_ID': getattr(settings, 'AWS_ACCESS_KEY_ID', 'Not set in settings') 
-                                      and settings.AWS_ACCESS_KEY_ID[:4] + '****' or 'Not set in settings',
-                'AWS_SECRET_ACCESS_KEY': getattr(settings, 'AWS_SECRET_ACCESS_KEY', 'Not set in settings') 
+                'TIGRIS_ACCESS_KEY_ID': getattr(settings, 'TIGRIS_ACCESS_KEY_ID', 'Not set in settings') 
+                                      and settings.TIGRIS_ACCESS_KEY_ID[:4] + '****' or 'Not set in settings',
+                'TIGRIS_SECRET_ACCESS_KEY': getattr(settings, 'TIGRIS_SECRET_ACCESS_KEY', 'Not set in settings') 
                                           and '****' or 'Not set in settings',
-                'AWS_STORAGE_BUCKET_NAME': getattr(settings, 'AWS_STORAGE_BUCKET_NAME', 'Not set in settings'),
-                'AWS_S3_REGION_NAME': getattr(settings, 'AWS_S3_REGION_NAME', 'Not set in settings'),
-                'CLOUDFRONT_DOMAIN': getattr(settings, 'CLOUDFRONT_DOMAIN', 'Not set in settings'),
+                'TIGRIS_STORAGE_BUCKET_NAME': getattr(settings, 'TIGRIS_STORAGE_BUCKET_NAME', 'Not set in settings'),
+                'TIGRIS_REGION_NAME': getattr(settings, 'TIGRIS_REGION_NAME', 'Not set in settings'),
+                'TIGRIS_ENDPOINT_URL': getattr(settings, 'TIGRIS_ENDPOINT_URL', 'Not set in settings'),
+                'TIGRIS_S3_CUSTOM_DOMAIN': getattr(settings, 'TIGRIS_S3_CUSTOM_DOMAIN', 'Not set in settings'),
             }
             
             # Get python version
@@ -280,73 +278,51 @@ class DiagnosticView(APIView):
             import boto3
             boto3_version = boto3.__version__
             
-            # Test S3 connection
-            s3_connection_test = "Not tested"
-            s3_error = None
+            # Test S3 (Tigris) connection (using TIGRIS_ settings and endpoint_url)
+            tigris_connection_test = "Not tested"
+            tigris_error = None
             try:
-                s3_client = boto3.client(
+                # Use TIGRIS_ settings and importantly, endpoint_url
+                test_boto_client = boto3.client(
                     's3',
-                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                    region_name=settings.AWS_S3_REGION_NAME
+                    aws_access_key_id=settings.TIGRIS_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.TIGRIS_SECRET_ACCESS_KEY,
+                    region_name=settings.TIGRIS_REGION_NAME,
+                    endpoint_url=settings.TIGRIS_ENDPOINT_URL 
                 )
-                buckets = s3_client.list_buckets()
-                bucket_names = [b['Name'] for b in buckets.get('Buckets', [])]
-                s3_connection_test = f"Success. Found {len(bucket_names)} buckets."
-                s3_bucket_exists = settings.AWS_STORAGE_BUCKET_NAME in bucket_names
-                s3_connection_test += f" Bucket '{settings.AWS_STORAGE_BUCKET_NAME}' exists: {s3_bucket_exists}"
+                buckets_response = test_boto_client.list_buckets()
+                bucket_names = [b['Name'] for b in buckets_response.get('Buckets', [])]
+                tigris_connection_test = f"Success. Found {len(bucket_names)} buckets."
+                # Use TIGRIS_ prefix for bucket name check
+                target_bucket_exists = settings.TIGRIS_STORAGE_BUCKET_NAME in bucket_names
+                tigris_connection_test += f" Bucket '{settings.TIGRIS_STORAGE_BUCKET_NAME}' exists: {target_bucket_exists}"
             except Exception as e:
-                s3_connection_test = "Failed"
-                s3_error = str(e)
+                tigris_connection_test = "Failed"
+                tigris_error = str(e)
                 
-            # Test CloudFront URL generation
-            cloudfront_test = "Not tested"
-            test_path = "test/test.jpg"
-            cloudfront_url = None
-            cloudfront_status = "Unknown"
-            try:
-                if hasattr(settings, 'CLOUDFRONT_DOMAIN') and settings.CLOUDFRONT_DOMAIN:
-                    cloudfront_url = f"https://{settings.CLOUDFRONT_DOMAIN}/{test_path}"
-                    cloudfront_test = f"CloudFront configured and working. Sample URL: {cloudfront_url}"
-                    cloudfront_status = "Configured and working properly"
-                    
-                    # Check if OAI is configured
-                    if hasattr(settings, 'CLOUDFRONT_OAI_ID') and settings.CLOUDFRONT_OAI_ID:
-                        cloudfront_test += f"\nOAI ID: {settings.CLOUDFRONT_OAI_ID}"
-                else:
-                    cloudfront_test = "CloudFront not configured"
-                    cloudfront_status = "Not configured"
-            except Exception as e:
-                cloudfront_test = f"Error testing CloudFront: {str(e)}"
-                cloudfront_status = f"Error: {str(e)}"
-                
-            # Generate a test URL to demonstrate current behavior
+            # Generate a test presigned URL using TigrisClient (which is already updated)
             test_url = None
+            test_path = "test/diagnostic_test.jpg"
             try:
-                s3_client = S3Client()
-                test_url = s3_client.generate_presigned_url(test_path, 3600)
-                
-                if test_url and test_url.startswith(f"https://{settings.CLOUDFRONT_DOMAIN}"):
-                    cloudfront_test += "\nNow using CloudFront URLs for all file access."
-                else:
-                    cloudfront_test += "\nWarning: Not using CloudFront URLs. Please check your configuration."
+                # Use renamed client instance
+                tigris_client_instance = TigrisClient()
+                test_url = tigris_client_instance.generate_presigned_url(test_path, 3600)
+                logger.info(f"Generated diagnostic test URL: {test_url}")
             except Exception as e:
-                cloudfront_test += f"\nError generating test URL: {str(e)}"
-            
-            # Compile diagnostic data
+                logger.error(f"Error generating test URL in diagnostic view: {str(e)}")
+                tigris_error = tigris_error + f"; Error generating test URL: {str(e)}" if tigris_error else f"Error generating test URL: {str(e)}"
+
+            # Compile diagnostic data (updated for Tigris)
             diagnostic_data = {
                 'environment_variables': env_vars,
                 'settings_variables': settings_vars,
                 'python_version': python_version,
                 'boto3_version': boto3_version,
-                's3_connection_test': s3_connection_test,
-                's3_error': s3_error,
-                'cloudfront_test': cloudfront_test,
-                'cloudfront_url_example': cloudfront_url,
-                'cloudfront_status': cloudfront_status,
-                'current_url_generated': test_url,
+                'tigris_connection_test': tigris_connection_test,
+                'tigris_error': tigris_error,
+                'tigris_presigned_url_example': test_url,
                 'tenant_id': request.tenant.schema_name if hasattr(request.tenant, 'schema_name') else str(request.tenant),
-                'setup_guide': "Please see setup_cloudfront_s3_access.md for instructions on how to properly configure CloudFront with S3"
+                'notes': "This view checks Tigris configuration based on settings.py."
             }
             
             return Response(diagnostic_data)

@@ -11,7 +11,7 @@ import traceback
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fspapplication_backend.settings')
 django.setup()
 
-from fspapplication_backend.files.s3_utils import S3Client
+from fspapplication_backend.files.tigris_utils import S3Client
 from django.conf import settings
 
 print("\n=== S3 Connection Test ===\n")

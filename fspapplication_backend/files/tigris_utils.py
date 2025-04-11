@@ -10,13 +10,14 @@ from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
 
-def check_aws_settings():
-    """Check that all required AWS settings are configured"""
+def check_tigris_settings():
+    """Check that all required Tigris settings are configured"""
     required_settings = [
-        ('AWS_ACCESS_KEY_ID', 'AWS access key ID'),
-        ('AWS_SECRET_ACCESS_KEY', 'AWS secret access key'),
-        ('AWS_STORAGE_BUCKET_NAME', 'S3 bucket name'),
-        ('AWS_S3_REGION_NAME', 'AWS region')
+        ('TIGRIS_ACCESS_KEY_ID', 'Tigris access key ID'),
+        ('TIGRIS_SECRET_ACCESS_KEY', 'Tigris secret access key'),
+        ('TIGRIS_STORAGE_BUCKET_NAME', 'Tigris bucket name'),
+        ('TIGRIS_REGION_NAME', 'Tigris region'),
+        ('TIGRIS_ENDPOINT_URL', 'Tigris endpoint URL')
     ]
     
     missing_settings = []
@@ -26,80 +27,69 @@ def check_aws_settings():
             missing_settings.append(description)
     
     if missing_settings:
-        error_message = f"Missing required AWS settings: {', '.join(missing_settings)}"
+        error_message = f"Missing required Tigris settings: {', '.join(missing_settings)}"
         logger.error(error_message)
         raise ValueError(error_message)
     
-    # Special check for region name to ensure it's not a placeholder
-    if hasattr(settings, 'AWS_S3_REGION_NAME'):
-        region = getattr(settings, 'AWS_S3_REGION_NAME')
-        if region == 'your-region-name' or 'your-region' in region or 'region' in region.lower():
-            error_message = f"Invalid AWS region name: '{region}'. Please set a valid AWS region like 'us-east-1' or 'ap-southeast-2'."
-            logger.error(error_message)
-            raise ValueError(error_message)
-    
     return True
 
-def print_aws_settings():
-    """Print AWS settings for debugging (with credentials partially hidden)"""
-    aws_access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', 'Not set')
-    aws_secret = getattr(settings, 'AWS_SECRET_ACCESS_KEY', 'Not set')
-    bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', 'Not set')
-    region = getattr(settings, 'AWS_S3_REGION_NAME', 'Not set')
-    cloudfront_domain = getattr(settings, 'CLOUDFRONT_DOMAIN', 'Not set')
+def print_tigris_settings():
+    """Print Tigris settings for debugging (with credentials partially hidden)"""
+    tigris_access_key = getattr(settings, 'TIGRIS_ACCESS_KEY_ID', 'Not set')
+    tigris_secret = getattr(settings, 'TIGRIS_SECRET_ACCESS_KEY', 'Not set')
+    bucket_name = getattr(settings, 'TIGRIS_STORAGE_BUCKET_NAME', 'Not set')
+    region = getattr(settings, 'TIGRIS_REGION_NAME', 'Not set')
+    endpoint_url = getattr(settings, 'TIGRIS_ENDPOINT_URL', 'Not set')
+    custom_domain = getattr(settings, 'TIGRIS_S3_CUSTOM_DOMAIN', 'Not set')
     
     # Hide part of the credentials for security
-    if aws_access_key and len(aws_access_key) > 4:
-        safe_key = aws_access_key[:4] + '*' * (len(aws_access_key) - 4)
+    if tigris_access_key and len(tigris_access_key) > 4:
+        safe_key = tigris_access_key[:4] + '*' * (len(tigris_access_key) - 4)
     else:
-        safe_key = aws_access_key
+        safe_key = tigris_access_key
     
-    if aws_secret and len(aws_secret) > 4:
-        safe_secret = '*' * len(aws_secret)
+    if tigris_secret and len(tigris_secret) > 4:
+        safe_secret = '*' * len(tigris_secret)
     else:
-        safe_secret = aws_secret
+        safe_secret = tigris_secret
     
     settings_str = (
-        f"\nAWS Settings:\n"
-        f"  AWS_ACCESS_KEY_ID: {safe_key}\n"
-        f"  AWS_SECRET_ACCESS_KEY: {safe_secret}\n"
-        f"  AWS_STORAGE_BUCKET_NAME: {bucket_name}\n"
-        f"  AWS_S3_REGION_NAME: {region}\n"
-        f"  CLOUDFRONT_DOMAIN: {cloudfront_domain}\n"
+        f"\nTigris Settings:\n"
+        f"  TIGRIS_ACCESS_KEY_ID: {safe_key}\n"
+        f"  TIGRIS_SECRET_ACCESS_KEY: {safe_secret}\n"
+        f"  TIGRIS_STORAGE_BUCKET_NAME: {bucket_name}\n"
+        f"  TIGRIS_REGION_NAME: {region}\n"
+        f"  TIGRIS_ENDPOINT_URL: {endpoint_url}\n"
+        f"  TIGRIS_S3_CUSTOM_DOMAIN: {custom_domain}\n"
     )
     
     logger.info(settings_str)
     return settings_str
 
-class S3Client:
+class TigrisClient:
     def __init__(self):
-        logger.debug(f"Initializing S3Client with region: {settings.AWS_S3_REGION_NAME}, bucket: {settings.AWS_STORAGE_BUCKET_NAME}")
+        logger.debug(f"Initializing TigrisClient with region: {settings.TIGRIS_REGION_NAME}, bucket: {settings.TIGRIS_STORAGE_BUCKET_NAME}, endpoint: {settings.TIGRIS_ENDPOINT_URL}")
         try:
-            # Print AWS settings
-            print_aws_settings()
+            # Print Tigris settings
+            print_tigris_settings()
             
-            # Verify AWS settings are configured
-            check_aws_settings()
+            # Verify Tigris settings are configured
+            check_tigris_settings()
             
             self.s3_client = boto3.client(
                 's3',
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name=settings.AWS_S3_REGION_NAME
+                aws_access_key_id=settings.TIGRIS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.TIGRIS_SECRET_ACCESS_KEY,
+                region_name=settings.TIGRIS_REGION_NAME,
+                endpoint_url=settings.TIGRIS_ENDPOINT_URL
             )
-            self.bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-            
-            # Set CloudFront domain if available
-            self.use_cloudfront = hasattr(settings, 'CLOUDFRONT_DOMAIN') and settings.CLOUDFRONT_DOMAIN
-            self.cloudfront_domain = getattr(settings, 'CLOUDFRONT_DOMAIN', None)
+            self.bucket_name = settings.TIGRIS_STORAGE_BUCKET_NAME
             
             # Test connection
             self.s3_client.list_buckets()
-            logger.info("S3 connection successful")
-            if self.use_cloudfront:
-                logger.info(f"Using CloudFront domain: {self.cloudfront_domain}")
+            logger.info("S3 (Tigris) connection successful")
         except Exception as e:
-            logger.error(f"Error initializing S3 client: {str(e)}")
+            logger.error(f"Error initializing S3 (Tigris) client: {str(e)}")
             logger.error(traceback.format_exc())
             raise
 
@@ -216,29 +206,20 @@ class S3Client:
 
     def generate_presigned_url(self, object_name, expiration=3600):
         try:
-            logger.debug(f"Generating URL for: {object_name}")
+            logger.debug(f"Generating presigned URL for: {object_name} using Tigris endpoint")
             
-            # If CloudFront is configured, use CloudFront URL instead of S3 presigned URL
-            if self.use_cloudfront and self.cloudfront_domain:
-                # For CloudFront, we use the direct path without presigning
-                cf_url = f"https://{self.cloudfront_domain}/{object_name}"
-                logger.debug(f"Generated CloudFront URL: {cf_url}")
-                return cf_url
-            else:
-                # Fall back to S3 presigned URL if CloudFront is not configured
-                logger.debug(f"CloudFront not configured, generating S3 presigned URL")
-                response = self.s3_client.generate_presigned_url(
-                    'get_object',
-                    Params={
-                        'Bucket': self.bucket_name,
-                        'Key': object_name
-                    },
-                    ExpiresIn=expiration
-                )
-                logger.debug(f"Generated S3 presigned URL: {response[:100]}...")
-                return response
+            response = self.s3_client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': self.bucket_name,
+                    'Key': object_name
+                },
+                ExpiresIn=expiration
+            )
+            logger.debug(f"Generated Tigris presigned URL: {response[:100]}...")
+            return response
         except ClientError as e:
-            logger.error(f"Error generating URL: {e}")
+            logger.error(f"Error generating presigned URL: {e}")
             return None
 
     def list_files(self, prefix=''):
