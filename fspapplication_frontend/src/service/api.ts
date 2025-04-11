@@ -2,11 +2,12 @@ import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 
 // Get the API URL from environment variables or use a default
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// Use '/api' to route requests through the Vite proxy during development
+const API_BASE_URL = '/api'; // Changed from import.meta.env.VITE_API_URL
 
 // Create API client instance with default configuration
 export const apiClient = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL, // Use the proxy path
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',

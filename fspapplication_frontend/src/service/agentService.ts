@@ -1,8 +1,9 @@
-import axios from 'axios';
+import apiClient from './api'; // Import the shared client
+// import axios from 'axios'; // Remove direct axios import
 import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
-import type { AxiosResponse } from 'axios';
+import type { AxiosResponse } from 'axios'; // Keep for type hint if needed
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// const API_URL = import.meta.env.VITE_API_URL || '/api'; // Remove manual API_URL construction
 
 // Agent model definition
 export interface Agent {
@@ -99,8 +100,10 @@ const CACHE_TTL = 60 * 1000; // 60 seconds
 
 // Generate a cache key from request parameters
 const generateCacheKey = (endpoint: string, params?: any): string => {
-  if (!params) return endpoint;
-  return `${endpoint}:${JSON.stringify(params)}`;
+  // Endpoint should be relative path now (e.g., 'agent/agents/')
+  const baseKey = `/api/${endpoint}`; // Add /api prefix for consistency in cache keys
+  if (!params) return baseKey;
+  return `${baseKey}:${JSON.stringify(params)}`;
 }
 
 // Helper to check if cache entry is valid
@@ -125,7 +128,8 @@ export const agentService = {
         (apiParams[key] === undefined || apiParams[key] === null) && delete apiParams[key]
       );
       
-      const response = await axios.get(`${API_URL}/agent/agents/`, { params: apiParams });
+      // Use apiClient and relative path
+      const response = await apiClient.get(`agent/agents/`, { params: apiParams });
       
       return {
         count: response.data.count,
@@ -141,17 +145,18 @@ export const agentService = {
   
   async getAgentById(id: string): Promise<Agent> {
     try {
-      const cacheKey = generateCacheKey(`${API_URL}/agent/agents/${id}/`);
+      const cacheKey = generateCacheKey(`agent/agents/${id}/`);
       const cachedData = cache.get(cacheKey);
       
       if (cachedData && isCacheValid(cachedData)) {
         return cachedData.data;
       }
       
-      const response = await axios.get(`${API_URL}/agent/agents/${id}/`);
+      // Use apiClient and relative path
+      const response = await apiClient.get(`agent/agents/${id}/`);
       const agentData = convertObjectKeysToCamel(response.data);
       
-      // Cache the response
+      // Cache the response (use relative path for key)
       cache.set(cacheKey, {
         timestamp: Date.now(),
         data: agentData
@@ -169,13 +174,13 @@ export const agentService = {
       // Convert data from camelCase to snake_case for the API
       const apiData = convertObjectKeysToSnake(agentData);
       
-      // Make API call to create the agent
-      const response = await axios.post(`${API_URL}/agent/agents/`, apiData);
+      // Make API call to create the agent using apiClient
+      const response = await apiClient.post(`agent/agents/`, apiData);
       const newAgent = convertObjectKeysToCamel(response.data);
       
-      // Clear any cached agent lists since we added a new agent
+      // Clear any cached agent lists (check prefix)
       for (const key of cache.keys()) {
-        if (key.startsWith(`${API_URL}/agent/agents/:`)) {
+        if (key.startsWith(`/api/agent/agents/:`)) { // Ensure prefix matches generateCacheKey
           cache.delete(key);
         }
       }
@@ -190,16 +195,17 @@ export const agentService = {
   async updateAgentStatus(id: string, isActive: boolean): Promise<Agent> {
     try {
       const data = convertObjectKeysToSnake({ isActive });
-      const response = await axios.patch(`${API_URL}/agent/agents/${id}/`, data);
+      // Use apiClient and relative path
+      const response = await apiClient.patch(`agent/agents/${id}/`, data);
       const updatedAgent = convertObjectKeysToCamel(response.data);
       
-      // Invalidate related caches
-      const agentCacheKey = generateCacheKey(`${API_URL}/agent/agents/${id}/`);
+      // Invalidate related caches (use relative path for key)
+      const agentCacheKey = generateCacheKey(`agent/agents/${id}/`);
       cache.delete(agentCacheKey);
       
-      // Clear any cached agent lists since they might include this agent
+      // Clear any cached agent lists (check prefix)
       for (const key of cache.keys()) {
-        if (key.startsWith(`${API_URL}/agent/agents/:`)) {
+        if (key.startsWith(`/api/agent/agents/:`)) { // Ensure prefix matches generateCacheKey
           cache.delete(key);
         }
       }
@@ -216,21 +222,22 @@ export const agentService = {
       // Convert data from camelCase to snake_case for the API
       const apiData = convertObjectKeysToSnake(data);
       
-      const response: AxiosResponse<Agent> = await axios.patch(
-        `${API_URL}/agent/agents/${agentId}/`,
+      // Use apiClient and relative path
+      const response: AxiosResponse<Agent> = await apiClient.patch(
+        `agent/agents/${agentId}/`,
         apiData
       );
       
       // Convert response data back to camelCase
       const updatedAgent = convertObjectKeysToCamel(response.data);
       
-      // Clear any cached data for this agent
-      const cacheKey = generateCacheKey(`${API_URL}/agent/agents/${agentId}/`);
+      // Clear any cached data for this agent (use relative path for key)
+      const cacheKey = generateCacheKey(`agent/agents/${agentId}/`);
       cache.delete(cacheKey);
       
-      // Clear any cached agent lists since they might include this agent
+      // Clear any cached agent lists (check prefix)
       for (const key of cache.keys()) {
-        if (key.startsWith(`${API_URL}/agent/agents/:`)) {
+        if (key.startsWith(`/api/agent/agents/:`)) { // Ensure prefix matches generateCacheKey
           cache.delete(key);
         }
       }
@@ -257,7 +264,8 @@ export const agentService = {
         (apiParams[key] === undefined || apiParams[key] === null) && delete apiParams[key]
       );
       
-      const response = await axios.get(`${API_URL}/agent/agents/${agentId}/warehouses/`, { params: apiParams });
+      // Use apiClient and relative path
+      const response = await apiClient.get(`agent/agents/${agentId}/warehouses/`, { params: apiParams });
       
       return {
         count: response.data.count,
@@ -273,17 +281,18 @@ export const agentService = {
   
   async getAgentWarehouseById(agentId: string, warehouseId: string): Promise<AgentWarehouse> {
     try {
-      const cacheKey = generateCacheKey(`${API_URL}/agent/agents/${agentId}/warehouses/${warehouseId}/`);
+      const cacheKey = generateCacheKey(`agent/agents/${agentId}/warehouses/${warehouseId}/`);
       const cachedData = cache.get(cacheKey);
       
       if (cachedData && isCacheValid(cachedData)) {
         return cachedData.data;
       }
       
-      const response = await axios.get(`${API_URL}/agent/agents/${agentId}/warehouses/${warehouseId}/`);
+      // Use apiClient and relative path
+      const response = await apiClient.get(`agent/agents/${agentId}/warehouses/${warehouseId}/`);
       const warehouseData = convertObjectKeysToCamel(response.data);
       
-      // Cache the response
+      // Cache the response (use relative path for key)
       cache.set(cacheKey, {
         timestamp: Date.now(),
         data: warehouseData
@@ -301,13 +310,13 @@ export const agentService = {
       // Convert data from camelCase to snake_case for the API
       const apiData = convertObjectKeysToSnake(warehouseData);
       
-      // Make API call to create the warehouse
-      const response = await axios.post(`${API_URL}/agent/agents/${agentId}/warehouses/`, apiData);
+      // Make API call to create the warehouse using apiClient
+      const response = await apiClient.post(`agent/agents/${agentId}/warehouses/`, apiData);
       const newWarehouse = convertObjectKeysToCamel(response.data);
       
-      // Clear any cached warehouse lists since we added a new warehouse
+      // Clear cached lists (check prefix)
       for (const key of cache.keys()) {
-        if (key.startsWith(`${API_URL}/agent/agents/${agentId}/warehouses/:`)) {
+        if (key.startsWith(`/api/agent/agents/${agentId}/warehouses/:`)) { // Ensure prefix matches generateCacheKey
           cache.delete(key);
         }
       }
@@ -324,21 +333,22 @@ export const agentService = {
       // Convert data from camelCase to snake_case for the API
       const apiData = convertObjectKeysToSnake(data);
       
-      const response: AxiosResponse<AgentWarehouse> = await axios.patch(
-        `${API_URL}/agent/agents/${agentId}/warehouses/${warehouseId}/`,
+      // Use apiClient and relative path
+      const response: AxiosResponse<AgentWarehouse> = await apiClient.patch(
+        `agent/agents/${agentId}/warehouses/${warehouseId}/`,
         apiData
       );
       
       // Convert response data back to camelCase
       const updatedWarehouse = convertObjectKeysToCamel(response.data);
       
-      // Clear any cached data for this warehouse
-      const cacheKey = generateCacheKey(`${API_URL}/agent/agents/${agentId}/warehouses/${warehouseId}/`);
+      // Clear cached data for this warehouse (use relative path for key)
+      const cacheKey = generateCacheKey(`agent/agents/${agentId}/warehouses/${warehouseId}/`);
       cache.delete(cacheKey);
       
-      // Clear any cached warehouse lists since they might include this warehouse
+      // Clear cached lists (check prefix)
       for (const key of cache.keys()) {
-        if (key.startsWith(`${API_URL}/agent/agents/${agentId}/warehouses/:`)) {
+        if (key.startsWith(`/api/agent/agents/${agentId}/warehouses/:`)) { // Ensure prefix matches generateCacheKey
           cache.delete(key);
         }
       }

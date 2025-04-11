@@ -9,6 +9,8 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, process.cwd())
   
+  const apiUrl = env.VITE_API_URL || 'http://localhost:8000'; 
+
   return {
     plugins: [
       vue(),
@@ -22,10 +24,10 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        '/api': {
-          target: env.VITE_API_URL || 'http://localhost:8000',
+        '/api': { 
+          target: apiUrl, 
           changeOrigin: true,
-          secure: false
+          secure: false,
         }
       }
     }

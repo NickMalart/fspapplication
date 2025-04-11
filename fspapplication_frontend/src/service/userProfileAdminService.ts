@@ -1,8 +1,9 @@
-import axios from 'axios';
+import apiClient from './api'; // Import the shared client
+// import axios from 'axios'; // Remove direct axios import
 import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
 import type { UserProfileAdmin, FunctionalGroup } from '@/stores/userProfileAdminStore';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// const API_URL = import.meta.env.VITE_API_URL || '/api'; // Remove manual API_URL construction
 
 export const userProfileAdminService = {
   /**
@@ -10,9 +11,11 @@ export const userProfileAdminService = {
    */
   async getUserProfile(userId: string): Promise<UserProfileAdmin> {
     try {
-      const response = await axios.get(`${API_URL}/account/users/${userId}/`);
+      // Use apiClient and relative path
+      const response = await apiClient.get(`account/users/${userId}/`);
       return convertObjectKeysToCamel(response.data);
     } catch (error) {
+      // TODO: Implement proper error handling, potentially using a shared handler
       throw error;
     }
   },
@@ -33,9 +36,11 @@ export const userProfileAdminService = {
         delete convertedData.functional_groups;
       }
       
-      const response = await axios.put(`${API_URL}/account/users/${userId}/`, convertedData);
+      // Use apiClient and relative path
+      const response = await apiClient.put(`account/users/${userId}/`, convertedData);
       return convertObjectKeysToCamel(response.data);
     } catch (error) {
+      // TODO: Implement proper error handling
       throw error;
     }
   },
@@ -46,9 +51,11 @@ export const userProfileAdminService = {
   async patchUserProfile(userId: string, data: any): Promise<UserProfileAdmin> {
     try {
       const convertedData = convertObjectKeysToSnake(data);
-      const response = await axios.patch(`${API_URL}/account/users/${userId}/`, convertedData);
+      // Use apiClient and relative path
+      const response = await apiClient.patch(`account/users/${userId}/`, convertedData);
       return convertObjectKeysToCamel(response.data);
     } catch (error) {
+      // TODO: Implement proper error handling
       throw error;
     }
   },

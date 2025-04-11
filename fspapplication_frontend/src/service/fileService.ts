@@ -1,7 +1,7 @@
 import apiClient from './api';
 import { convertObjectKeysToCamel } from '@/utils/caseConverter';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// const API_URL = import.meta.env.VITE_API_URL || '/api'; // Remove unused constant
 
 export interface FileUploadResponse {
   success: boolean;
@@ -238,13 +238,15 @@ export const fileService = {
     module?: string
   ): Promise<FileListItem[]> {
     try {
-      let url = `${API_URL}/files/list/`;
+      // Use relative path with apiClient
+      const endpoint = 'files/list/'; 
       const params: Record<string, string> = {};
       
       if (fileType) params.file_type = fileType;
       if (module) params.module = module;
 
-      const response = await apiClient.get(url, { params });
+      // Pass relative endpoint and params to apiClient
+      const response = await apiClient.get(endpoint, { params });
       
       return convertObjectKeysToCamel(response.data.files || []);
     } catch (error) {

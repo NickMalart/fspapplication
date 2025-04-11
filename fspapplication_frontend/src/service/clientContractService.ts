@@ -1,7 +1,8 @@
-import axios from 'axios';
+import apiClient from './api'; // Import the shared client
+// import axios from 'axios'; // Remove direct axios import
 import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// const API_URL = import.meta.env.VITE_API_URL || '/api'; // Remove manual API_URL construction
 
 // Contract model definition
 export interface Contract {
@@ -35,7 +36,11 @@ export const clientContractService = {
     try {
       const apiParams = convertObjectKeysToSnake(params);
       const clientId = params.client;
-      const response = await axios.get(`${API_URL}/client/clients/${clientId}/contracts/`, { params: apiParams });
+      if (!clientId) {
+        throw new Error('Client ID is required to fetch contracts');
+      }
+      // Use apiClient and relative path
+      const response = await apiClient.get(`client/clients/${clientId}/contracts/`, { params: apiParams });
       
       return {
         count: response.data.count,
@@ -49,12 +54,16 @@ export const clientContractService = {
     }
   },
 
-  async getContractById(id: string): Promise<Contract> {
+  async getContractById(clientId: string, contractId: string): Promise<Contract> {
     try {
-      const response = await axios.get(`${API_URL}/client/clients/${id}/contracts/${id}/`);
+      if (!clientId) {
+        throw new Error('Client ID is required to fetch a contract');
+      }
+      // Use apiClient and relative path
+      const response = await apiClient.get(`client/clients/${clientId}/contracts/${contractId}/`);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
-      console.error(`Error fetching contract with ID ${id}:`, error);
+      console.error(`Error fetching contract with ID ${contractId}:`, error);
       throw error;
     }
   },
@@ -66,7 +75,8 @@ export const clientContractService = {
       }
       const apiData = convertObjectKeysToSnake(contractData);
       const clientId = contractData.client;
-      const response = await axios.post(`${API_URL}/client/clients/${clientId}/contracts/`, apiData);
+      // Use apiClient and relative path
+      const response = await apiClient.post(`client/clients/${clientId}/contracts/`, apiData);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
       console.error('Error creating contract:', error);
@@ -74,9 +84,13 @@ export const clientContractService = {
     }
   },
 
-  async updateContractStatus(contractId: string, isActive: boolean): Promise<Contract> {
+  async updateContractStatus(clientId: string, contractId: string, isActive: boolean): Promise<Contract> {
     try {
-      const response = await axios.patch(`${API_URL}/client/clients/${contractId}/contracts/${contractId}/`, {
+      if (!clientId) {
+        throw new Error('Client ID is required to update contract status');
+      }
+      // Use apiClient and relative path
+      const response = await apiClient.patch(`client/clients/${clientId}/contracts/${contractId}/`, {
         is_active: isActive
       });
       return convertObjectKeysToCamel(response.data);
@@ -86,10 +100,14 @@ export const clientContractService = {
     }
   },
 
-  async updateContract(contractId: string, contractData: Partial<Contract>): Promise<Contract> {
+  async updateContract(clientId: string, contractId: string, contractData: Partial<Contract>): Promise<Contract> {
     try {
+      if (!clientId) {
+        throw new Error('Client ID is required to update a contract');
+      }
       const apiData = convertObjectKeysToSnake(contractData);
-      const response = await axios.patch(`${API_URL}/client/clients/${contractId}/contracts/${contractId}/`, apiData);
+      // Use apiClient and relative path
+      const response = await apiClient.patch(`client/clients/${clientId}/contracts/${contractId}/`, apiData);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
       console.error('Error updating contract:', error);

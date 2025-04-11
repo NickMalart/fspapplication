@@ -1,8 +1,9 @@
-import axios from 'axios';
+import apiClient from './api'; // Import the shared client
+// import axios from 'axios'; // Removed
 import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
 import type { CompleteUser } from '@/service/userProfileService';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// const API_URL = import.meta.env.VITE_API_URL || '/api'; // Removed
 
 // Export the UserAccount type which can reuse CompleteUser
 export type UserAccount = CompleteUser;
@@ -33,8 +34,9 @@ const CACHE_TTL = 60 * 1000; // 60 seconds
 
 // Generate a cache key from request parameters
 const generateCacheKey = (endpoint: string, params?: any): string => {
-  if (!params) return endpoint;
-  return `${endpoint}:${JSON.stringify(params)}`;
+  // Endpoint should be relative path now (e.g., 'account/users/')
+  if (!params) return `/api/${endpoint}`; // Add /api prefix for consistency in cache keys
+  return `/api/${endpoint}:${JSON.stringify(params)}`; // Add /api prefix for consistency
 }
 
 // Helper to check if cache entry is valid
@@ -45,19 +47,18 @@ const isCacheValid = (entry: CacheEntry): boolean => {
 export const userAccountsService = {
   async getUsers(params: UserListParams = {}): Promise<UsersResponse> {
     try {
-      // Convert all params from camelCase to snake_case for the API
       const apiParams = convertObjectKeysToSnake(params);
       
-      // Check cache first
-      const cacheKey = generateCacheKey(`${API_URL}/account/users/`, apiParams);
+      // Use relative endpoint for cache key generation
+      const cacheKey = generateCacheKey('account/users/', apiParams); 
       const cachedData = cache.get(cacheKey);
       
       if (cachedData && isCacheValid(cachedData)) {
         return cachedData.data;
       }
       
-      // Make a single batch request with all parameters
-      const response = await axios.get(`${API_URL}/account/users/`, { 
+      // Use apiClient and relative path
+      const response = await apiClient.get('account/users/', { 
         params: apiParams
       });
       
@@ -84,14 +85,16 @@ export const userAccountsService = {
   
   async getUserById(id: string): Promise<UserAccount> {
     try {
-      const cacheKey = generateCacheKey(`${API_URL}/account/users/${id}/`);
+      // Use relative endpoint for cache key generation
+      const cacheKey = generateCacheKey(`account/users/${id}/`);
       const cachedData = cache.get(cacheKey);
       
       if (cachedData && isCacheValid(cachedData)) {
         return cachedData.data;
       }
       
-      const response = await axios.get(`${API_URL}/account/users/${id}/`);
+      // Use apiClient and relative path
+      const response = await apiClient.get(`account/users/${id}/`); 
       const userData = convertObjectKeysToCamel(response.data);
       
       // Cache the response
@@ -110,16 +113,17 @@ export const userAccountsService = {
   async updateUserStatus(id: string, isActive: boolean): Promise<UserAccount> {
     try {
       const data = convertObjectKeysToSnake({ isActive });
-      const response = await axios.patch(`${API_URL}/account/users/${id}/`, data);
+      // Use apiClient and relative path
+      const response = await apiClient.patch(`account/users/${id}/`, data); 
       const updatedUser = convertObjectKeysToCamel(response.data);
       
-      // Invalidate related caches
-      const userCacheKey = generateCacheKey(`${API_URL}/account/users/${id}/`);
+      // Invalidate related caches using relative paths
+      const userCacheKey = generateCacheKey(`account/users/${id}/`);
       cache.delete(userCacheKey);
       
-      // Clear any cached user lists since they might include this user
       for (const key of cache.keys()) {
-        if (key.startsWith(`${API_URL}/account/users/:`)) {
+        // Check against cache keys which now start with /api/
+        if (key.startsWith('/api/account/users/') && key.includes(':')) { 
           cache.delete(key);
         }
       }
@@ -134,12 +138,13 @@ export const userAccountsService = {
   async createUser(userData: Partial<UserAccount>): Promise<UserAccount> {
     try {
       const data = convertObjectKeysToSnake(userData);
-      const response = await axios.post(`${API_URL}/account/users/`, data);
+      // Use apiClient and relative path
+      const response = await apiClient.post('account/users/', data);
       const newUser = convertObjectKeysToCamel(response.data);
       
-      // Clear any cached user lists since they might include this user
       for (const key of cache.keys()) {
-        if (key.startsWith(`${API_URL}/account/users/:`)) {
+         // Check against cache keys which now start with /api/
+        if (key.startsWith('/api/account/users/') && key.includes(':')) { 
           cache.delete(key);
         }
       }

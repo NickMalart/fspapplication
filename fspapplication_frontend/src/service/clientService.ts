@@ -1,8 +1,9 @@
-import axios from 'axios';
+import apiClient from './api'; // Import the shared client
+// import axios from 'axios'; // Remove direct axios import
 import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
-import type { AxiosResponse } from 'axios';
+import type { AxiosResponse } from 'axios'; // Keep for type hint if needed, or remove if AxiosResponse isn't directly used
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// const API_URL = import.meta.env.VITE_API_URL || '/api'; // Remove manual API_URL construction
 
 // Client model definition
 export interface Client {
@@ -54,8 +55,10 @@ const CACHE_TTL = 60 * 1000; // 60 seconds
 
 // Generate a cache key from request parameters
 const generateCacheKey = (endpoint: string, params?: any): string => {
-  if (!params) return endpoint;
-  return `${endpoint}:${JSON.stringify(params)}`;
+  // Endpoint should be relative path now (e.g., 'client/clients/')
+  const baseKey = `/api/${endpoint}`; // Add /api prefix for consistency in cache keys
+  if (!params) return baseKey;
+  return `${baseKey}:${JSON.stringify(params)}`;
 }
 
 // Helper to check if cache entry is valid
@@ -80,7 +83,8 @@ export const clientService = {
         (apiParams[key] === undefined || apiParams[key] === null) && delete apiParams[key]
       );
       
-      const response = await axios.get(`${API_URL}/client/clients/`, { params: apiParams });
+      // Use apiClient and relative path
+      const response = await apiClient.get(`client/clients/`, { params: apiParams });
       
       return {
         count: response.data.count,
@@ -96,18 +100,20 @@ export const clientService = {
   
   async getClientById(id: string): Promise<Client> {
     try {
-      const cacheKey = generateCacheKey(`${API_URL}/client/clients/${id}/`);
+      const cacheKey = generateCacheKey(`client/clients/${id}/`);
       const cachedData = cache.get(cacheKey);
       
       if (cachedData && isCacheValid(cachedData)) {
         return cachedData.data;
       }
       
-      const response = await axios.get(`${API_URL}/client/clients/${id}/`);
+      // Use apiClient and relative path
+      const response = await apiClient.get(`client/clients/${id}/`);
       const clientData = convertObjectKeysToCamel(response.data);
       
-      // Cache the response
-      cache.set(cacheKey, {
+      // Cache the response (use relative path for key)
+      // Note: cacheKey generation now handles the /api prefix internally
+      cache.set(generateCacheKey(`client/clients/${id}/`), {
         timestamp: Date.now(),
         data: clientData
       });
@@ -124,13 +130,14 @@ export const clientService = {
       // Convert data from camelCase to snake_case for the API
       const apiData = convertObjectKeysToSnake(clientData);
       
-      // Make API call to create the client
-      const response = await axios.post(`${API_URL}/client/clients/`, apiData);
+      // Make API call to create the client using apiClient
+      const response = await apiClient.post(`client/clients/`, apiData);
       const newClient = convertObjectKeysToCamel(response.data);
       
       // Clear any cached client lists since we added a new client
       for (const key of cache.keys()) {
-        if (key.startsWith(`${API_URL}/client/clients/:`)) {
+        // Check against cache keys which now start with /api/
+        if (key.startsWith(`/api/client/clients/:`)) { // Ensure this prefix matches generateCacheKey
           cache.delete(key);
         }
       }
@@ -145,16 +152,17 @@ export const clientService = {
   async updateClientStatus(id: string, isActive: boolean): Promise<Client> {
     try {
       const data = convertObjectKeysToSnake({ isActive });
-      const response = await axios.patch(`${API_URL}/client/clients/${id}/`, data);
+      // Use apiClient and relative path
+      const response = await apiClient.patch(`client/clients/${id}/`, data);
       const updatedClient = convertObjectKeysToCamel(response.data);
       
-      // Invalidate related caches
-      const clientCacheKey = generateCacheKey(`${API_URL}/client/clients/${id}/`);
+      // Invalidate related caches (use relative path for key)
+      const clientCacheKey = generateCacheKey(`client/clients/${id}/`);
       cache.delete(clientCacheKey);
       
-      // Clear any cached client lists since they might include this client
+      // Clear any cached client lists (check prefix)
       for (const key of cache.keys()) {
-        if (key.startsWith(`${API_URL}/client/clients/:`)) {
+        if (key.startsWith(`/api/client/clients/:`)) { // Ensure this prefix matches generateCacheKey
           cache.delete(key);
         }
       }
@@ -171,21 +179,22 @@ export const clientService = {
       // Convert data from camelCase to snake_case for the API
       const apiData = convertObjectKeysToSnake(data);
       
-      const response: AxiosResponse<Client> = await axios.patch(
-        `${API_URL}/client/clients/${clientId}/`,
+      // Use apiClient and relative path
+      const response: AxiosResponse<Client> = await apiClient.patch(
+        `client/clients/${clientId}/`,
         apiData
       );
       
       // Convert response data back to camelCase
       const updatedClient = convertObjectKeysToCamel(response.data);
       
-      // Clear any cached data for this client
-      const cacheKey = generateCacheKey(`${API_URL}/client/clients/${clientId}/`);
+      // Clear any cached data for this client (use relative path for key)
+      const cacheKey = generateCacheKey(`client/clients/${clientId}/`);
       cache.delete(cacheKey);
       
-      // Clear any cached client lists since they might include this client
+      // Clear any cached client lists (check prefix)
       for (const key of cache.keys()) {
-        if (key.startsWith(`${API_URL}/client/clients/:`)) {
+        if (key.startsWith(`/api/client/clients/:`)) { // Ensure this prefix matches generateCacheKey
           cache.delete(key);
         }
       }
