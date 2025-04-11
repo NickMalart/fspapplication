@@ -1,8 +1,8 @@
 <template>
   <router-link to="/" class="lg:hidden flex items-center">
     <img 
-      v-if="companyLogoUrl" 
-      :src="companyLogoUrl" 
+      v-if="logoUrl" 
+      :src="logoUrl" 
       alt="Company Logo" 
       class="h-8 mr-2"
     />
@@ -18,7 +18,7 @@
 
 <script setup>
 import { RouterLink } from 'vue-router'
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { usecompanyStore } from '@/stores/companyStore';
 import { fileService } from '@/service/fileService';
 
@@ -26,18 +26,25 @@ const companyStore = usecompanyStore();
 
 // Computed property for the logo URL
 const logoUrl = computed(() => {
-  // Use the tenant-specific logo if available, otherwise fallback to default
+  // Use the tenant-specific logo if available
   if (companyStore.companyProfile?.logo) {
     // Use the file service to get the correct URL
     return fileService.getPublicFileUrl(companyStore.companyProfile.logo);
   } else {
-    // Provide a fallback path to a default logo in the public directory
-    return '/images/logo/default-company-logo.png';
+    // Return null if no logo, template will use default
+    return null; 
   }
 });
 
 // Get company name
 const companyName = computed(() => {
   return companyStore.companyProfile?.name || 'Company Name';
+});
+
+// Fetch company profile on component mount if not already loaded
+onMounted(() => {
+  if (!companyStore.companyProfile) {
+    companyStore.fetchCompanyProfile();
+  }
 });
 </script>

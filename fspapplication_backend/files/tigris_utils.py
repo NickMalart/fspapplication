@@ -114,80 +114,29 @@ class TigrisClient:
             
         try:
             args = extra_args or {}
-            logger.debug(f"Uploading file to S3: {object_name} with args: {args}")
+            logger.debug(f"Uploading file to S3 via upload_fileobj: {object_name} with args: {args}")
             
-            # Use multipart upload for improved memory efficiency
-            # This prevents loading the entire file into memory at once
-            chunk_size = 5 * 1024 * 1024  # 5MB chunks (S3 minimum is 5MB)
+            # Ensure the file pointer is at the beginning
+            file_obj.seek(0)
             
-            # Create a multipart upload
-            mpu = self.s3_client.create_multipart_upload(
+            # Use boto3's upload_fileobj for efficient streaming and automatic multipart handling
+            self.s3_client.upload_fileobj(
+                Fileobj=file_obj, 
                 Bucket=self.bucket_name,
                 Key=object_name,
-                **args
+                ExtraArgs=args
+                # Config=boto3.s3.transfer.TransferConfig(multipart_threshold=5*1024*1024, multipart_chunksize=5*1024*1024) # Optional: Explicitly configure multipart thresholds if needed
             )
             
-            upload_id = mpu['UploadId']
-            parts = []
-            
-            # Upload file in chunks
-            part_number = 1
-            
-            try:
-                # Handle both file-like objects and Django's UploadedFile
-                file_obj.seek(0)
-                
-                while True:
-                    # Read a chunk of data
-                    chunk = file_obj.read(chunk_size)
-                    if not chunk:
-                        break
-                    
-                    # Upload the part
-                    response = self.s3_client.upload_part(
-                        Body=chunk,
-                        Bucket=self.bucket_name,
-                        Key=object_name,
-                        PartNumber=part_number,
-                        UploadId=upload_id
-                    )
-                    
-                    # Add the part to our parts list
-                    parts.append({
-                        'PartNumber': part_number,
-                        'ETag': response['ETag']
-                    })
-                    
-                    part_number += 1
-                    logger.debug(f"Uploaded part {part_number-1} of file {object_name}")
-                
-                # Complete the multipart upload
-                self.s3_client.complete_multipart_upload(
-                    Bucket=self.bucket_name,
-                    Key=object_name,
-                    UploadId=upload_id,
-                    MultipartUpload={'Parts': parts}
-                )
-                
-                logger.info(f"File {object_name} uploaded to S3 bucket {self.bucket_name} in {part_number-1} parts")
-                return True
-                
-            except Exception as e:
-                # Abort the multipart upload if something goes wrong
-                logger.error(f"Error during multipart upload: {str(e)}")
-                self.s3_client.abort_multipart_upload(
-                    Bucket=self.bucket_name,
-                    Key=object_name,
-                    UploadId=upload_id
-                )
-                raise
+            logger.info(f"File {object_name} uploaded successfully using upload_fileobj to S3 bucket {self.bucket_name}")
+            return True
                 
         except ClientError as e:
-            logger.error(f"S3 ClientError uploading file: {e}")
+            logger.error(f"S3 ClientError uploading file via upload_fileobj: {e}")
             logger.error(traceback.format_exc())
             return False
         except Exception as e:
-            logger.error(f"Unexpected error uploading file to S3: {str(e)}")
+            logger.error(f"Unexpected error uploading file via upload_fileobj: {str(e)}")
             logger.error(traceback.format_exc())
             return False
 

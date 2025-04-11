@@ -314,11 +314,11 @@ export const fileService = {
     }
 
     // Use the correct environment variables
-    const endpointUrl = import.meta.env.VITE_AWS_ENDPOINT_URL_S3; // e.g., https://fly.storage.tigris.dev
-    const bucketName = import.meta.env.VITE_AWS_STORAGE_BUCKET_NAME; // e.g., frosty-bird-4733
+    const endpointUrl = import.meta.env.VITE_TIGRIS_ENDPOINT_URL; // Use TIGRIS_ prefix for consistency
+    const bucketName = import.meta.env.VITE_TIGRIS_STORAGE_BUCKET_NAME; // Use TIGRIS_ prefix for consistency
 
     if (!endpointUrl || !bucketName) {
-      console.error('Tigris environment variables (VITE_AWS_ENDPOINT_URL_S3, VITE_AWS_STORAGE_BUCKET_NAME) are not set.');
+      console.error('Tigris environment variables (VITE_TIGRIS_ENDPOINT_URL, VITE_TIGRIS_STORAGE_BUCKET_NAME) are not set.');
       // Fallback or return an error indicator
       return '/images/error-loading.png'; // Or some other appropriate fallback
     }
@@ -328,17 +328,14 @@ export const fileService = {
     try {
       endpointHostname = new URL(endpointUrl).hostname;
     } catch (e) {
-      console.error('Invalid VITE_AWS_ENDPOINT_URL_S3 format:', endpointUrl);
+      console.error('Invalid VITE_TIGRIS_ENDPOINT_URL format:', endpointUrl);
       return '/images/error-loading.png';
     }
 
     // Construct the base domain in the format: https://{bucket}.{hostname}
     const baseDomain = `https://${bucketName}.${endpointHostname}`;
     
-    // Ensure the path starts with 'dev/' (assuming this is still required by your storage structure)
-    const cleanPath = path.startsWith('dev/') ? path : `dev/${path}`;
-
-    // Construct the full URL
-    return `${baseDomain}/${cleanPath}`;
+    // Construct the full URL using the base domain and the original path
+    return `${baseDomain}/${path}`;
   }
 }; 
