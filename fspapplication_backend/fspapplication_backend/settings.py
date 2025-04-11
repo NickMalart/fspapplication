@@ -239,21 +239,27 @@ else:
     # Use S3 for static files
     STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
 
-# AWS S3 configuration using environment variables
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME')
-AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-AWS_DEFAULT_ACL = os.environ.get('AWS_DEFAULT_ACL', 'private')
-AWS_S3_OBJECT_PARAMETERS = {
+# Tigris S3 compatible storage configuration using environment variables
+TIGRIS_ACCESS_KEY_ID = os.environ.get('TIGRIS_ACCESS_KEY_ID')
+TIGRIS_SECRET_ACCESS_KEY = os.environ.get('TIGRIS_SECRET_ACCESS_KEY')
+TIGRIS_STORAGE_BUCKET_NAME = os.environ.get('TIGRIS_STORAGE_BUCKET_NAME')
+TIGRIS_REGION_NAME = os.environ.get('TIGRIS_REGION_NAME')
+TIGRIS_ENDPOINT_URL = os.environ.get('TIGRIS_ENDPOINT_URL_S3') # Using TIGRIS_ prefix
+# Custom domain format as requested: bucket_name.endpoint_url
+TIGRIS_ENDPOINT_URL_S3_VAL = os.environ.get('TIGRIS_ENDPOINT_URL_S3', '') # Get endpoint value
+if TIGRIS_ENDPOINT_URL_S3_VAL and TIGRIS_STORAGE_BUCKET_NAME: # Using TIGRIS_ prefix
+    TIGRIS_S3_CUSTOM_DOMAIN = f'{TIGRIS_STORAGE_BUCKET_NAME}.{TIGRIS_ENDPOINT_URL_S3_VAL}' # Using TIGRIS_ prefix
+else:
+    TIGRIS_S3_CUSTOM_DOMAIN = '' # Handle case where env vars might be missing
+TIGRIS_DEFAULT_ACL = os.environ.get('TIGRIS_DEFAULT_ACL', 'private') # Using TIGRIS_ prefix
+TIGRIS_S3_OBJECT_PARAMETERS = { # Using TIGRIS_ prefix
     'CacheControl': 'max-age=86400',
 }
 
-# CloudFront settings
-CLOUDFRONT_DOMAIN = os.environ.get('CLOUDFRONT_DOMAIN', 'd1elaz1f509qmb.cloudfront.net')
-CLOUDFRONT_OAI_ID = os.environ.get('CLOUDFRONT_OAI_ID', '')
-AWS_S3_USE_OAI = os.environ.get('AWS_S3_USE_OAI', 'False') == 'True'
+# CloudFront settings removed as per user request (using Tigris directly)
+# CLOUDFRONT_DOMAIN = os.environ.get('CLOUDFRONT_DOMAIN', 'd1elaz1f509qmb.cloudfront.net')
+# CLOUDFRONT_OAI_ID = os.environ.get('CLOUDFRONT_OAI_ID', '')
+# AWS_S3_USE_OAI = os.environ.get('AWS_S3_USE_OAI', 'False') == 'True'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
