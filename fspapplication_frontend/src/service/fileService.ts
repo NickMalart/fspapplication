@@ -2,28 +2,46 @@ import apiClient from './api';
 import { convertObjectKeysToCamel } from '@/utils/caseConverter';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
+// Read the Tigris public domain from environment variables
+const TIGRIS_PUBLIC_DOMAIN = import.meta.env.VITE_TIGRIS_PUBLIC_DOMAIN || '';
 
 export interface FileUploadResponse {
   success: boolean;
-  path?: string;
-  url?: string;
-  id?: number;
+  path?: string;        // The object key/path in the bucket
+  url?: string;         // Presigned URL for temporary access
+  fileUrl?: string;     // Potentially direct URL (if public), may differ from display URL
+  id?: number;          // DB record ID
   error?: string;
+  // Add fields returned by FileUploadSerializer
+  originalFilename?: string;
+  fileType?: string;
+  module?: string;
+  contentType?: string;
+  fileSize?: number;
+  createdBy?: number;
+  createdAt?: string;
+  filename?: string; // Base filename derived from path
 }
 
 export interface FileListItem {
-  key: string;
-  url: string;
-  filename: string;
+  // Based on FileUploadSerializer fields
+  id: number;
+  path: string;
+  originalFilename: string;
   fileType: string;
   module: string;
-  lastModified: Date;
-  size: number;
+  contentType: string | null;
+  fileSize: number;
+  createdBy: number | null;
+  createdAt: string;
+  url: string | null; // Presigned URL
+  filename: string | null;
+  fileUrl: string | null; // Direct/Public URL from backend
 }
 
 export interface FileDownloadResponse {
   success: boolean;
-  url?: string;
+  url?: string; // This will be the presigned URL from the backend
   error?: string;
 }
 
@@ -31,282 +49,304 @@ export interface FileDownloadResponse {
 export interface ImageResizeOptions {
   maxWidth?: number;
   maxHeight?: number;
-  quality?: number;
-  outputFormat?: string;
+  quality?: number; // 0 to 1 (e.g., 0.85 for 85% quality)
+  outputFormat?: 'image/jpeg' | 'image/png' | 'image/webp'; // Specify output format
 }
 
 export const fileService = {
   /**
-   * Normalizes a file path to be used with CloudFront
-   * Removes /dev prefix, localhost URLs, and standardizes the path
+   * Resizes an image client-side before upload.
+   * Helps reduce upload size and server processing.
    * 
-   * @param path The file path to normalize
-   * @returns Normalized path suitable for CloudFront
-   */
-  normalizePath(path: string): string {
-    if (!path) return '';
-    
-    let cleanPath = path;
-    
-    // Remove any domain or protocol parts if present
-    if (cleanPath.includes('://')) {
-      cleanPath = new URL(cleanPath).pathname;
-    }
-    
-    // Remove /dev prefix if present
-    cleanPath = cleanPath.replace(/^\/dev\//, '');
-    
-    // Remove any leading slash
-    cleanPath = cleanPath.startsWith('/') ? cleanPath.substring(1) : cleanPath;
-    
-    return cleanPath;
-  },
-
-  /**
-   * Resizes an image client-side before upload to reduce server load and bandwidth
-   * 
-   * @param file The original file to resize
-   * @param options Resize options (width, height, quality)
-   * @returns Promise that resolves to the resized file
+   * @param file The original image file.
+   * @param options Resize options (maxWidth, maxHeight, quality, outputFormat).
+   * @returns Promise resolving to the resized File object.
    */
   async resizeImage(file: File, options: ImageResizeOptions = {}): Promise<File> {
-    // Skip resizing if not an image
     if (!file.type.startsWith('image/')) {
+      console.warn('Attempted to resize a non-image file. Returning original.');
       return file;
     }
-    
-    const maxWidth = options.maxWidth || 800;
-    const maxHeight = options.maxHeight || 800;
-    const quality = options.quality || 0.85;
-    
-    // Preserve original format for PNG to maintain transparency
-    const outputFormat = options.outputFormat || 
-                         (file.type === 'image/png' ? 'image/png' : 'image/jpeg');
-    
+
+    const maxWidth = options.maxWidth || 800; // Default max width
+    const maxHeight = options.maxHeight || 800; // Default max height
+    const quality = options.quality !== undefined ? options.quality : 0.85; // Default quality
+
+    // Default to JPEG unless PNG is specified or original is PNG (to preserve transparency)
+    const outputFormat = options.outputFormat || (file.type === 'image/png' ? 'image/png' : 'image/jpeg');
+
     return new Promise((resolve, reject) => {
       const img = new Image();
-      img.src = URL.createObjectURL(file);
-      
+      const objectUrl = URL.createObjectURL(file);
+      img.src = objectUrl;
+
       img.onload = () => {
-        // Release object URL
-        URL.revokeObjectURL(img.src);
-        
-        // Calculate new dimensions while maintaining aspect ratio
-        let width = img.width;
-        let height = img.height;
-        
+        URL.revokeObjectURL(objectUrl); // Clean up object URL
+
+        let { width, height } = img;
+        const aspectRatio = width / height;
+
+        // Calculate new dimensions maintaining aspect ratio
         if (width > maxWidth) {
-          height = (height * maxWidth) / width;
           width = maxWidth;
+          height = width / aspectRatio;
         }
-        
         if (height > maxHeight) {
-          width = (width * maxHeight) / height;
           height = maxHeight;
+          width = height * aspectRatio;
         }
-        
-        // Skip resizing if image is already smaller than target dimensions
-        if (img.width <= maxWidth && img.height <= maxHeight && file.type === outputFormat) {
-          console.log('Image already smaller than target size, skipping resize');
+
+        // Round dimensions to whole pixels
+        width = Math.round(width);
+        height = Math.round(height);
+
+        // Optimization: If the image is already small enough and format matches, return original
+        if (img.width <= width && img.height <= height && file.type === outputFormat) {
+          console.log('Image is already within target dimensions and format. Skipping resize.');
           resolve(file);
           return;
         }
-        
-        // Create canvas for resizing
+
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
-        
-        // Draw and resize image on canvas
         const ctx = canvas.getContext('2d');
+
         if (!ctx) {
-          reject(new Error('Could not get canvas context'));
+          reject(new Error('Failed to get 2D context from canvas'));
           return;
         }
-        
-        // For PNG files, ensure the canvas is transparent before drawing
-        if (outputFormat === 'image/png') {
-          ctx.clearRect(0, 0, width, height);
-        }
-        
+
+        // Draw image onto canvas (resizing occurs here)
         ctx.drawImage(img, 0, 0, width, height);
-        
-        // Convert to blob with reduced quality
+
+        // Convert canvas to blob with specified format and quality
         canvas.toBlob(
           (blob) => {
             if (!blob) {
               reject(new Error('Canvas to Blob conversion failed'));
               return;
             }
-            
-            // Create new file from blob
-            const resizedFile = new File(
-              [blob],
-              file.name,
-              { type: outputFormat, lastModified: Date.now() }
+            // Create a new File object from the blob
+            const resizedFile = new File([blob], file.name, {
+              type: outputFormat,
+              lastModified: Date.now(),
+            });
+
+            console.log(
+              `Resized image from ${this.formatFileSize(file.size)} ` +
+              `to ${this.formatFileSize(resizedFile.size)} ` +
+              `(Format: ${outputFormat}, Quality: ${quality})`
             );
-            
-            // Use the formatFileSize method from this object
-            const formatSize = fileService.formatFileSize;
-            console.log(`Resized image from ${formatSize(file.size)} to ${formatSize(resizedFile.size)}`);
             resolve(resizedFile);
           },
           outputFormat,
           quality
         );
       };
-      
-      img.onerror = () => {
-        URL.revokeObjectURL(img.src);
-        reject(new Error('Error loading image'));
+
+      img.onerror = (error) => {
+        URL.revokeObjectURL(objectUrl);
+        console.error('Error loading image for resizing:', error);
+        reject(new Error('Image loading failed'));
       };
     });
   },
-  
+
   /**
-   * Format file size in a human-readable format
-   * @param bytes File size in bytes
-   * @returns Formatted string (e.g., "2.5 MB")
+   * Formats file size in bytes to a human-readable string (KB, MB, GB).
+   * 
+   * @param bytes File size in bytes.
+   * @returns Formatted file size string.
    */
   formatFileSize(bytes: number): string {
+    if (bytes < 0) return 'Invalid size';
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']; // Added TB
+    const i = Math.max(0, Math.floor(Math.log(bytes) / Math.log(k)));
+    // Ensure we don't exceed the sizes array bounds
+    const unitIndex = Math.min(i, sizes.length - 1); 
+    // Use toFixed(1) for KB and above for better readability
+    const precision = unitIndex === 0 ? 0 : 1; 
+    return `${parseFloat((bytes / Math.pow(k, unitIndex)).toFixed(precision))} ${sizes[unitIndex]}`;
   },
 
   /**
-   * Upload a file to the server with automatic image resizing
-   * @param file The file to upload
-   * @param fileType The type category for the file
-   * @param module The module the file belongs to
-   * @param resizeOptions Optional image resize options (if it's an image)
-   * @returns Promise with the upload response
+   * Uploads a file to the backend API.
+   * Optionally resizes images before uploading.
+   * 
+   * @param file The File object to upload.
+   * @param fileType Category for the file (e.g., 'images', 'documents').
+   * @param module Module the file belongs to (e.g., 'avatars', 'invoices').
+   * @param resizeOptions Options for resizing if the file is an image. Pass `null` to disable resizing.
+   * @returns Promise resolving to the FileUploadResponse from the backend.
    */
   async uploadFile(
     file: File,
     fileType: string,
     module: string,
-    resizeOptions?: ImageResizeOptions
+    resizeOptions?: ImageResizeOptions | null // Allow null to explicitly disable resize
   ): Promise<FileUploadResponse> {
-    try {
-      // Automatically resize images before upload
-      let fileToUpload = file;
-      
-      if (file.type.startsWith('image/') && resizeOptions !== null) {
-        try {
-          fileToUpload = await this.resizeImage(file, resizeOptions || undefined);
-        } catch (err) {
-          console.error('Error resizing image:', err);
-          // Continue with original file if resize fails
-        }
+    let fileToUpload = file;
+
+    // Resize image if it's an image and resizeOptions are provided (not null)
+    if (file.type.startsWith('image/') && resizeOptions !== null) {
+      try {
+        console.log('Attempting to resize image before upload...');
+        fileToUpload = await this.resizeImage(file, resizeOptions || undefined);
+      } catch (resizeError) {
+        console.error('Image resizing failed, uploading original file:', resizeError);
+        // Fallback to uploading the original file if resizing fails
       }
-      
-      const formData = new FormData();
-      formData.append('file', fileToUpload);
-      formData.append('file_type', fileType);
-      formData.append('module', module);
-      formData.append('use_chunked_upload', 'true');
+    }
 
-      const response = await apiClient.post('/files/upload/', formData, {
+    const formData = new FormData();
+    formData.append('file', fileToUpload, file.name); // Use original filename
+    formData.append('file_type', fileType);
+    formData.append('module', module);
+    // Removed 'use_chunked_upload' as it seemed unused in backend
+
+    console.log(`Uploading file: ${fileToUpload.name}, Type: ${fileType}, Module: ${module}, Size: ${this.formatFileSize(fileToUpload.size)}`);
+
+    try {
+      // Use the generic apiClient for the request
+      const response = await apiClient.post<FileUploadResponse>(`${API_URL}/files/upload/`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          // Content-Type is automatically set by browser for FormData
+          // 'Content-Type': 'multipart/form-data', 
         },
-        withCredentials: true
+        // Ensure credentials (like cookies or auth tokens) are sent if needed by the backend
+        withCredentials: true, 
       });
+      
+      console.log('Upload API response received:', response.data);
+      // Convert keys before returning
+      return convertObjectKeysToCamel(response.data) as FileUploadResponse;
 
-      return response.data;
     } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { error?: string } }, message?: string };
+      console.error('File upload failed:', error);
+      // Provide a more detailed error object
+      const errorMessage = apiClient.isAxiosError(error) 
+        ? error.response?.data?.error || error.message 
+        : (error instanceof Error ? error.message : 'Unknown upload error');
+        
       return {
         success: false,
-        error: axiosError.response?.data?.error || axiosError.message || 'Failed to upload file',
+        error: errorMessage,
       };
     }
   },
 
   /**
-   * List files for the tenant, optionally filtered by file type and module
+   * Lists files stored for the current tenant.
+   * Can be filtered by fileType and module.
    * 
-   * @param fileType - Optional type filter (images, documents, etc.)
-   * @param module - Optional module filter
-   * @returns Promise with array of file objects
+   * @param fileType Optional filter by file type (e.g., 'images').
+   * @param module Optional filter by module (e.g., 'avatars').
+   * @returns Promise resolving to an array of FileListItem objects.
    */
   async listFiles(
     fileType?: string,
     module?: string
   ): Promise<FileListItem[]> {
-    try {
-      let url = `${API_URL}/files/list/`;
-      const params: Record<string, string> = {};
-      
-      if (fileType) params.file_type = fileType;
-      if (module) params.module = module;
+    const params: Record<string, string> = {};
+    if (fileType) params.file_type = fileType;
+    if (module) params.module = module;
 
-      const response = await apiClient.get(url, { params });
-      
-      return convertObjectKeysToCamel(response.data.files || []);
+    try {
+      const response = await apiClient.get<{ files: any[] }>(`${API_URL}/files/list/`, { params });
+      // Convert keys and ensure dates are parsed correctly if needed
+      return (response.data.files || []).map(file => convertObjectKeysToCamel(file)) as FileListItem[];
     } catch (error) {
-      return [];
+      console.error('Failed to list files:', error);
+      return []; // Return empty array on failure
     }
   },
 
   /**
-   * Delete a file by its path
+   * Deletes a file from storage using its path.
    * 
-   * @param filePath - Full S3 path of the file to delete
-   * @returns Promise with success status
+   * @param filePath The full path (object key) of the file in the bucket.
+   * @returns Promise resolving to an object indicating success or failure.
    */
   async deleteFile(filePath: string): Promise<{ success: boolean; error?: string }> {
+    console.log(`Requesting deletion of file path: ${filePath}`);
     try {
-      await apiClient.delete('/files/delete/', {
+      // Backend expects path in the request body data
+      await apiClient.delete(`${API_URL}/files/delete/`, {
         data: { path: filePath }
       });
-      
+      console.log(`File deleted successfully: ${filePath}`);
       return { success: true };
-    } catch (error) {
-      if (apiClient.isAxiosError(error) && error.response) {
-        return {
-          success: false,
-          error: error.response.data.detail || 'File deletion failed',
-        };
-      }
+    } catch (error: unknown) {
+      console.error(`Failed to delete file ${filePath}:`, error);
+      const errorMessage = apiClient.isAxiosError(error)
+        ? error.response?.data?.error || error.message
+        : (error instanceof Error ? error.message : 'Unknown deletion error');
       return {
         success: false,
-        error: 'File deletion failed',
+        error: errorMessage,
       };
     }
   },
 
   /**
-   * Get a URL for downloading a file
-   * @param path The path of the file to download
-   * @returns Promise with download URL
+   * Retrieves a temporary, secure (presigned) URL for accessing a file.
+   * Ideal for downloading private files or displaying images securely.
+   * 
+   * @param path The full path (object key) of the file in the bucket.
+   * @param expiration Optional expiration time in seconds (default from backend: 3600).
+   * @returns Promise resolving to the presigned URL string, or null if failed.
    */
-  async getDownloadUrl(path: string): Promise<string | null> {
+  async getDownloadUrl(path: string, expiration?: number): Promise<string | null> {
+    const params: Record<string, string | number> = { path };
+    if (expiration !== undefined) {
+      params.expiration = expiration;
+    }
     try {
-      const response = await apiClient.get('/files/download/', {
-        params: { path },
-        withCredentials: true,
+      const response = await apiClient.get<FileDownloadResponse>(`${API_URL}/files/download/`, {
+        params,
+        withCredentials: true, // Ensure auth is sent
       });
 
       if (response.data.success && response.data.url) {
         return response.data.url;
       }
+      console.error(`Failed to get download URL from backend for path: ${path}`, response.data.error);
       return null;
     } catch (error) {
+      console.error(`Error fetching download URL for path: ${path}`, error);
       return null;
     }
   },
 
   /**
-   * Get CloudFront URL for a file path
-   * @param path The file path
-   * @returns Full CloudFront URL
+   * Constructs a potentially public URL for a file using the configured Tigris public domain.
+   * This URL format typically follows: https://<bucket_name>.<endpoint_domain>/<file_path>
+   * WARNING: This function *assumes* the file has public read access. 
+   * Use getDownloadUrl() for secure access to private files.
+   * 
+   * @param path The file path (object key) within the bucket.
+   * @returns The constructed public URL string, or null if domain is not configured.
    */
-  getCloudFrontUrl(path: string): string {
-    const cleanPath = this.normalizePath(path);
-    return `https://d1elaz1f509qmb.cloudfront.net/${cleanPath}`;
+  getPublicFileUrl(path: string): string | null {
+    if (!TIGRIS_PUBLIC_DOMAIN) {
+      console.warn('VITE_TIGRIS_PUBLIC_DOMAIN is not configured in environment variables. Cannot generate public URL.');
+      return null;
+    }
+    if (!path) {
+      return null; // Don't generate URL for empty path
+    }
+    
+    // Ensure path doesn't have a leading slash for URL construction
+    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    
+    // Construct the URL using the virtual-hosted style domain
+    // Ensure the domain doesn't already include https://
+    const domain = TIGRIS_PUBLIC_DOMAIN.replace(/^https?:\/\//, '');
+    const url = `https://${domain}/${cleanPath}`;
+    // console.log(`Generated public URL: ${url}`); // Optional debug log
+    return url;
   }
 }; 

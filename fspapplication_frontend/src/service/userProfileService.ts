@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { convertObjectKeysToSnake, convertObjectKeysToCamel } from '@/utils/caseConverter';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// Always use the relative path for the Vite proxy to intercept
+const API_BASE_PATH = '/api';
 
 export interface UserLogin {
   id: string; 
@@ -54,7 +55,7 @@ export const userService = {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       if (!isRefreshingToken) {
         isRefreshingToken = true;
-        tokenRefreshPromise = axios.post(`${API_URL}/account/token/refresh/`)
+        tokenRefreshPromise = axios.post(`${API_BASE_PATH}/account/token/refresh/`)
           .then(response => {
             return response.data;
           })
@@ -81,7 +82,7 @@ export const userService = {
   
   async getCurrentUser(): Promise<UserLogin> {
     try {
-      const response = await axios.get(`${API_URL}/account/user/`);
+      const response = await axios.get(`${API_BASE_PATH}/account/user/`);
       return convertObjectKeysToCamel(response.data);
     } catch (error) {
       return this.handleAuthError(error);
@@ -90,7 +91,7 @@ export const userService = {
   
   async getUserProfile(): Promise<CompleteUser> {
     try {
-      const response = await axios.get(`${API_URL}/account/user/profile/`);
+      const response = await axios.get(`${API_BASE_PATH}/account/user/profile/`);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
       if (error.name === 'RetryAfterRefresh') {
@@ -113,7 +114,7 @@ export const userService = {
         simplifiedData.profile = convertObjectKeysToSnake(userData.profile);
       }
       
-      const response = await axios.put(`${API_URL}/account/user/profile/update/`, simplifiedData);
+      const response = await axios.put(`${API_BASE_PATH}/account/user/profile/update/`, simplifiedData);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
       if (error.name === 'RetryAfterRefresh') {
