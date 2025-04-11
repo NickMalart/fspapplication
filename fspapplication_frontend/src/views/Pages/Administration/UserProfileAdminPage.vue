@@ -57,6 +57,7 @@ import UserAddressAdminCard from '@/components/administration/accounts/UserAddre
 import UserEmergencyContactAdminCard from "@/components/administration/accounts/UserEmergencyContactAdminCard.vue";
 import UserTypeProfileAdminCard from "@/components/administration/accounts/UserTypeProfileAdminCard.vue";
 import { convertObjectKeysToCamel } from "@/utils/caseConverter";
+import { useUserStore } from "@/stores/userProfileStore";
 
 
 const route = useRoute();
@@ -67,11 +68,23 @@ const loading = computed(() => userProfileAdminStore.loading);
 const error = computed(() => userProfileAdminStore.error);
 const userProfile = computed(() => userProfileAdminStore.currentUser);
 
+// Get the main user store instance
+const userStore = useUserStore();
+
 // Handle updates from the avatar component
 const handleUserUpdate = (updatedUser: UserProfileAdmin) => {
   // Update the store's currentUser directly without a full refresh
   if (updatedUser) {
     userProfileAdminStore.$patch({ currentUser: updatedUser });
+
+    // Also update the main user store if the updated user is the logged-in user
+    const loggedInUserId = userStore.completeUser?.id;
+    if (loggedInUserId && updatedUser.id === loggedInUserId) {
+      console.log('Admin updated logged-in user profile, updating main user store.');
+      // Ensure the structure matches CompleteUser if needed, or cast if identical
+      userStore.$patch({ completeUser: updatedUser as any }); 
+      // Or more explicitly map fields if UserProfileAdmin != CompleteUser
+    }
   }
 };
 
