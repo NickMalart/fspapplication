@@ -167,8 +167,8 @@ const fullName = computed(() => {
 const avatarUrl = computed(() => {
   const avatarPath = props.user?.avatar;
   if (!avatarPath) {
-    // Return a default avatar path or null
-    return '/images/user/user-avatar.png'; // Adjust the path as needed
+    // Return null to allow the template's v-else fallback to work
+    return null; 
   }
   // Use the file service to get the public URL
   return fileService.getPublicFileUrl(avatarPath);
