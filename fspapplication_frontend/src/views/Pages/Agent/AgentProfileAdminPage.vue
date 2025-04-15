@@ -57,7 +57,6 @@ const fetchAgentDetails = async () => {
     agent.value = data;
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load agent details';
-    console.error('Error fetching agent details:', err);
   } finally {
     isLoading.value = false;
   }
@@ -70,7 +69,7 @@ const handleLogoUpdate = async (updateData: { id: string, logo: string | null })
       agent.value.logo = updateData.logo;
     }
   } catch (err) {
-    console.error('Error updating agent logo:', err);
+    error.value = 'Error updating agent logo: ' + (err instanceof Error ? err.message : String(err));
   }
 };
 
@@ -81,7 +80,7 @@ const handleStatusUpdate = async (updateData: { id: string, isActive: boolean })
       agent.value.isActive = updateData.isActive;
     }
   } catch (err) {
-    console.error('Error updating agent status:', err);
+    error.value = 'Error updating agent status: ' + (err instanceof Error ? err.message : String(err));
   }
 };
 
@@ -91,7 +90,7 @@ const handleAgentUpdate = async (updatedAgent: Agent) => {
     agent.value = updatedAgent;
     await fetchAgentDetails(); // Refresh the data to ensure consistency
   } catch (err) {
-    console.error('Error handling agent update:', err);
+    error.value = 'Error handling agent update: ' + (err instanceof Error ? err.message : String(err));
   }
 };
 

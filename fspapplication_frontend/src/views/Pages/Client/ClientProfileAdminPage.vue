@@ -72,7 +72,6 @@ const fetchClientDetails = async () => {
     client.value = data;
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load client details';
-    console.error('Error fetching client details:', err);
   } finally {
     isLoading.value = false;
   }
@@ -85,7 +84,7 @@ const handleLogoUpdate = async (updateData: { id: string, logo: string | null })
       client.value.logo = updateData.logo;
     }
   } catch (err) {
-    console.error('Error updating client logo:', err);
+    error.value = 'Error updating client logo: ' + (err instanceof Error ? err.message : String(err))
   }
 };
 
@@ -96,7 +95,7 @@ const handleStatusUpdate = async (updateData: { id: string, isActive: boolean })
       client.value.isActive = updateData.isActive;
     }
   } catch (err) {
-    console.error('Error updating client status:', err);
+    error.value = 'Error updating client status: ' + (err instanceof Error ? err.message : String(err))
   }
 };
 
@@ -106,7 +105,7 @@ const handleClientUpdate = async (updatedClient: Client) => {
     client.value = updatedClient;
     await fetchClientDetails(); // Refresh the data to ensure consistency
   } catch (err) {
-    console.error('Error handling client update:', err);
+    error.value = 'Error handling client update: ' + (err instanceof Error ? err.message : String(err))
   }
 };
 

@@ -15,7 +15,7 @@
       </div>
       <p class="text-sm text-red-500">{{ userError }}</p>
       <button 
-        @click="fetchUserData"
+        @click="() => fetchUserData(true)"
         class="mt-4 px-3 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
       >
         Retry
@@ -194,62 +194,55 @@ const currentUser = computed(() => props.user || localUser.value);
 
 // Prevent window focus events from triggering unwanted refreshes
 const handleVisibilityChange = () => {
-  console.log(`[UserAvatarSectionAdmin] Visibility changed: ${document.visibilityState} at ${new Date().toISOString()}`);
+  if (document.visibilityState === 'visible') {
+    // If the page becomes visible again, we might want to refresh data
+    // For now, let's not automatically refresh on visibility change unless needed
+    // fetchUserData();
+  }
 };
 
 // Watch for userId changes to fetch user data
 watch(() => props.userId, (newUserId, oldUserId) => {
-  console.log(`[UserAvatarSectionAdmin] userId changed: ${oldUserId} -> ${newUserId}`);
-  // Only fetch if userId actually changed
-  if (newUserId !== oldUserId && newUserId) {
-    previousUserId.value = newUserId;
-    console.log(`[UserAvatarSectionAdmin] Fetching data due to userId change`);
-    fetchUserData();
+  previousUserId.value = oldUserId;
+  if (newUserId !== oldUserId) {
+    fetchUserData(true); // Force fetch when ID changes
   }
 }, { immediate: true });
 
 // Watch refreshTrigger to explicitly refresh data when needed
 watch(() => props.refreshTrigger, (newVal, oldVal) => {
-  console.log(`[UserAvatarSectionAdmin] refreshTrigger changed: ${oldVal} -> ${newVal}`);
-  if (props.userId) {
-    isForcedRefresh.value = true;
-    console.log(`[UserAvatarSectionAdmin] Fetching data due to explicit refreshTrigger`);
-    fetchUserData();
+  if (newVal !== oldVal) {
+    fetchUserData(true); // Force fetch on trigger
   }
 });
 
 // Fetch user data if userId is provided
-async function fetchUserData() {
-  console.log(`[UserAvatarSectionAdmin] fetchUserData called. userId: ${props.userId}, isForcedRefresh: ${isForcedRefresh.value}`);
-  
+async function fetchUserData(force = false) {
   if (!props.userId) {
-    console.log(`[UserAvatarSectionAdmin] No userId, skipping fetch`);
+    userError.value = null;
+    loadingUser.value = false;
     return;
   }
   
   // Skip if we already have the user data passed as prop
   if (props.user) {
-    console.log(`[UserAvatarSectionAdmin] User data passed as prop, skipping fetch`);
+    loadingUser.value = false;
     return;
   }
   
   // Skip if we already have data for this user and it's not a forced refresh
   if (localUser.value?.id === props.userId && !isForcedRefresh.value) {
-    console.log(`[UserAvatarSectionAdmin] Already have data for user ${props.userId} and not forced refresh, skipping fetch`);
-    isForcedRefresh.value = false;
+    loadingUser.value = false;
     return;
   }
   
-  console.log(`[UserAvatarSectionAdmin] Fetching user data for ${props.userId}`);
   loadingUser.value = true;
   userError.value = null;
   
   try {
     localUser.value = await userProfileAdminService.getUserProfile(props.userId);
-    console.log(`[UserAvatarSectionAdmin] Successfully fetched data for ${props.userId}`);
   } catch (error) {
     userError.value = error instanceof Error ? error.message : 'Failed to load user data';
-    console.error(`[UserAvatarSectionAdmin] Error fetching user:`, error);
   } finally {
     loadingUser.value = false;
     isForcedRefresh.value = false;
@@ -258,17 +251,12 @@ async function fetchUserData() {
 
 // Fetch user data on mount if userId is provided and has changed
 onMounted(() => {
-  console.log(`[UserAvatarSectionAdmin] Component mounted. userId: ${props.userId}, previousUserId: ${previousUserId.value}`);
-  
-  if (props.userId && !props.user && props.userId !== previousUserId.value) {
-    previousUserId.value = props.userId;
-    console.log(`[UserAvatarSectionAdmin] Fetching data on mount`);
+  if (props.userId && props.userId !== previousUserId.value) {
     fetchUserData();
   }
   
-  // Add visibility change listener to intercept potential browser focus events
+  // Add visibility change listener
   document.addEventListener('visibilitychange', handleVisibilityChange);
-  console.log(`[UserAvatarSectionAdmin] Added visibilitychange listener`);
 });
 
 onUnmounted(() => {
@@ -419,7 +407,7 @@ const toggleUserStatus = async () => {
     emit('update:user', updatedUser);
     emit('status-toggle');
   } catch (error) {
-    console.error('Failed to update user status:', error);
+    userError.value = error instanceof Error ? error.message : 'Failed to update status';
   }
 };
 
