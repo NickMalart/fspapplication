@@ -156,8 +156,6 @@ const initForm = () => {
     
     editForm.taxNumber = props.companyData.taxNumber || '';
     editForm.abnNumber = props.companyData.abnNumber || '';
-    
-    console.log('Initialized company form data:', editForm);
   }
 };
 
@@ -172,7 +170,6 @@ const saveChanges = () => {
     abnNumber: editForm.abnNumber || undefined
   };
   
-  console.log('Saving company form data:', formData);
   emit('save', formData);
 };
 

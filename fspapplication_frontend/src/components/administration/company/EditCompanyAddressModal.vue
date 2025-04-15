@@ -180,8 +180,6 @@ const populateAddressFields = (data: any) => {
     return;
   }
   
-  console.log('Address data received:', data);
-  
   // Copy the existing form data to avoid losing current values
   const newFormData = { ...formData.value };
   
@@ -300,8 +298,6 @@ const populateAddressFields = (data: any) => {
   
   // Update form data
   formData.value = newFormData;
-  
-  console.log('Address fields populated:', formData.value);
 };
 
 // Initialize form data when props change
@@ -319,8 +315,6 @@ const initForm = () => {
       longitude: props.companyData.longitude,
       googlePlaceId: props.companyData.googlePlaceId
     };
-    
-    console.log('Initialized company address form data:', formData.value);
   }
 };
 
@@ -365,7 +359,6 @@ const saveChanges = () => {
     }
   }
   
-  console.log('Saving company address changes:', dataToSave);
   emit('save', dataToSave);
 };
 

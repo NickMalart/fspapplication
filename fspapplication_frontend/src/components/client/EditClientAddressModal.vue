@@ -174,8 +174,6 @@ const populateAddressFields = (data: any) => {
     return;
   }
   
-  console.log('Address data received:', data);
-  
   // Copy the existing form data to avoid losing current values
   const newFormData = { ...formData.value };
   
@@ -260,8 +258,6 @@ const populateAddressFields = (data: any) => {
   
   // Update form data
   formData.value = newFormData;
-  
-  console.log('Address fields populated:', formData.value);
 };
 
 // Initialize form data when props change
@@ -278,9 +274,7 @@ const initForm = () => {
       latitude: props.clientData.latitude,
       longitude: props.clientData.longitude
     };
-    
-    console.log('Initialized address form data:', formData.value);
-  }
+  };
 };
 
 // Handle form submission
@@ -333,7 +327,7 @@ const saveChanges = () => {
     }
   }
   
-  console.log('Saving address changes:', formattedData);
+  // console.log('Saving address changes:', formattedData); // Ensure this is removed or commented out
   emit('save', formattedData);
 };
 

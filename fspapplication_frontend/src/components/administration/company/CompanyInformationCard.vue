@@ -103,7 +103,6 @@ const companyStore = usecompanyStore();
 const { companyProfile, loading, error } = storeToRefs(companyStore);
 
 const company = computed(() => {
-  console.log('Computing company:', companyProfile.value);
   return companyProfile.value;
 });
 const isModalOpen = ref(false);
@@ -126,9 +125,7 @@ const handleSave = async (formData: {
   isSaving.value = true;
   
   try {
-    console.log('Sending company data to store:', formData);
     const success = await companyStore.updateCompanyProfile(formData);
-    console.log('Update result:', success);
     
     // Increment key to force modal re-render on next open
     modalKey.value++;
@@ -145,23 +142,19 @@ const handleSave = async (formData: {
 
 // Fetch company data on mount
 onMounted(async () => {
-  console.log('Company card mounted, fetching company data');
   await companyStore.fetchCompanyProfile();
 });
 
 // Debug log when company data changes
 watch(() => companyProfile.value, (newValue) => {
-  console.log('companyProfile changed:', newValue);
 }, { deep: true });
 
 watch(company, (newCompany) => {
-  console.log('company computed changed:', newCompany);
 }, { deep: true });
 
 // Force refetch when modal closes
 watch(isModalOpen, (open) => {
   if (!open) {
-    console.log('Company modal closed, refreshing data');
     companyStore.fetchCompanyProfile();
   }
 });

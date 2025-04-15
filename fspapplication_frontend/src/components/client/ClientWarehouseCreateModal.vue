@@ -245,12 +245,9 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import axios from 'axios';
-import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
-import BaseModal from '@/components/ui/BaseModal.vue'; // Import BaseModal
-import AddressAutocomplete from '@/components/common/AddressAutocomplete.vue'; // Import AddressAutocomplete
-
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+import BaseModal from '@/components/ui/BaseModal.vue';
+import AddressAutocomplete from '@/components/common/AddressAutocomplete.vue';
+import { clientWarehouseService, type Warehouse } from '@/service/clientWarehouseService';
 
 const props = defineProps<{
   show: boolean;
@@ -263,8 +260,7 @@ const emit = defineEmits<{
   (e: 'warehouse-created', warehouse: any): void;
 }>();
 
-// Form data state
-const formData = ref({
+const formData = ref<Partial<Warehouse>>({
   name: '',
   description: '',
   streetNumber: '',
@@ -287,33 +283,9 @@ const formData = ref({
   isActive: true
 });
 
-// Type for the address data received from AddressAutocomplete
-interface AddressData {
-  formattedAddress?: string;
-  components?: { 
-    streetNumber?: string;
-    route?: string; // Often used for street name
-    locality?: string; // Often used for city
-    sublocality?: string; // Often used for suburb
-    administrativeAreaLevel1?: string; // Often used for state
-    country?: string;
-    postalCode?: string;
-    [key: string]: string | undefined; // Allow other component types
-  };
-  street?: string; // Potentially formatted street
-  city?: string;
-  state?: string;
-  country?: string;
-  postalCode?: string;
-  lat?: number | null;
-  lng?: number | null;
-  placeId?: string; 
-}
-
 const isLoading = ref(false);
 const error = ref('');
 
-// Reset form when modal is opened
 watch(() => props.show, (newVal) => {
   if (newVal) {
     resetForm();
@@ -346,9 +318,8 @@ const resetForm = () => {
   error.value = '';
 };
 
-// Handle address update from AddressAutocomplete
-const handleAddressUpdate = (addressData: AddressData) => {
-  console.log("Received address data:", addressData);
+const handleAddressUpdate = (addressData: any) => {
+  // console.log("Received address data:", addressData); // REMOVED
   
   // Extract components, handling potential undefined
   const components = addressData.components || {};
@@ -446,10 +417,9 @@ const handleAddressUpdate = (addressData: AddressData) => {
   formData.value.latitude = addressData.lat !== undefined ? addressData.lat : null;
   formData.value.longitude = addressData.lng !== undefined ? addressData.lng : null;
   
-  console.log("Updated form data with address:", formData.value);
+  // console.log("Updated form data with address:", formData.value); // REMOVED
 };
 
-// Handle form submission (triggered by BaseModal @save event)
 const handleSubmit = async () => {
   if (!formData.value.name) {
     error.value = 'Warehouse name is required';
@@ -460,36 +430,10 @@ const handleSubmit = async () => {
   error.value = '';
   
   try {
-    // Create a copy of the form data to modify coordinates if needed
-    const formDataToSubmit = { ...formData.value };
+    // The service handles case conversion and coordinate formatting
+    const createdWarehouse = await clientWarehouseService.createWarehouse(props.clientId, formData.value);
     
-    // Format coordinates to ensure they don't exceed database limits
-    if (formDataToSubmit.latitude !== null) {
-      // Ensure latitude has max 9 digits total with 6 decimal places
-      formDataToSubmit.latitude = parseFloat(formDataToSubmit.latitude.toFixed(6));
-    }
-    
-    if (formDataToSubmit.longitude !== null) {
-      // Ensure longitude has max 12 digits total with 9 decimal places
-      formDataToSubmit.longitude = parseFloat(formDataToSubmit.longitude.toFixed(9));
-    }
-    
-    // Convert form data to snake_case for API using the utility
-    const apiData = convertObjectKeysToSnake(formDataToSubmit);
-    
-    // Add client ID to the data
-    apiData.client = props.clientId;
-    
-    // Submit data to API
-    const response = await axios.post(
-      `${API_URL}/client/clients/${props.clientId}/warehouses/`,
-      apiData
-    );
-    
-    // Convert response to camelCase
-    const createdWarehouse = convertObjectKeysToCamel(response.data);
-    
-    // Emit event with created warehouse data
+    // Emit event with created warehouse data (already camelCase)
     emit('warehouse-created', createdWarehouse);
     
     // Close modal

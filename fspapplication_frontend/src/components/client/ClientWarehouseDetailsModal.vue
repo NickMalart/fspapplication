@@ -326,41 +326,9 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
-import axios from 'axios';
-import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import AddressAutocomplete from '@/components/common/AddressAutocomplete.vue';
-
-const API_URL = import.meta.env.VITE_API_URL || '/api';
-
-// Define the Warehouse interface
-interface Warehouse {
-  id: string;
-  name: string;
-  client: string;
-  description: string | null;
-  streetNumber: string | null;
-  streetName: string | null;
-  suburb: string | null;
-  city: string | null;
-  state: string | null;
-  postalCode: string | null;
-  country: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  firstName: string | null;
-  lastName: string | null;
-  contactName: string | null;
-  contactPhone: string | null;
-  contactEmail: string | null;
-  isPrimary: boolean;
-  operatingHours: string | null;
-  storageCapacity: string | null;
-  specialInstructions: string | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { clientWarehouseService, type Warehouse } from '@/service/clientWarehouseService';
 
 // Type for the address data received from AddressAutocomplete
 interface AddressData {
@@ -402,8 +370,6 @@ const editedWarehouse = reactive<Partial<Warehouse>>({});
 
 // Helper function to handle address update from AddressAutocomplete
 const handleAddressUpdate = (addressData: AddressData) => {
-  console.log("Received address data:", addressData);
-  
   // Extract components, handling potential undefined
   const components = addressData.components || {};
 
@@ -499,8 +465,6 @@ const handleAddressUpdate = (addressData: AddressData) => {
   // Save coordinates
   editedWarehouse.latitude = addressData.lat !== undefined ? addressData.lat : null;
   editedWarehouse.longitude = addressData.lng !== undefined ? addressData.lng : null;
-  
-  console.log("Updated warehouse data with address:", editedWarehouse);
 };
 
 // Helper function to format address
@@ -536,13 +500,14 @@ const closeModal = () => {
 const toggleStatus = async () => {
   try {
     isLoading.value = true;
-    const response = await axios.patch(
-      `${API_URL}/client/clients/${props.warehouse.client}/warehouses/${props.warehouse.id}/`,
-      { is_active: !props.warehouse.isActive }
+    // Use the service to update status
+    const updatedWarehouse = await clientWarehouseService.updateWarehouseStatus(
+      props.warehouse.client, 
+      props.warehouse.id, 
+      !props.warehouse.isActive
     );
     
-    const updatedWarehouse = convertObjectKeysToCamel(response.data);
-    emit('status-updated', updatedWarehouse);
+    emit('status-updated', updatedWarehouse); // Emits already camelCase warehouse
   } catch (error) {
     console.error('Error updating warehouse status:', error);
   } finally {
@@ -567,33 +532,15 @@ const handleSave = async () => {
   try {
     isLoading.value = true;
     
-    // Create a copy of the edited warehouse data to modify coordinates if needed
-    const warehouseData = { ...editedWarehouse };
-    
-    // Format coordinates to ensure they don't exceed database limits
-    if (warehouseData.latitude !== null && warehouseData.latitude !== undefined) {
-      // Convert to number with 6 decimal places
-      warehouseData.latitude = Number(parseFloat(String(warehouseData.latitude)).toFixed(6));
-    }
-    
-    if (warehouseData.longitude !== null && warehouseData.longitude !== undefined) {
-      // Convert to number with 9 decimal places
-      warehouseData.longitude = Number(parseFloat(String(warehouseData.longitude)).toFixed(9));
-    }
-    
-    // Convert to snake_case for API
-    const apiData = convertObjectKeysToSnake(warehouseData);
-    
-    // Submit data to API
-    const response = await axios.patch(
-      `${API_URL}/client/clients/${props.warehouse.client}/warehouses/${props.warehouse.id}/`,
-      apiData
+    // Use the service to update the warehouse
+    // The service handles case conversion and coordinate formatting
+    const updatedWarehouse = await clientWarehouseService.updateWarehouse(
+      props.warehouse.client, 
+      props.warehouse.id, 
+      editedWarehouse // Pass the reactive partial object
     );
     
-    // Convert response back to camelCase
-    const updatedWarehouse = convertObjectKeysToCamel(response.data);
-    
-    // Emit update event
+    // Emit update event (already camelCase)
     emit('warehouse-updated', updatedWarehouse);
     
     // Exit editing mode

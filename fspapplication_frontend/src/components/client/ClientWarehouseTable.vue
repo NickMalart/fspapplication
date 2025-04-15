@@ -284,42 +284,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import axios from 'axios';
-import { convertObjectKeysToCamel } from '@/utils/caseConverter';
 import debounce from 'lodash/debounce';
 import ClientWarehouseCreateModal from '@/components/client/ClientWarehouseCreateModal.vue';
 import ClientWarehouseDetailsModal from '@/components/client/ClientWarehouseDetailsModal.vue';
+import { clientWarehouseService, type Warehouse, type WarehouseListParams, type WarehousesResponse } from '@/service/clientWarehouseService';
 
-// Define the Warehouse interface
-interface Warehouse {
-  id: string;
-  name: string;
-  client: string;
-  description: string | null;
-  streetNumber: string | null;
-  streetName: string | null;
-  suburb: string | null;
-  city: string | null;
-  state: string | null;
-  postalCode: string | null;
-  country: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  firstName: string | null;
-  lastName: string | null;
-  contactName: string | null;
-  contactPhone: string | null;
-  contactEmail: string | null;
-  isPrimary: boolean;
-  operatingHours: string | null;
-  storageCapacity: string | null;
-  specialInstructions: string | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const API_URL = import.meta.env.VITE_API_URL || '/api';
 const props = defineProps<{
   clientId: string;
   clientName: string;
@@ -374,18 +343,18 @@ const formatLocation = (warehouse: Warehouse): string => {
 const fetchWarehouses = async () => {
   loading.value = true;
   try {
-    const apiParams = {
+    const apiParams: WarehouseListParams = {
       search: search.value,
       ordering: `${sortDirection.value === 'desc' ? '-' : ''}${sortColumn.value}`,
       page: currentPage.value,
-      page_size: perPage.value,
+      pageSize: perPage.value,
       status: statusFilter.value
     };
     
-    const response = await axios.get(`${API_URL}/client/clients/${props.clientId}/warehouses/`, { params: apiParams });
+    const response: WarehousesResponse = await clientWarehouseService.getWarehouses(props.clientId, apiParams);
     
-    warehouses.value = response.data.results.map((warehouse: any) => convertObjectKeysToCamel(warehouse));
-    totalWarehouses.value = response.data.count;
+    warehouses.value = response.results;
+    totalWarehouses.value = response.count;
   } catch (error) {
     console.error('Error fetching warehouses:', error);
   } finally {
