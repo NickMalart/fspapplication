@@ -272,7 +272,8 @@ const toggleAgentStatus = async () => {
     // Emit the update to parent component
     emit('status-updated', { id: props.agent.id, isActive: updatedAgent.isActive });
   } catch (error) {
-    console.error('Failed to update agent status:', error);
+    // console.error('Failed to update agent status:', error); // Removed debugging
+    // TODO: Add user-facing error notification
   }
 };
 </script>

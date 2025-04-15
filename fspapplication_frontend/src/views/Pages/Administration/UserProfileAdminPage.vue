@@ -80,10 +80,7 @@ const handleUserUpdate = (updatedUser: UserProfileAdmin) => {
     // Also update the main user store if the updated user is the logged-in user
     const loggedInUserId = userStore.completeUser?.id;
     if (loggedInUserId && updatedUser.id === loggedInUserId) {
-      console.log('Admin updated logged-in user profile, updating main user store.');
-      // Ensure the structure matches CompleteUser if needed, or cast if identical
       userStore.$patch({ completeUser: updatedUser as any }); 
-      // Or more explicitly map fields if UserProfileAdmin != CompleteUser
     }
   }
 };
@@ -104,7 +101,6 @@ watch(
   (newPath) => {
     // Check if the new path is for the admin user profile page
     if (newPath.includes('/admin/users/') && newPath.includes('/profile')) {
-      console.log('Route changed to admin profile page, refreshing data');
       fetchUserData();
     }
   }
@@ -115,7 +111,6 @@ watch(
   () => userId.value,
   (newUserId, oldUserId) => {
     if (newUserId && newUserId !== oldUserId) {
-      console.log('User ID changed, refreshing admin profile data');
       fetchUserData();
     }
   }

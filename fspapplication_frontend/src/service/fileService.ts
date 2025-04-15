@@ -107,7 +107,6 @@ export const fileService = {
         
         // Skip resizing if image is already smaller than target dimensions
         if (img.width <= maxWidth && img.height <= maxHeight && file.type === outputFormat) {
-          console.log('Image already smaller than target size, skipping resize');
           resolve(file);
           return;
         }
@@ -147,8 +146,8 @@ export const fileService = {
             );
             
             // Use the formatFileSize method from this object
-            const formatSize = fileService.formatFileSize;
-            console.log(`Resized image from ${formatSize(file.size)} to ${formatSize(resizedFile.size)}`);
+            // const formatSize = fileService.formatFileSize;
+            // console.log(`Resized image from ${formatSize(file.size)} to ${formatSize(resizedFile.size)}`); // Removed debugging
             resolve(resizedFile);
           },
           outputFormat,
@@ -198,7 +197,7 @@ export const fileService = {
         try {
           fileToUpload = await this.resizeImage(file, resizeOptions || undefined);
         } catch (err) {
-          console.error('Error resizing image:', err);
+          // console.error('Error resizing image:', err); // Removed debugging
           // Continue with original file if resize fails
         }
       }
@@ -318,7 +317,7 @@ export const fileService = {
     const bucketName = import.meta.env.VITE_TIGRIS_STORAGE_BUCKET_NAME; // Use TIGRIS_ prefix for consistency
 
     if (!endpointUrl || !bucketName) {
-      console.error('Tigris environment variables (VITE_TIGRIS_ENDPOINT_URL, VITE_TIGRIS_STORAGE_BUCKET_NAME) are not set.');
+      // console.error('Tigris environment variables (VITE_TIGRIS_ENDPOINT_URL, VITE_TIGRIS_STORAGE_BUCKET_NAME) are not set.'); // Removed debugging
       // Fallback or return an error indicator
       return '/images/error-loading.png'; // Or some other appropriate fallback
     }
@@ -328,7 +327,7 @@ export const fileService = {
     try {
       endpointHostname = new URL(endpointUrl).hostname;
     } catch (e) {
-      console.error('Invalid VITE_TIGRIS_ENDPOINT_URL format:', endpointUrl);
+      // console.error('Invalid VITE_TIGRIS_ENDPOINT_URL format:', endpointUrl); // Removed debugging
       return '/images/error-loading.png';
     }
 

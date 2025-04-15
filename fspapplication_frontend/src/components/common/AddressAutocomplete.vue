@@ -84,18 +84,14 @@
         }
         
         try {
-          console.log('Fetching suggestions for:', input);
           const response = await axios.get('/api/places/autocomplete/', {
             params: { input }
           });
           
-          console.log('Autocomplete API response:', response.data);
           if (response.data.predictions) {
             suggestions.value = response.data.predictions;
-            console.log('Suggestions loaded:', suggestions.value);
           }
         } catch (error) {
-          console.error('Error fetching address suggestions:', error);
           suggestions.value = [];
         }
       }, 300);
@@ -117,27 +113,17 @@
       
       const selectAddress = async (suggestion: Suggestion) => {
         try {
-          console.log('Selected suggestion:', suggestion);
-          
           if (!suggestion || !suggestion.placeId) {
-            console.error('No placeId found in suggestion:', suggestion);
             return;
           }
           
-          console.log('Fetching place details for placeId:', suggestion.placeId);
           const response = await axios.get('/api/places/details/', {
             params: { place_id: suggestion.placeId }
           });
           
-          console.log('Place details response:', response.data);
-          console.log('Response status:', response.data.status);
-          
           if (response.data.result) {
             const result = response.data.result;
-            console.log('Result structure:', Object.keys(result));
-            console.log('Full result:', result);
             const formattedAddress = result.formatted_address || result.formattedAddress || '';
-            console.log('Formatted address:', formattedAddress);
             
             // Parse address components
             const addressComponents: AddressComponents = {};
@@ -147,11 +133,8 @@
             
             // Add null check for address_components
             if (components && Array.isArray(components)) {
-              console.log('Address components:', components);
-              
               components.forEach((component: any) => {
                 const types = component.types;
-                console.log('Component types:', types, 'value:', component.long_name);
                 
                 if (types && Array.isArray(types)) {
                   if (types.includes('street_number')) {
@@ -172,10 +155,6 @@
                   }
                 }
               });
-              
-              console.log('Parsed address components:', addressComponents);
-            } else {
-              console.warn('No address_components in result:', result);
             }
             
             // Extract individual parts from the formatted address if components are empty
@@ -199,7 +178,6 @@
             if ((!street || !city || !state || !postal_code || !country) && formattedAddress) {
               // Example: "8 Park Ave, Nirimba QLD 4551, Australia"
               const parts = formattedAddress.split(',').map((part: string) => part.trim());
-              console.log('Address parts:', parts);
               
               // First part is usually the street
               if (!street && parts.length > 0) {
@@ -272,8 +250,6 @@
               }
             }
             
-            console.log('Extracted address parts:', { street, city, state, postal_code, country });
-            
             // Get coordinates from either naming convention
             const location = result.geometry?.location || {};
             const lat = location.lat || null;
@@ -293,8 +269,6 @@
               place_id: suggestion.placeId
             };
             
-            console.log('Final address data to emit:', addressData);
-            
             // Update the model value
             emit('update:modelValue', addressData);
             
@@ -305,7 +279,6 @@
             suggestions.value = [];
           }
         } catch (error) {
-          console.error('Error fetching address details:', error);
         }
       };
       

@@ -43,15 +43,12 @@ export const useAuthStore = defineStore('auth', {
       // axios.defaults.headers.common['X-DTS-TENANT'] = tenant
     },
 
-    setUser(backendUser: { id: string, email: string }) {
-      console.log('Raw backend user data:', backendUser)
-      
+    setUser(backendUser: { id: string, email: string }) {      
       this.user = {
         id: backendUser.id,
         email: backendUser.email,
       }
       
-      console.log('Final user state:', this.user)
       
       // Persist to localStorage for re-hydration
       localStorage.setItem('auth.user.id', this.user.id || '')

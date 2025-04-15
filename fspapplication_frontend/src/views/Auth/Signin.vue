@@ -134,7 +134,6 @@ export default {
         // Clean up temporary header setting
         delete axios.defaults.headers.common["X-DTS-TENANT"]
 
-        console.log('Login response:', response.data)
         auth.setToken({
           access: response.data.access,
           refresh: response.data.refresh
@@ -144,11 +143,7 @@ export default {
 
         // Use apiClient for the user request - interceptors will add headers
         const userResponse = await apiClient.get(`account/user/`) 
-        console.log('Raw user response data:', userResponse.data)
-        console.log('User data before conversion:', userResponse.data)
         auth.setUser(userResponse.data)
-        console.log('User data after conversion:', auth.user)
-
         alert('✅ Login successful!')
         this.$router.push('/dashboard')
       } catch (error) {

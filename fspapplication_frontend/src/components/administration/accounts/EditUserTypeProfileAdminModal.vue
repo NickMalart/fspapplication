@@ -273,7 +273,7 @@ const fetchClients = async () => {
     const response = await clientService.getClients({ status: 'active' });
     clients.value = response.results;
   } catch (error) {
-    console.error('Error fetching clients:', error);
+    // TODO: Add user-facing error message
   } finally {
     isLoadingClients.value = false;
   }
@@ -283,7 +283,6 @@ const fetchClients = async () => {
 const updateSelectedClientFromId = (event: Event) => {
   const select = event.target as HTMLSelectElement;
   const id = select.value;
-  console.log('Selected client changed:', id);
   if (id) {
     localClientData.value.companyNameId = id;
     localClientData.value.companyName = clients.value.find(c => c.id === id)?.name || '';

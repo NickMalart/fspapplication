@@ -1,9 +1,9 @@
 <template>
   <ComponentCard title="Agent Information">
     <!-- Debug Info (Remove in production) -->
-    <pre v-if="false" class="text-xs bg-gray-100 dark:bg-gray-800 p-2 mb-4 overflow-auto">
+    <!-- <pre v-if="false" class="text-xs bg-gray-100 dark:bg-gray-800 p-2 mb-4 overflow-auto">
       agent: {{ JSON.stringify(agent, null, 2) }}
-    </pre>
+    </pre> -->
 
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center py-8">
@@ -129,7 +129,8 @@ const handleSave = async (formData: Partial<Agent>) => {
     // Close modal
     isModalOpen.value = false;
   } catch (error) {
-    console.error('Failed to save agent changes:', error);
+    // console.error('Failed to save agent changes:', error);
+    // TODO: Add user-facing error notification
   } finally {
     isSaving.value = false;
   }

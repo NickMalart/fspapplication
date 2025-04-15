@@ -132,7 +132,6 @@ const initForm = () => {
       editForm.dateOfBirth = '';
     }
     
-    console.log('Initialized form data:', editForm);
   }
 };
 
@@ -146,7 +145,6 @@ const saveChanges = () => {
       if (!isNaN(date.getTime())) {
         // Explicitly format as YYYY-MM-DD
         formattedDateOfBirth = date.toISOString().split('T')[0];
-        console.log('Formatted date for backend:', formattedDateOfBirth);
       }
     } catch (e) {
       console.error('Error formatting date before save:', e);
@@ -158,7 +156,6 @@ const saveChanges = () => {
     dateOfBirth: formattedDateOfBirth
   };
   
-  console.log('Saving form data:', formData);
   emit('save', formData);
 };
 

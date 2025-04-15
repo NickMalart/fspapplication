@@ -174,11 +174,8 @@ const addressData = ref<any>({});
 // Function to populate form fields from selected address
 const populateAddressFields = (data: any) => {
   if (!data) {
-    console.error('No address data received');
     return;
   }
-  
-  console.log('Address data received:', data);
   
   // Copy the existing form data to avoid losing current values
   const newFormData = { ...formData.value };
@@ -298,8 +295,6 @@ const populateAddressFields = (data: any) => {
   
   // Update form data
   formData.value = newFormData;
-  
-  console.log('Address fields populated:', formData.value);
 };
 
 // Initialize form data when props change
@@ -317,8 +312,6 @@ const initForm = () => {
       longitude: props.userData.profile.longitude,
       googlePlaceId: props.userData.profile.googlePlaceId
     };
-    
-    console.log('Initialized admin address form data:', formData.value);
   }
 };
 
@@ -363,7 +356,6 @@ const saveChanges = () => {
     }
   }
   
-  console.log('Saving admin address changes (fixed formatting):', dataToSave);
   emit('save', dataToSave);
 };
 

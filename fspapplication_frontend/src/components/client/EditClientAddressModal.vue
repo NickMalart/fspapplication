@@ -170,7 +170,7 @@ const addressData = ref<any>({});
 // Function to populate form fields from selected address
 const populateAddressFields = (data: any) => {
   if (!data) {
-    console.error('No address data received');
+    // console.error('No address data received'); // Removed debugging
     return;
   }
   
@@ -327,7 +327,6 @@ const saveChanges = () => {
     }
   }
   
-  // console.log('Saving address changes:', formattedData); // Ensure this is removed or commented out
   emit('save', formattedData);
 };
 

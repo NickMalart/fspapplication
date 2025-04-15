@@ -107,13 +107,11 @@ const initForm = () => {
       emergencyContactLastName: props.userData.emergencyContactLastName || ''
     };
     
-    console.log('Initialized emergency contact form data:', formData.value);
   }
 };
 
 // Handle form submission
 const saveChanges = () => {
-  console.log('Saving emergency contact changes:', formData.value);
   
   const contactData: Partial<ProfileData> = {
     emergencyContact: formData.value.emergencyContact || null,

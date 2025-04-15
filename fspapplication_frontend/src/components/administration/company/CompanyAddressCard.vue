@@ -139,7 +139,6 @@ const handleSave = async (formData: Partial<ExtendedCompanyProfile>) => {
     await companyStore.fetchCompanyProfile();
     isModalOpen.value = false;
   } catch (error) {
-    console.error('Failed to save address changes:', error);
   } finally {
     isSaving.value = false;
   }

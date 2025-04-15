@@ -118,7 +118,6 @@ const handleSave = async (formData: Partial<Client>) => {
   isSaving.value = true;
   
   try {
-    // console.log('Saving client address data:', formData); // REMOVED
     
     // Create a properly formatted address data object
     const addressData: Partial<Client> = {

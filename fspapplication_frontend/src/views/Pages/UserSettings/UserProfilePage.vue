@@ -39,10 +39,7 @@ const fetchUserData = async () => {
 
 // Function to force refresh data
 const forceRefresh = async () => {
-  console.log('Forcing profile data refresh');
-  // Clear existing data first to ensure UI shows loading state
   userStore.$patch({ completeUser: null });
-  // Then fetch fresh data
   await fetchUserData();
 };
 

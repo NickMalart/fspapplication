@@ -404,11 +404,6 @@ const handleContractUpdated = (updatedContract: Contract) => {
   closeDetailsModal();
 };
 
-const handleEditContract = (contract: Contract) => {
-  // Will implement edit functionality later
-  console.log('Edit contract:', contract);
-};
-
 const handleContractCreated = (newContract: Contract) => {
   // Refresh the contracts list
   fetchContracts();

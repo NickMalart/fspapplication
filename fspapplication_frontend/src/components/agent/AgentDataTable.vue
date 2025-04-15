@@ -256,12 +256,9 @@ const perPage = computed({
 })
 const totalAgents = computed(() => agentStore.totalAgents)
 const totalPages = computed(() => agentStore.totalPages)
-const sortColumn = computed(() => agentStore.sortColumn)
-const sortDirection = computed(() => agentStore.sortDirection)
 const startIndex = computed(() => agentStore.startIndex)
 const endIndex = computed(() => agentStore.endIndex)
 const pageNumbers = computed(() => agentStore.pageNumbers)
-const loading = computed(() => agentStore.loading)
 
 // Use paginatedAgents directly from the store
 const paginatedAgents = computed(() => agentStore.agents)

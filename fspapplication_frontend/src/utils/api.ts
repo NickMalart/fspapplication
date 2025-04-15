@@ -32,13 +32,6 @@ export function configureApi() {
   const backendHost = host.replace(':5173', ':8000')
   const baseUrl = `${protocol}//${backendHost}`
   
-  console.log('API Configuration:', { 
-    protocol, 
-    host, 
-    backendHost, 
-    baseUrl 
-  })
-  
   // Set default base URL
   axios.defaults.baseURL = baseUrl
   
@@ -46,18 +39,10 @@ export function configureApi() {
   const hostname = window.location.hostname
   const tenant = hostname.split('.')[0]
   
-  console.log('Tenant detection:', { 
-    hostname, 
-    tenant,
-    isValid: !!tenant && tenant !== 'localhost'
-  })
-  
   // Set tenant header if available and valid
   if (tenant && tenant !== 'localhost') {
-    console.log('Setting tenant header:', tenant)
     axios.defaults.headers.common['X-DTS-TENANT'] = tenant
   } else {
-    console.warn('No valid tenant found in hostname, using default "dev"')
     // Use default tenant for development
     axios.defaults.headers.common['X-DTS-TENANT'] = 'dev'
   }
@@ -68,15 +53,6 @@ export function configureApi() {
       response.data = convertKeys(response.data)
     }
     return response
-  })
-  
-  // Log current axios configuration
-  console.log('Axios configuration:', {
-    baseURL: axios.defaults.baseURL,
-    headers: {
-      'X-DTS-TENANT': axios.defaults.headers.common['X-DTS-TENANT'],
-      'Authorization': axios.defaults.headers.common['Authorization']
-    }
   })
   
   return baseUrl

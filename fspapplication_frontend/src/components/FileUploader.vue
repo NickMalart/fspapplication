@@ -188,9 +188,7 @@ export default defineComponent({
       if (props.resizeImages && isImageFile(file)) {
         try {
           fileToUpload = await resizeImage(file);
-          console.log(`Resized image from ${formatFileSize(file.size)} to ${formatFileSize(fileToUpload.size)}`);
         } catch (err) {
-          console.error('Error resizing image:', err);
           // Continue with original file if resize fails
         }
       }
@@ -254,7 +252,6 @@ export default defineComponent({
       } catch (err) {
         error.value = 'An error occurred during upload';
         emit('upload-error', error.value);
-        console.error('Upload error:', err);
       } finally {
         loading.value = false;
       }

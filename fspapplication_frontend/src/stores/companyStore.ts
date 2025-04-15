@@ -44,7 +44,6 @@ export const usecompanyStore = defineStore('companyProfile', () => {
   const fetchCompanyProfile = async () => {
     // Return cached data if still valid
     if (isCacheValid.value && companyProfile.value) {
-      console.log('Using cached company profile data');
       return companyProfile.value;
     }
     
@@ -59,7 +58,6 @@ export const usecompanyStore = defineStore('companyProfile', () => {
     
     // If already loading, return current data
     if (loading.value) {
-      console.log('Already fetching company profile data');
       return companyProfile.value;
     }
     

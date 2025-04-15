@@ -82,8 +82,5 @@ app.mount('#app')
 
 // Optional: Add any global error handling
 app.config.errorHandler = (err, instance, info) => {
-  console.error("Global error:", err);
-  console.log("Vue instance:", instance);
-  console.log("Error info:", info);
   // Handle the error, e.g., send it to a logging service
 };

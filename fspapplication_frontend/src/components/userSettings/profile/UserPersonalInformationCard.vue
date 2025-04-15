@@ -72,7 +72,6 @@ const { completeUser, loading, error } = storeToRefs(userStore);
 
 const userProfile = computed(() => {
   const profile = completeUser.value?.profile || null;
-  console.log('Computing userProfile:', profile);
   return profile;
 });
 const isModalOpen = ref(false);
@@ -103,9 +102,7 @@ const handleSave = async (formData: { phoneNumber: string | null, dateOfBirth: s
   isSaving.value = true;
   
   try {
-    console.log('Sending form data to store:', formData);
     const result = await userStore.updateProfileData(formData);
-    console.log('Update result:', result);
     
     // Increment key to force modal re-render on next open
     modalKey.value++;
@@ -122,7 +119,6 @@ const handleSave = async (formData: { phoneNumber: string | null, dateOfBirth: s
 
 // Fetch profile data on mount
 onMounted(async () => {
-  console.log('Component mounted, fetching profile data');
   // Only fetch if we don't already have the data
   if (!completeUser.value) {
     await userStore.fetchUserProfile();
@@ -131,17 +127,14 @@ onMounted(async () => {
 
 // Debug log when profile data changes
 watch(() => completeUser.value, (newValue) => {
-  console.log('completeUser changed:', newValue);
 }, { deep: true });
 
 watch(userProfile, (newProfile) => {
-  console.log('userProfile computed changed:', newProfile);
 }, { deep: true });
 
 // Force refetch when modal closes
 watch(isModalOpen, (open) => {
   if (!open) {
-    console.log('Modal closed, refreshing data');
     userStore.fetchUserProfile();
   }
 });

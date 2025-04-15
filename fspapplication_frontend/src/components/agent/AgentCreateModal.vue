@@ -87,8 +87,9 @@ const handleSubmit = async () => {
     resetForm();
     closeModal();
   } catch (error) {
-    console.error('Error creating agent:', error);
+    // console.error('Error creating agent:', error); // Removed debugging
     // Handle error appropriately
+    // TODO: Add user-facing error notification
   } finally {
     isLoading.value = false;
   }

@@ -319,7 +319,6 @@ const resetForm = () => {
 };
 
 const handleAddressUpdate = (addressData: any) => {
-  // console.log("Received address data:", addressData); // REMOVED
   
   // Extract components, handling potential undefined
   const components = addressData.components || {};
@@ -417,7 +416,6 @@ const handleAddressUpdate = (addressData: any) => {
   formData.value.latitude = addressData.lat !== undefined ? addressData.lat : null;
   formData.value.longitude = addressData.lng !== undefined ? addressData.lng : null;
   
-  // console.log("Updated form data with address:", formData.value); // REMOVED
 };
 
 const handleSubmit = async () => {
@@ -438,9 +436,8 @@ const handleSubmit = async () => {
     
     // Close modal
     emit('close');
-  } catch (err: any) {
-    console.error('Error creating warehouse:', err);
-    error.value = err.response?.data?.detail || 'Failed to create warehouse. Please try again.';
+  } catch (err) {
+    error.value = 'Error creating warehouse: ' + (err instanceof Error ? err.message : String(err));
   } finally {
     isLoading.value = false;
   }

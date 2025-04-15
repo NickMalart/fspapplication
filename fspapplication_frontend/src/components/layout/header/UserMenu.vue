@@ -110,7 +110,6 @@ const closeDropdown = () => {
 
 const signOut = () => {
   // Implement sign out logic here
-  console.log('Signing out...')
   auth.removeToken()
   closeDropdown()
 }

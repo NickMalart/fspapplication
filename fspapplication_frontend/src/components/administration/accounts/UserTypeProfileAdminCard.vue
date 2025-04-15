@@ -312,15 +312,12 @@ const formatDate = (dateString?: string) => {
       day: 'numeric'
     }).format(date);
   } catch (e) {
-    console.error('Error formatting date:', e);
     return 'Not provided';
   }
 };
 
 // For debugging
 const userTypeDebug = computed(() => {
-  console.log('User data:', props.userData);
-  console.log('User type:', props.userData?.userType);
   return props.userData?.userType || 'undefined';
 });
 
@@ -350,8 +347,6 @@ const getProfileTitle = () => {
 
 // Initialize profile data based on user type
 const initializeProfileData = () => {
-  console.log('Initializing profile data for user type:', props.userData?.userType);
-
   // Explicitly reset all local profile refs first
   agentProfileData.value = {};
   clientProfileData.value = {};
@@ -363,7 +358,6 @@ const initializeProfileData = () => {
   }
   
   if (isAgent.value && props.userData.agentProfile) {
-    console.log('Agent profile found:', props.userData.agentProfile);
     // Convert any snake_case keys to camelCase
     const profile = convertObjectKeysToCamel(props.userData.agentProfile);
     agentProfileData.value = { 
@@ -372,7 +366,6 @@ const initializeProfileData = () => {
       yearsOfExperience: profile.yearsOfExperience || 0
     };
   } else if (isClient.value && props.userData.clientProfile) {
-    console.log('Client profile found:', props.userData.clientProfile);
     // Convert any snake_case keys to camelCase
     const profile = convertObjectKeysToCamel(props.userData.clientProfile);
     clientProfileData.value = { 
@@ -382,7 +375,6 @@ const initializeProfileData = () => {
       clientSince: profile.clientSince || ''
     };
   } else if (isEmployee.value && props.userData.employeeProfile) {
-    console.log('Employee profile found:', props.userData.employeeProfile);
     // Convert any snake_case keys to camelCase
     const profile = convertObjectKeysToCamel(props.userData.employeeProfile);
     employeeProfileData.value = { 
@@ -393,8 +385,6 @@ const initializeProfileData = () => {
       startDate: profile.startDate || '',
       reportsTo: profile.reportsTo || null
     };
-  } else {
-    console.log('No matching profile type found');
   }
 };
 
@@ -442,7 +432,6 @@ const changeUserType = async () => {
     
     showChangeTypeConfirm.value = false;
   } catch (error) {
-    console.error('Error changing user type:', error);
   } finally {
     isChangingType.value = false;
   }
@@ -489,7 +478,6 @@ const handleAgentSave = async (updatedData: AgentProfileData) => {
     emit('update:user', updatedUser);
     showEditForm.value = false;
   } catch (error) {
-    console.error('Error updating agent profile:', error);
   } finally {
     isSaving.value = false;
   }
@@ -536,7 +524,6 @@ const handleClientSave = async (updatedData: ClientProfileData) => {
     emit('update:user', updatedUser);
     showEditForm.value = false;
   } catch (error) {
-    console.error('Error updating client profile:', error);
   } finally {
     isSaving.value = false;
   }
@@ -582,7 +569,6 @@ const handleEmployeeSave = async (updatedData: EmployeeProfileData) => {
     emit('update:user', updatedUser);
     showEditForm.value = false;
   } catch (error) {
-    console.error('Error updating employee profile:', error);
   } finally {
     isSaving.value = false;
   }

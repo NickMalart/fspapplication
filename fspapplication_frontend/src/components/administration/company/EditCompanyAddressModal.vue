@@ -156,6 +156,9 @@ const emit = defineEmits<{
   (e: 'save', data: Partial<ExtendedCompanyProfile>): void;
 }>();
 
+// Define a ref for error messages
+const errorMessage = ref<string | null>(null);
+
 // Create a form data object from company data props
 const formData = ref<Partial<ExtendedCompanyProfile>>({
   streetNumber: props.companyData.streetNumber || '',
@@ -176,7 +179,7 @@ const addressData = ref<any>({});
 // Function to populate form fields from selected address
 const populateAddressFields = (data: any) => {
   if (!data) {
-    console.error('No address data received');
+    errorMessage.value = 'No address data was received to initialize the form.';
     return;
   }
   

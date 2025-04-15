@@ -174,9 +174,7 @@ const populateAddressFields = (data: any) => {
     console.error('No address data received');
     return;
   }
-  
-  console.log('Address data received:', data);
-  
+    
   // Copy the existing form data to avoid losing current values
   const newFormData = { ...formData.value };
   
@@ -296,7 +294,6 @@ const populateAddressFields = (data: any) => {
   // Update form data
   formData.value = newFormData;
   
-  console.log('Address fields populated:', formData.value);
 };
 
 // Initialize form data when props change
@@ -315,7 +312,6 @@ const initForm = () => {
       googlePlaceId: props.userData.googlePlaceId
     };
     
-    console.log('Initialized address form data:', formData.value);
   }
 };
 
@@ -360,7 +356,6 @@ const saveChanges = () => {
     }
   }
   
-  console.log('Saving address changes (fixed formatting):', dataToSave);
   emit('save', dataToSave);
 };
 
