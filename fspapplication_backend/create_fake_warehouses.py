@@ -13,7 +13,7 @@ from faker import Faker
 from tenant.models import Client as TenantClient
 from django.db import connection
 
-def create_fake_warehouses(tenant_schema='dev', client_name='Baldwin Group Services', count=100):
+def create_fake_warehouses(tenant_schema='dev', client_name='Atkins Inr', count=100):
     """Create fake warehouses for a specific client in the given tenant"""
     # Connect to tenant
     try:
@@ -216,4 +216,4 @@ def create_fake_warehouses(tenant_schema='dev', client_name='Baldwin Group Servi
     print(f'Successfully created {warehouses_created} fake warehouses for {client_name}')
 
 if __name__ == '__main__':
-    create_fake_warehouses('dev', 'Adams Group', 100) 
+    create_fake_warehouses('dev', 'Atkins Inr', 100) 
