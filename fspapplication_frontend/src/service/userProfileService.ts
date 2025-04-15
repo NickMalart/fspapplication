@@ -103,15 +103,13 @@ export const userService = {
   },
   
   async getUserProfile(): Promise<CompleteUser> {
-    console.log("[getUserProfile] Sending GET request to:", `account/user/profile/`);
     try {
       const response = await apiClient.get(`account/user/profile/`);
-      console.log("[getUserProfile] Response received:", response.data);
+      console.log(`[getUserProfile] Profile received for user ID: ${response.data.id}`); // Log only ID for confirmation
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
       console.error("[getUserProfile] Error occurred:", error);
       if (error.name === 'RetryAfterRefresh') {
-        console.log("[getUserProfile] Retrying after token refresh...");
         return this.getUserProfile();
       }
       return this.handleAuthError(error);

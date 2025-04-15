@@ -96,6 +96,7 @@
 
 <script>
 import axios from 'axios'
+import apiClient from '@/service/api'
 import loginImg from '@/assets/103.png'
 import { useAuthStore } from '@/stores/auth'
 
@@ -110,43 +111,39 @@ export default {
     }
   },
   methods: {
-    getBaseApiUrl() {
-      const protocol = window.location.protocol
-      const host = window.location.host
-      const backendHost = host.replace(':5173', ':8000')
-      return `${protocol}//${backendHost}`
-    },
-
     async handleLogin() {
       this.error = null
       const auth = useAuthStore()  
 
       try {
-        // Extract tenant from hostname (dev.localhost)
+        // Extract tenant from hostname
         const hostname = window.location.hostname
         const tenant = hostname.split('.')[0]
         
-        // Setup axios with tenant header
+        // Setup axios defaults temporarily for the login request ONLY 
+        // (Ideally, login should also use apiClient, but requires modifying backend potentially
+        // if it doesn't expect standard Auth Bearer for login itself)
         axios.defaults.headers.common["X-DTS-TENANT"] = tenant
         
-        const response = await axios.post(`${this.getBaseApiUrl()}/api/account/login/`, { 
+        // Use global axios for login POST for now
+        const response = await axios.post(`/api/account/login/`, { 
           email: this.email,
           password: this.password,
         })
+        
+        // Clean up temporary header setting
+        delete axios.defaults.headers.common["X-DTS-TENANT"]
 
         console.log('Login response:', response.data)
         auth.setToken({
           access: response.data.access,
           refresh: response.data.refresh
         })
-        localStorage.setItem('accessToken', response.data.access);
-
-        // Save tenant info in auth store
-        auth.setTenant(tenant)
         
-        axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.access}`
+        auth.setTenant(tenant)
 
-        const userResponse = await axios.get(`${this.getBaseApiUrl()}/api/account/user/`)
+        // Use apiClient for the user request - interceptors will add headers
+        const userResponse = await apiClient.get(`account/user/`) 
         console.log('Raw user response data:', userResponse.data)
         console.log('User data before conversion:', userResponse.data)
         auth.setUser(userResponse.data)
@@ -155,12 +152,28 @@ export default {
         alert('✅ Login successful!')
         this.$router.push('/dashboard')
       } catch (error) {
-        if (error.response) {
-          this.error = error.response.data.detail || 'Login failed. Please try again.'
+        // Clean up temporary header setting in case of error during login POST
+        delete axios.defaults.headers.common["X-DTS-TENANT"]
+        
+        if (axios.isAxiosError(error)) { // Type check error
+          if (error.response) {
+            // Handle specific error codes if needed
+            this.error = error.response.data.detail || 'Login failed. Please check credentials.';
+            if (error.response.status === 404 && error.config?.url?.includes('login')) {
+                this.error = "Login endpoint not found or invalid tenant.";
+            }
+          } else if (error.request) {
+            // Network error (no response received)
+             this.error = 'Server is not responding. Check network or try again later.';
+          } else {
+            // Other errors (e.g., setting up the request)
+            this.error = 'An unexpected error occurred during login setup.';
+          }
         } else {
-          this.error = 'Server is not responding. Check your network or try again later.'
-          console.error('❌ Login error →', error)
+           // Non-Axios error
+           this.error = 'An unexpected error occurred.';
         }
+        console.error('❌ Login error →', error)
         alert(`❌ ${this.error}`)
       }
     }

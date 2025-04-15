@@ -20,15 +20,16 @@ app.use(VueApexCharts)
 
 import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
-auth.init() 
 
-// Configure API with base URL and tenant headers
-configureApi()
+// Configure API with base URL and tenant headers (if still needed, otherwise remove)
+// configureApi()
 
-// Import axios after configuration
-import axios from 'axios'
+// Remove axios import if not used directly elsewhere in main.ts
+// import axios from 'axios'
 
-// Set up axios interceptors
+// Remove the conflicting interceptors defined directly in main.ts
+// The interceptors in src/service/api.ts handle this globally for apiClient
+/*
 axios.interceptors.request.use(
   (config) => {
     const token = auth.accessToken
@@ -58,7 +59,7 @@ axios.interceptors.response.use(
       originalRequest._retry = true
 
       try {
-        await auth.refreshTokenAction()
+        await auth.refreshTokenAction() // This action was removed
         
         originalRequest.headers.Authorization = `Bearer ${auth.accessToken}`
         return axios(originalRequest)
@@ -72,5 +73,17 @@ axios.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+*/
+
+// Refresh token periodically (This logic is now handled by the interceptor in api.ts)
+// ... (keep commented out) ...
 
 app.mount('#app')
+
+// Optional: Add any global error handling
+app.config.errorHandler = (err, instance, info) => {
+  console.error("Global error:", err);
+  console.log("Vue instance:", instance);
+  console.log("Error info:", info);
+  // Handle the error, e.g., send it to a logging service
+};

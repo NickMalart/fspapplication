@@ -1,53 +1,46 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
-import { configureApi } from '@/utils/api'
+// Remove direct axios import here, interceptors will handle headers
+// import axios from 'axios' 
+// Remove configureApi import if it's only setting axios defaults
+// import { configureApi } from '@/utils/api'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    isAuthenticated: false,
-    accessToken: '',
-    refreshToken: '',
-    tenant: '',
+    // Attempt to initialize state from localStorage on load, but don't rely on it elsewhere
+    isAuthenticated: !!localStorage.getItem('auth.access'),
+    accessToken: localStorage.getItem('auth.access') || '',
+    refreshToken: localStorage.getItem('auth.refresh') || '',
+    tenant: localStorage.getItem('auth.tenant') || '',
     user: {
-      id: null as string | null,
-      email: '',
+      id: localStorage.getItem('auth.user.id') as string | null,
+      email: localStorage.getItem('auth.user.email') || '',
     },
   }),
 
   actions: {
-    init() {
-      this.accessToken = localStorage.getItem('auth.access') || ''
-      this.refreshToken = localStorage.getItem('auth.refresh') || ''
-      this.tenant = localStorage.getItem('auth.tenant') || ''
-      this.user.id = localStorage.getItem('auth.user.id')
-      this.user.email = localStorage.getItem('auth.user.email') || ''
-      
-      this.isAuthenticated = !!this.accessToken && !!this.refreshToken
-      
-      configureApi()
-      
-      if (this.tenant) {
-        axios.defaults.headers.common['X-DTS-TENANT'] = this.tenant
-      }
-      
-      if (this.accessToken) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${this.accessToken}`
-      }
-    },
+    // init() action is likely no longer needed as state is initialized above 
+    // and interceptors handle headers. Remove it or simplify significantly.
+    // init() {
+    //   // ... removed logic ...
+    // },
 
     setToken(data: { access: string; refresh: string }) {
       this.accessToken = data.access
       this.refreshToken = data.refresh
       this.isAuthenticated = true
+      // Persist to localStorage for re-hydration on page load
       localStorage.setItem('auth.access', data.access)
       localStorage.setItem('auth.refresh', data.refresh)
-      axios.defaults.headers.common['Authorization'] = `Bearer ${data.access}`
+      // Remove direct header manipulation
+      // axios.defaults.headers.common['Authorization'] = `Bearer ${data.access}`
     },
 
     setTenant(tenant: string) {
       this.tenant = tenant
+      // Persist to localStorage for re-hydration
       localStorage.setItem('auth.tenant', tenant)
-      axios.defaults.headers.common['X-DTS-TENANT'] = tenant
+      // Remove direct header manipulation
+      // axios.defaults.headers.common['X-DTS-TENANT'] = tenant
     },
 
     setUser(backendUser: { id: string, email: string }) {
@@ -60,11 +53,13 @@ export const useAuthStore = defineStore('auth', {
       
       console.log('Final user state:', this.user)
       
+      // Persist to localStorage for re-hydration
       localStorage.setItem('auth.user.id', this.user.id || '')
       localStorage.setItem('auth.user.email', this.user.email)
     },
 
     removeToken() {
+      // Clear state
       this.accessToken = ''
       this.refreshToken = ''
       this.tenant = ''
@@ -74,29 +69,26 @@ export const useAuthStore = defineStore('auth', {
         email: '',
       }
 
+      // Clear persisted data
       localStorage.removeItem('auth.access')
       localStorage.removeItem('auth.refresh')
       localStorage.removeItem('auth.tenant')
       localStorage.removeItem('auth.user.id')
       localStorage.removeItem('auth.user.email')
-      localStorage.removeItem('auth.user.profile')
+      // localStorage.removeItem('auth.user.profile') // Uncomment if used
       
-      delete axios.defaults.headers.common['Authorization']
-      delete axios.defaults.headers.common['X-DTS-TENANT']
+      // Remove direct header manipulation (interceptors handle this)
+      // delete axios.defaults.headers.common['Authorization']
+      // delete axios.defaults.headers.common['X-DTS-TENANT']
+      
+      // Optional: Redirect to login page after clearing tokens
+      // import router from '@/router'; // Import router if needed
+      // router.push('/login');
     },
 
-    refreshTokenAction() {
-      axios
-        .post('/api/account/refresh/', { refresh: this.refreshToken })
-        .then((res) => {
-          this.accessToken = res.data.access
-          localStorage.setItem('auth.access', res.data.access)
-          axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.access}`
-        })
-        .catch((err) => {
-          console.error(err)
-          this.removeToken()
-        })
-    },
+    // Remove the old refreshTokenAction, the interceptor handles this now
+    // refreshTokenAction() {
+    //   // ... removed logic ...
+    // },
   },
 })

@@ -17,15 +17,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-$ubqr)l_jiei9@h!jd!h&9v+bj1orr*735i7bqpjhq4m7y4d(7)')
 
 # SECURITY WARNING: don't run with debug turned on in production!
+# DEBUG = False # IMPORTANT: Set to False in production
 DEBUG = True  # WARNING: Running with debug enabled in production is a security risk
 # DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,.localhost,127.0.0.1,.127.0.0.1,.fly.dev').split(',')
 
+# Add a check for production environment to enforce stricter settings
+IS_PRODUCTION = os.environ.get('DJANGO_ENV') == 'production'
+
+if IS_PRODUCTION:
+    DEBUG = False
+    # Ensure ALLOWED_HOSTS is properly configured via environment variable for production
+    # Example: os.environ.get('ALLOWED_HOSTS', 'yourdomain.com,.yourdomain.com').split(',')
+    # Ensure CORS/CSRF origins are properly configured for production
+    # Example: CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'https://yourfrontend.com').split(',')
+    # Example: CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://yourfrontend.com').split(',')
+    pass # Add production-specific overrides here if needed
+
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=30),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=180),
-    'ROTATE_REFRESH_TOKENS': False,
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
 }
 
 REST_FRAMEWORK = {
@@ -34,7 +47,15 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    )
+    ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '1000/day',  # Adjust rates as needed
+        'anon': '100/day',   # Adjust rates as needed
+    }
 }
 
 CORS_ALLOWED_ORIGINS = [
@@ -113,14 +134,15 @@ INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in S
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    'fspapplication_backend.custommiddleware.CustomTenantMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'fspapplication_backend.security_headers_middleware.SecurityHeadersMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'fspapplication_backend.custommiddleware.CustomTenantMiddleware',
     'account.middleware.TenantUserLimitMiddleware',
 ]
 
@@ -151,11 +173,12 @@ WSGI_APPLICATION = 'fspapplication_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django_tenants.postgresql_backend',  # ✅ Use Django-Tenants backend
-        'NAME': 'neondb',  # ✅ Database name from your NeonDB URL
-        'USER': 'neondb_owner',  # ✅ Username from your NeonDB URL
-        'PASSWORD': 'npg_oZKwX9T3VIsy',  # ✅ Password from your NeonDB URL
-        'HOST': 'ep-broad-sun-a7w4swm3-pooler.ap-southeast-2.aws.neon.tech',  # ✅ Host from your NeonDB URL
-        'PORT': '5432',  # ✅ PostgreSQL default port
+        # Recommendation: Load sensitive DB details from environment variables
+        'NAME': os.environ.get('DB_NAME', 'neondb'),
+        'USER': os.environ.get('DB_USER', 'neondb_owner'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'npg_oZKwX9T3VIsy'), # Replace default if needed
+        'HOST': os.environ.get('DB_HOST', 'ep-broad-sun-a7w4swm3-pooler.ap-southeast-2.aws.neon.tech'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
         'OPTIONS': {
             'sslmode': 'require',  # ✅ Enforce SSL for security
         }
@@ -289,3 +312,17 @@ DATABASE_ROUTERS = (
 )
 
 GOOGLE_PLACES_API_KEY = os.environ.get('GOOGLE_PLACES_API_KEY', 'AIzaSyDvfOM0JZd18BTt8kijxWo1gAOw6y0qy7U')
+
+# Security Middleware Settings (Enable/Configure for Production)
+# Ensure 'django.middleware.security.SecurityMiddleware' is high in your MIDDLEWARE list
+
+SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True') == 'True' if IS_PRODUCTION else False
+SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'True') == 'True' if IS_PRODUCTION else False
+CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'True') == 'True' if IS_PRODUCTION else False
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# HTTP Strict Transport Security (HSTS) - Enable carefully after testing HTTPS
+# SECURE_HSTS_SECONDS = 31536000  # 1 year
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
