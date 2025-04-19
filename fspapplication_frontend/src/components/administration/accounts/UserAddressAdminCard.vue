@@ -64,7 +64,19 @@
           </p>
         </div>
       </div>
-      <div v-else class="py-4 text-center text-gray-500">
+      <!-- Map Container - Show if user profile has coordinates -->
+      <div v-show="userData?.profile?.latitude && userData?.profile?.longitude" class="mt-6 relative"> 
+        <div 
+          ref="mapContainer" 
+          class="h-32 w-32 rounded-md border border-gray-300 dark:border-gray-600 cursor-pointer overflow-hidden" 
+          @click="isMapViewerOpen = true" 
+        ></div>
+      </div>
+      <!-- No Map Message -->
+      <div v-if="!loading && (!userData?.profile?.latitude || !userData?.profile?.longitude)" class="py-4 text-center text-gray-500">
+        No map available (missing coordinates)
+      </div>
+      <div v-else-if="!loading && !userData?.profile" class="py-4 text-center text-gray-500">
         No address information available
       </div>
     </div>
@@ -78,16 +90,29 @@
       @close="isModalOpen = false"
       @save="handleSave"
     />
+
+    <!-- Map Viewer Modal -->
+    <MapViewerModal
+      v-if="isMapViewerOpen && userData?.profile?.latitude && userData?.profile?.longitude"
+      :show="isMapViewerOpen"
+      :latitude="userData.profile.latitude"
+      :longitude="userData.profile.longitude"
+      :title="`${userData.firstName || 'User'} Location`"
+      @close="isMapViewerOpen = false"
+    />
   </ComponentCard>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineProps, defineEmits } from 'vue';
+import { ref, computed, defineProps, defineEmits, watch, onUnmounted, nextTick } from 'vue';
 import ComponentCard from '@/components/common/ComponentCard.vue';
 import UserAddressAdminModal from '@/components/administration/accounts/UserAddressAdminModal.vue';
+import MapViewerModal from '@/components/common/MapViewerModal.vue';
 import { useUserProfileAdminStore } from '@/stores/userProfileAdminStore';
 import type { UserProfileAdmin } from '@/stores/userProfileAdminStore';
 import type { PropType } from 'vue';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
 const props = defineProps({
   userData: {
@@ -110,6 +135,9 @@ const userProfileAdminStore = useUserProfileAdminStore();
 const isModalOpen = ref(false);
 const isSaving = ref(false);
 const modalKey = ref(0); // Used to force modal re-render
+const mapContainer = ref<HTMLElement | null>(null); // Ref for map container element
+const mapInstance = ref<L.Map | null>(null); // Ref for map instance
+const isMapViewerOpen = ref(false); // State for the map viewer modal
 
 // Format street address
 const formatStreetAddress = (profile: any) => {
@@ -159,4 +187,55 @@ const handleSave = async (formData: any) => {
     isSaving.value = false;
   }
 };
+
+// Function to initialize Leaflet map
+const initMap = () => {
+  const profile = props.userData?.profile; // Access profile from props
+  if (mapContainer.value && profile && profile.latitude && profile.longitude && !mapInstance.value) {
+    mapInstance.value = L.map(mapContainer.value, {
+      attributionControl: false,
+      scrollWheelZoom: false,
+      zoomControl: false 
+    }).setView(
+      [profile.latitude, profile.longitude],
+      13
+    );
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(mapInstance.value as L.Map);
+
+    L.marker([profile.latitude, profile.longitude]).addTo(mapInstance.value as L.Map);
+  }
+};
+
+// Function to destroy Leaflet map
+const destroyMap = () => {
+  if (mapInstance.value) {
+    mapInstance.value.remove();
+    mapInstance.value = null;
+  }
+};
+
+// Watch for changes in user data to update the map
+watch(() => props.userData, (newUserData, oldUserData) => {
+  const newProfile = newUserData?.profile;
+  const oldProfile = oldUserData?.profile;
+  if (newProfile && newProfile.latitude && newProfile.longitude) {
+    if (!mapInstance.value || 
+        (oldProfile && (newProfile.latitude !== oldProfile.latitude || newProfile.longitude !== oldProfile.longitude))) {
+      nextTick(() => {
+        destroyMap();
+        initMap();
+      });
+    }
+  } else {
+    destroyMap();
+  }
+}, { immediate: true, deep: true });
+
+// Ensure map is destroyed when component unmounts
+onUnmounted(() => {
+  destroyMap();
+});
 </script> 
