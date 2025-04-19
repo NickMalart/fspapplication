@@ -22,6 +22,11 @@
         @agent-updated="handleAgentUpdate"
       />
       
+      <AgentAddressCard 
+        :agent-id="agentId"
+        @agent-updated="handleAgentUpdate"
+      />
+      
       <!-- Additional agent sections to be added later -->
       
     </div>
@@ -36,6 +41,7 @@ import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import AgentAvatarSection from '@/components/agent/AgentAvatarSection.vue';
 import AgentInformationCard from '@/components/agent/AgentInformationCard.vue';
+import AgentAddressCard from '@/components/agent/AgentAddressCard.vue';
 
 const route = useRoute();
 const agentId = computed(() => route.params.id as string);
@@ -87,8 +93,7 @@ const handleStatusUpdate = async (updateData: { id: string, isActive: boolean })
 // Handle agent information updates
 const handleAgentUpdate = async (updatedAgent: Agent) => {
   try {
-    agent.value = updatedAgent;
-    await fetchAgentDetails(); // Refresh the data to ensure consistency
+    await fetchAgentDetails();
   } catch (err) {
     error.value = 'Error handling agent update: ' + (err instanceof Error ? err.message : String(err));
   }
