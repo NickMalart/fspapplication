@@ -1,5 +1,6 @@
 import apiClient from './api'; 
 import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
+import { formatLatLong } from '@/utils/formatters';
 import type { AxiosResponse } from 'axios';
 
 // Warehouse model definition (matching backend)
@@ -95,23 +96,9 @@ export const clientWarehouseService = {
     try {
       const apiData = convertObjectKeysToSnake({ ...warehouseData, client: clientId });
       
-      // Ensure lat/lng precision matches backend, converting safely
-      if (apiData.latitude !== null && apiData.latitude !== undefined) {
-        const latNumber = Number(apiData.latitude); // Convert to number first
-        if (!isNaN(latNumber)) { // Check if conversion was successful
-           apiData.latitude = parseFloat(latNumber.toFixed(6));
-        } else {
-           apiData.latitude = null; // Set to null if conversion fails
-        }
-      }
-      if (apiData.longitude !== null && apiData.longitude !== undefined) {
-          const lngNumber = Number(apiData.longitude); // Convert to number first
-          if (!isNaN(lngNumber)) { // Check if conversion was successful
-             apiData.longitude = parseFloat(lngNumber.toFixed(9));
-          } else {
-             apiData.longitude = null; // Set to null if conversion fails
-          }
-      }
+      // Format latitude and longitude using the utility function
+      apiData.latitude = formatLatLong(apiData.latitude);
+      apiData.longitude = formatLatLong(apiData.longitude);
 
       const response: AxiosResponse<Warehouse> = await apiClient.post(
         `client/clients/${clientId}/warehouses/`, 
@@ -131,23 +118,9 @@ export const clientWarehouseService = {
     try {
        const apiData = convertObjectKeysToSnake(warehouseData);
 
-       // Ensure lat/lng precision matches backend, converting safely
-       if (apiData.latitude !== null && apiData.latitude !== undefined) {
-          const latNumber = Number(apiData.latitude); // Convert to number first
-          if (!isNaN(latNumber)) { // Check if conversion was successful
-             apiData.latitude = parseFloat(latNumber.toFixed(6));
-          } else {
-             apiData.latitude = null; // Set to null if conversion fails
-          }
-       }
-       if (apiData.longitude !== null && apiData.longitude !== undefined) {
-          const lngNumber = Number(apiData.longitude); // Convert to number first
-          if (!isNaN(lngNumber)) { // Check if conversion was successful
-             apiData.longitude = parseFloat(lngNumber.toFixed(9));
-          } else {
-             apiData.longitude = null; // Set to null if conversion fails
-          }
-       }
+       // Format latitude and longitude using the utility function
+       apiData.latitude = formatLatLong(apiData.latitude);
+       apiData.longitude = formatLatLong(apiData.longitude);
 
       const response: AxiosResponse<Warehouse> = await apiClient.patch(
         `client/clients/${clientId}/warehouses/${warehouseId}/`,

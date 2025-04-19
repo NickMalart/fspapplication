@@ -1,5 +1,6 @@
 import apiClient from './api';
 import { convertObjectKeysToCamel } from '@/utils/caseConverter';
+import { formatLatLong } from '@/utils/formatters';
 
 // We don't need to add any prefix here since apiClient already has the baseURL set
 
@@ -56,8 +57,15 @@ export const companyService = {
    */
   async updateCompanyProfile(companyData: Partial<CompanyProfile>): Promise<CompanyUpdateResponse> {
     try {
+      // Format latitude and longitude first
+      const formattedData = {
+        ...companyData,
+        latitude: formatLatLong(companyData.latitude),
+        longitude: formatLatLong(companyData.longitude),
+      };
+
       // Convert camelCase to snake_case for API
-      const snakeCaseData = Object.entries(companyData).reduce((acc, [key, value]) => {
+      const snakeCaseData = Object.entries(formattedData).reduce((acc, [key, value]) => {
         // Convert camelCase to snake_case: streetName -> street_name
         const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
         acc[snakeKey] = value;

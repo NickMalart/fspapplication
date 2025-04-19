@@ -1,6 +1,7 @@
 import apiClient from './api'; // Import the shared client
 // import axios from 'axios'; // Remove direct axios import
 import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
+import { formatLatLong } from '@/utils/formatters'; // Import the formatter
 import type { AxiosResponse } from 'axios'; // Keep for type hint if needed, or remove if AxiosResponse isn't directly used
 
 // const API_URL = import.meta.env.VITE_API_URL || '/api'; // Remove manual API_URL construction
@@ -176,8 +177,15 @@ export const clientService = {
   
   async updateClient(clientId: string, data: Partial<Client>): Promise<Client> {
     try {
+      // Format latitude and longitude first
+      const formattedData = {
+        ...data,
+        latitude: formatLatLong(data.latitude),
+        longitude: formatLatLong(data.longitude),
+      };
+
       // Convert data from camelCase to snake_case for the API
-      const apiData = convertObjectKeysToSnake(data);
+      const apiData = convertObjectKeysToSnake(formattedData);
       
       // Use apiClient and relative path
       const response: AxiosResponse<Client> = await apiClient.patch(

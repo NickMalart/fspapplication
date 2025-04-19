@@ -1,6 +1,7 @@
 import apiClient from './api'; // Import the shared client
 // import axios from 'axios'; // Remove direct axios import if not needed elsewhere in the file
 import { convertObjectKeysToSnake, convertObjectKeysToCamel } from '@/utils/caseConverter';
+import { formatLatLong } from '@/utils/formatters'; // Import the formatter
 
 // const API_PREFIX = import.meta.env.VITE_API_PREFIX || '/api'; // Reverted
 
@@ -114,7 +115,12 @@ export const userService = {
       if (userData.email !== undefined) simplifiedData.email = userData.email;
       
       if (userData.profile) {
-        simplifiedData.profile = convertObjectKeysToSnake(userData.profile);
+        const formattedProfile = {
+          ...userData.profile,
+          latitude: formatLatLong(userData.profile.latitude),
+          longitude: formatLatLong(userData.profile.longitude),
+        };
+        simplifiedData.profile = convertObjectKeysToSnake(formattedProfile);
       }
       
       const response = await apiClient.put(`account/user/profile/update/`, simplifiedData);

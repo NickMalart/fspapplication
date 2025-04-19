@@ -1,6 +1,7 @@
 import apiClient from './api'; // Import the shared client
 // import axios from 'axios'; // Remove direct axios import
 import { convertObjectKeysToCamel, convertObjectKeysToSnake } from '@/utils/caseConverter';
+import { formatLatLong } from '@/utils/formatters'; // Import the new formatter
 import type { AxiosResponse } from 'axios'; // Keep for type hint if needed
 
 // const API_URL = import.meta.env.VITE_API_URL || '/api'; // Remove manual API_URL construction
@@ -219,14 +220,12 @@ export const agentService = {
   
   async updateAgent(agentId: string, data: Partial<Agent>): Promise<Agent> {
     try {
-      // Format latitude and longitude if they exist
-      const formattedData = { ...data };
-      if (typeof formattedData.latitude === 'number') {
-        formattedData.latitude = parseFloat(formattedData.latitude.toFixed(6));
-      }
-      if (typeof formattedData.longitude === 'number') {
-        formattedData.longitude = parseFloat(formattedData.longitude.toFixed(6));
-      }
+      // Format latitude and longitude using the utility function
+      const formattedData = {
+        ...data,
+        latitude: formatLatLong(data.latitude),
+        longitude: formatLatLong(data.longitude),
+      };
 
       // Convert data from camelCase to snake_case for the API
       const apiData = convertObjectKeysToSnake(formattedData);
@@ -246,7 +245,7 @@ export const agentService = {
       
       // Clear any cached agent lists (check prefix)
       for (const key of cache.keys()) {
-        if (key.startsWith(`/api/agent/agents/:`)) { // Ensure prefix matches generateCacheKey
+        if (key.startsWith(`/api/agent/agents/:`)) { 
           cache.delete(key);
         }
       }
@@ -339,8 +338,15 @@ export const agentService = {
   
   async updateAgentWarehouse(agentId: string, warehouseId: string, data: Partial<AgentWarehouse>): Promise<AgentWarehouse> {
     try {
+      // Format latitude and longitude using the utility function if they exist
+      const formattedData = {
+        ...data,
+        latitude: formatLatLong(data.latitude),
+        longitude: formatLatLong(data.longitude),
+      };
+
       // Convert data from camelCase to snake_case for the API
-      const apiData = convertObjectKeysToSnake(data);
+      const apiData = convertObjectKeysToSnake(formattedData);
       
       // Use apiClient and relative path
       const response: AxiosResponse<AgentWarehouse> = await apiClient.patch(
