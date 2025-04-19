@@ -161,6 +161,10 @@
                   {{ formatAddress(warehouse) }}
                 </p>
               </div>
+              <!-- Add Map Container only when not editing and coordinates exist -->
+              <div v-if="warehouse.latitude && warehouse.longitude" class="md:col-span-2 mt-4">
+                <div ref="mapContainer" class="h-64 w-full rounded-md border border-gray-300 dark:border-gray-600"></div>
+              </div>
             </div>
           </div>
           
@@ -325,10 +329,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import AddressAutocomplete from '@/components/common/AddressAutocomplete.vue';
 import { clientWarehouseService, type Warehouse } from '@/service/clientWarehouseService';
+import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
+import L from 'leaflet'; // Import Leaflet
 
 // Type for the address data received from AddressAutocomplete
 interface AddressData {
@@ -367,6 +373,8 @@ const emit = defineEmits<{
 const isLoading = ref(false);
 const isEditing = ref(false);
 const editedWarehouse = reactive<Partial<Warehouse>>({});
+const mapContainer = ref<HTMLElement | null>(null); // Ref for map container element
+const mapInstance = ref<L.Map | null>(null); // Ref for map instance
 
 // Helper function to handle address update from AddressAutocomplete
 const handleAddressUpdate = (addressData: AddressData) => {
@@ -551,6 +559,53 @@ const handleSave = async () => {
     isLoading.value = false;
   }
 };
+
+// Function to initialize Leaflet map
+const initMap = () => {
+  if (mapContainer.value && props.warehouse.latitude && props.warehouse.longitude && !mapInstance.value) {
+    mapInstance.value = L.map(mapContainer.value, {
+      attributionControl: false // Disable the default attribution control
+    }).setView(
+      [props.warehouse.latitude, props.warehouse.longitude],
+      13 // Zoom level
+    );
+
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      // Keep the attribution text for OpenStreetMap data
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(mapInstance.value as L.Map);
+
+    // Add marker
+    L.marker([props.warehouse.latitude, props.warehouse.longitude]).addTo(mapInstance.value as L.Map);
+  }
+};
+
+// Function to destroy Leaflet map
+const destroyMap = () => {
+  if (mapInstance.value) {
+    mapInstance.value.remove();
+    mapInstance.value = null;
+  }
+};
+
+// Watch for changes that require map update/initialization/destruction
+watch([() => props.show, () => props.warehouse, isEditing], ([show, warehouse, editing], [prevShow, prevWarehouse, prevEditing]) => {
+  if (show && !editing && warehouse.latitude && warehouse.longitude) {
+    // If modal is shown, not editing, and has coords, initialize map after DOM update
+    nextTick(() => {
+      initMap();
+    });
+  } else {
+    // Otherwise (modal closed, editing started, or no coords), destroy map
+    destroyMap();
+  }
+}, { immediate: true }); // immediate: true to run on initial load
+
+// Ensure map is destroyed when component unmounts
+onUnmounted(() => {
+  destroyMap();
+});
 </script>
 
 <style scoped>
