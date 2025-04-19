@@ -9,7 +9,6 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import VueApexCharts from 'vue3-apexcharts'
-import { configureApi } from './utils/api'
 
 const app = createApp(App)
 const pinia = createPinia()

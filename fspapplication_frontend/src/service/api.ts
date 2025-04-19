@@ -2,6 +2,27 @@ import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/stores/auth'; // Import Pinia auth store
 
+// --- Case Conversion Utilities ---
+function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+}
+
+function convertKeys(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(v => convertKeys(v));
+  } else if (obj !== null && obj.constructor === Object) {
+    return Object.keys(obj).reduce(
+      (result, key) => ({
+        ...result,
+        [toCamelCase(key)]: convertKeys(obj[key]),
+      }),
+      {}
+    );
+  }
+  return obj;
+}
+// --- End Case Conversion Utilities ---
+
 // Get the API URL from environment variables or use a default
 // Use '/api' to route requests through the Vite proxy during development
 const API_BASE_URL = '/api'; // Changed from import.meta.env.VITE_API_URL
@@ -37,6 +58,7 @@ apiClient.interceptors.request.use(
 
 // --- Response Interceptor ---
 // Handles token expiry and refresh automatically
+// Also handles case conversion for response data
 
 let isRefreshing = false; // Flag to prevent multiple refresh requests
 let failedQueue: { resolve: (value?: any) => void; reject: (reason?: any) => void }[] = []; // Queue for requests that failed during refresh
@@ -53,7 +75,13 @@ const processQueue = (error: any, token: string | null = null) => {
 };
 
 apiClient.interceptors.response.use(
-  (response) => response, // Pass through successful responses
+  (response) => {
+    // Convert response data keys to camelCase
+    if (response.data) {
+      response.data = convertKeys(response.data);
+    }
+    return response; // Pass through successful responses
+  },
   async (error) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const auth = useAuthStore();

@@ -31,8 +31,8 @@
   
   <script lang="ts">
   import { defineComponent, ref, watch } from 'vue';
-  import axios from 'axios';
   import { debounce } from 'lodash';
+  import apiClient from '@/service/api';
   
   interface Suggestion {
     placeId: string;
@@ -84,7 +84,7 @@
         }
         
         try {
-          const response = await axios.get('/api/places/autocomplete/', {
+          const response = await apiClient.get('/places/autocomplete/', {
             params: { input }
           });
           
@@ -117,7 +117,7 @@
             return;
           }
           
-          const response = await axios.get('/api/places/details/', {
+          const response = await apiClient.get('/places/details/', {
             params: { place_id: suggestion.placeId }
           });
           
