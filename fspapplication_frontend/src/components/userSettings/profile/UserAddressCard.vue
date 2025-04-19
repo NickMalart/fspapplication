@@ -67,6 +67,19 @@
       <div v-else class="py-4 text-center text-gray-500">
         No address information available
       </div>
+
+      <!-- Map Container - Show if user profile has coordinates -->
+      <div v-show="userProfile && userProfile.latitude && userProfile.longitude" class="mt-6 relative"> 
+        <div 
+          ref="mapContainer" 
+          class="h-32 w-32 rounded-md border border-gray-300 dark:border-gray-600 cursor-pointer overflow-hidden" 
+          @click="isMapViewerOpen = true" 
+        ></div>
+      </div>
+      <!-- No Map Message -->
+      <div v-if="!loading && (!userProfile || !userProfile.latitude || !userProfile.longitude)" class="py-4 text-center text-gray-500">
+        No map available (missing coordinates)
+      </div>
     </div>
 
     <!-- Placeholder for the EditUserAddressModal -->
@@ -78,16 +91,29 @@
       @close="isModalOpen = false"
       @save="handleSave"
     />
+    
+    <!-- Map Viewer Modal -->
+    <MapViewerModal
+      v-if="isMapViewerOpen && userProfile && userProfile.latitude && userProfile.longitude"
+      :show="isMapViewerOpen"
+      :latitude="userProfile.latitude"
+      :longitude="userProfile.longitude"
+      :title="`${completeUser?.firstName || 'User'} Location`"
+      @close="isMapViewerOpen = false"
+    />
   </ComponentCard>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue';
 import { useUserStore } from '@/stores/userProfileStore';
 import { storeToRefs } from 'pinia';
 import ComponentCard from '@/components/common/ComponentCard.vue';
 import EditUserAddressModal from './EditUserAddressModal.vue';
+import MapViewerModal from '@/components/common/MapViewerModal.vue';
 import type { ProfileData } from '@/service/userProfileService';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
 const userStore = useUserStore();
 const { completeUser, loading, error } = storeToRefs(userStore);
@@ -98,7 +124,10 @@ const userProfile = computed(() => {
 });
 const isModalOpen = ref(false);
 const isSaving = ref(false);
-const modalKey = ref(0); // Used to force modal re-render
+const modalKey = ref(0);
+const mapContainer = ref<HTMLElement | null>(null);
+const mapInstance = ref<L.Map | null>(null);
+const isMapViewerOpen = ref(false);
 
 // Format street address
 const formatStreetAddress = (profile: ProfileData) => {
@@ -155,5 +184,54 @@ watch(isModalOpen, (open) => {
   if (!open) {
     userStore.fetchUserProfile();
   }
+});
+
+// Function to initialize Leaflet map
+const initMap = () => {
+  const profile = userProfile.value;
+  if (mapContainer.value && profile && profile.latitude && profile.longitude && !mapInstance.value) {
+    mapInstance.value = L.map(mapContainer.value, {
+      attributionControl: false,
+      scrollWheelZoom: false,
+      zoomControl: false 
+    }).setView(
+      [profile.latitude, profile.longitude],
+      13
+    );
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(mapInstance.value as L.Map);
+
+    L.marker([profile.latitude, profile.longitude]).addTo(mapInstance.value as L.Map);
+  }
+};
+
+// Function to destroy Leaflet map
+const destroyMap = () => {
+  if (mapInstance.value) {
+    mapInstance.value.remove();
+    mapInstance.value = null;
+  }
+};
+
+// Watch for changes in user profile data to update the map
+watch(userProfile, (newProfile, oldProfile) => {
+  if (newProfile && newProfile.latitude && newProfile.longitude) {
+    if (!mapInstance.value || 
+        (oldProfile && (newProfile.latitude !== oldProfile.latitude || newProfile.longitude !== oldProfile.longitude))) {
+      nextTick(() => {
+        destroyMap();
+        initMap();
+      });
+    }
+  } else {
+    destroyMap();
+  }
+}, { immediate: true, deep: true });
+
+// Ensure map is destroyed when component unmounts
+onUnmounted(() => {
+  destroyMap();
 });
 </script>
