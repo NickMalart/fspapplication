@@ -162,8 +162,12 @@
                 </p>
               </div>
               <!-- Add Map Container only when not editing and coordinates exist -->
-              <div v-if="warehouse.latitude && warehouse.longitude" class="md:col-span-2 mt-4">
-                <div ref="mapContainer" class="h-64 w-full rounded-md border border-gray-300 dark:border-gray-600"></div>
+              <div v-if="warehouse.latitude && warehouse.longitude" class="md:col-span-2 mt-4 relative">
+                <div 
+                  ref="mapContainer" 
+                  class="h-32 w-32 rounded-md border border-gray-300 dark:border-gray-600 cursor-pointer overflow-hidden"
+                  @click="isMapViewerOpen = true"
+                ></div>
               </div>
             </div>
           </div>
@@ -325,6 +329,16 @@
         </button>
       </div>
     </div>
+    
+    <!-- Map Viewer Modal -->
+    <MapViewerModal
+      v-if="isMapViewerOpen && warehouse.latitude && warehouse.longitude"
+      :show="isMapViewerOpen"
+      :latitude="warehouse.latitude"
+      :longitude="warehouse.longitude"
+      :title="`${warehouse.name || 'Warehouse'} Location`"
+      @close="isMapViewerOpen = false"
+    />
   </BaseModal>
 </template>
 
@@ -332,6 +346,7 @@
 import { ref, reactive, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import AddressAutocomplete from '@/components/common/AddressAutocomplete.vue';
+import MapViewerModal from '@/components/common/MapViewerModal.vue';
 import { clientWarehouseService, type Warehouse } from '@/service/clientWarehouseService';
 import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
 import L from 'leaflet'; // Import Leaflet
@@ -375,6 +390,7 @@ const isEditing = ref(false);
 const editedWarehouse = reactive<Partial<Warehouse>>({});
 const mapContainer = ref<HTMLElement | null>(null); // Ref for map container element
 const mapInstance = ref<L.Map | null>(null); // Ref for map instance
+const isMapViewerOpen = ref(false); // State for the map viewer modal
 
 // Helper function to handle address update from AddressAutocomplete
 const handleAddressUpdate = (addressData: AddressData) => {
@@ -564,7 +580,9 @@ const handleSave = async () => {
 const initMap = () => {
   if (mapContainer.value && props.warehouse.latitude && props.warehouse.longitude && !mapInstance.value) {
     mapInstance.value = L.map(mapContainer.value, {
-      attributionControl: false // Disable the default attribution control
+      attributionControl: false, // Disable the default attribution control
+      scrollWheelZoom: false, // Disable scroll wheel zoom
+      zoomControl: false // Disable zoom control (+/- buttons)
     }).setView(
       [props.warehouse.latitude, props.warehouse.longitude],
       13 // Zoom level

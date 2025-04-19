@@ -40,6 +40,7 @@
             {{ cancelButtonText }}
           </button>
           <button 
+            v-if="showSubmitButton"
             @click="$emit('save')"
             class="flex justify-center rounded-lg bg-brand-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600"
             :disabled="isLoading"
@@ -80,6 +81,10 @@ const props = defineProps({
   maxWidth: {
     type: String,
     default: '584px'
+  },
+  showSubmitButton: {
+    type: Boolean,
+    default: true
   }
 });
 

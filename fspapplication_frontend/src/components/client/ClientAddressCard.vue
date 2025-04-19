@@ -64,8 +64,17 @@
           </p>
         </div>
       </div>
-      <div v-else class="py-4 text-center text-gray-500">
-        No address information available
+      <!-- Map Container - Show if client has coordinates -->
+      <div v-show="client && client.latitude && client.longitude" class="mt-6 relative"> 
+        <div 
+          ref="mapContainer" 
+          class="h-32 w-32 rounded-md border border-gray-300 dark:border-gray-600 cursor-pointer overflow-hidden" 
+          @click="isMapViewerOpen = true" 
+        ></div>
+      </div>
+      <!-- No Address Message - Show if loading is done and client is null or has no coordinates -->
+      <div v-if="!loading && (!client || !client.latitude || !client.longitude)" class="py-4 text-center text-gray-500">
+        No map available (missing coordinates)
       </div>
     </div>
 
@@ -78,16 +87,29 @@
       @close="isModalOpen = false"
       @save="handleSave"
     />
+    
+    <!-- Map Viewer Modal -->
+    <MapViewerModal
+      v-if="isMapViewerOpen && client && client.latitude && client.longitude"
+      :show="isMapViewerOpen"
+      :latitude="client.latitude"
+      :longitude="client.longitude"
+      :title="`${client.name || 'Client'} Location`"
+      @close="isMapViewerOpen = false"
+    />
   </ComponentCard>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue';
 import { useClientStore } from '@/stores/clientStore';
 import { storeToRefs } from 'pinia';
 import ComponentCard from '@/components/common/ComponentCard.vue';
 import EditClientAddressModal from './EditClientAddressModal.vue';
+import MapViewerModal from '@/components/common/MapViewerModal.vue';
 import type { Client } from '@/service/clientService';
+import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
+import L from 'leaflet'; // Import Leaflet
 
 const props = defineProps<{
   clientId: string;
@@ -100,6 +122,9 @@ const client = computed(() => clientStore.getClientById(props.clientId));
 const isModalOpen = ref(false);
 const isSaving = ref(false);
 const modalKey = ref(0); // Used to force modal re-render
+const mapContainer = ref<HTMLElement | null>(null); // Ref for map container element
+const mapInstance = ref<L.Map | null>(null); // Ref for map instance
+const isMapViewerOpen = ref(false); // State for the map viewer modal
 
 // Format street address
 const formatStreetAddress = (client: Client) => {
@@ -163,5 +188,59 @@ watch(isModalOpen, (open) => {
   if (!open) {
     clientStore.fetchClients();
   }
+});
+
+// Function to initialize Leaflet map
+const initMap = () => {
+  const currentClient = client.value;
+  if (mapContainer.value && currentClient && currentClient.latitude && currentClient.longitude && !mapInstance.value) {
+    mapInstance.value = L.map(mapContainer.value, {
+      attributionControl: false, // Disable Leaflet attribution
+      scrollWheelZoom: false, // Disable scroll wheel zoom
+      zoomControl: false // Disable zoom control (+/- buttons)
+    }).setView(
+      [currentClient.latitude, currentClient.longitude],
+      13 // Zoom level
+    );
+
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(mapInstance.value as L.Map);
+
+    // Add marker
+    L.marker([currentClient.latitude, currentClient.longitude]).addTo(mapInstance.value as L.Map);
+  }
+};
+
+// Function to destroy Leaflet map
+const destroyMap = () => {
+  if (mapInstance.value) {
+    mapInstance.value.remove();
+    mapInstance.value = null;
+  }
+};
+
+// Watch for changes in client data to update the map
+watch(client, (newClient, oldClient) => {
+  if (newClient && newClient.latitude && newClient.longitude) {
+    // If client data is available and has coordinates
+    if (!mapInstance.value || 
+        (oldClient && (newClient.latitude !== oldClient.latitude || newClient.longitude !== oldClient.longitude))) {
+      // Initialize map if it doesn't exist or coordinates changed
+      nextTick(() => {
+        destroyMap(); // Ensure old instance is removed before creating new
+        initMap();
+      });
+    }
+  } else {
+    // If no client or no coordinates, destroy the map
+    destroyMap();
+  }
+}, { immediate: true, deep: true }); // immediate: true to run on load, deep to watch nested props like lat/lng
+
+// Ensure map is destroyed when component unmounts
+onUnmounted(() => {
+  destroyMap();
 });
 </script> 
