@@ -219,8 +219,17 @@ export const agentService = {
   
   async updateAgent(agentId: string, data: Partial<Agent>): Promise<Agent> {
     try {
+      // Format latitude and longitude if they exist
+      const formattedData = { ...data };
+      if (typeof formattedData.latitude === 'number') {
+        formattedData.latitude = parseFloat(formattedData.latitude.toFixed(6));
+      }
+      if (typeof formattedData.longitude === 'number') {
+        formattedData.longitude = parseFloat(formattedData.longitude.toFixed(6));
+      }
+
       // Convert data from camelCase to snake_case for the API
-      const apiData = convertObjectKeysToSnake(data);
+      const apiData = convertObjectKeysToSnake(formattedData);
       
       // Use apiClient and relative path
       const response: AxiosResponse<Agent> = await apiClient.patch(

@@ -120,6 +120,9 @@ const props = defineProps<{
   agentId: string;
 }>();
 
+// Define emits including agent-updated
+const emit = defineEmits(['agent-updated']);
+
 const agentStore = useAgentStore();
 const { loading, error } = storeToRefs(agentStore);
 
@@ -146,12 +149,13 @@ const formatStreetAddress = (agent: Agent) => {
 
 // Handle save from modal
 const handleSave = async (formData: Partial<Agent>) => {
+  console.log("--- AgentAddressCard: handleSave triggered ---");
+  console.log("Received formData from modal:", JSON.stringify(formData, null, 2));
   isSaving.value = true;
   
   try {
     
     // Create a properly formatted address data object
-    // Only include address-related fields expected by the backend update method
     const addressData: Partial<Agent> = {
       streetNumber: formData.streetNumber,
       streetName: formData.streetName,
@@ -162,11 +166,14 @@ const handleSave = async (formData: Partial<Agent>) => {
       country: formData.country,
       latitude: formData.latitude,
       longitude: formData.longitude
-      // Removed googlePlaceId as it's not in the Agent model
     };
     
+    console.log("Constructed addressData for update:", JSON.stringify(addressData, null, 2));
+    
     // Update agent through store
+    console.log(`Calling agentStore.updateAgent for agent ID: ${props.agentId}`);
     await agentStore.updateAgent(props.agentId, addressData);
+    console.log("agentStore.updateAgent successful");
     
     // Increment key to force modal re-render on next open
     modalKey.value++;
@@ -174,16 +181,15 @@ const handleSave = async (formData: Partial<Agent>) => {
     // Close modal
     isModalOpen.value = false;
     
-    // Emit an event to notify the parent page to refresh data if needed
-    // emit('agent-updated'); // Maybe not needed if parent already handles refetching
+    // Emit an event to notify the parent page to refresh data
+    console.log("Emitting agent-updated event");
+    emit('agent-updated'); 
     
-    // Optionally force refetch agent data if needed, but parent page should handle this
-    // await agentStore.fetchAgents(); // Avoid double fetching if parent already does it
-
   } catch (saveError) {
-    console.error('Failed to save address changes:', saveError);
+    console.error('AgentAddressCard: Failed to save address changes:', saveError);
     // Optionally display an error message to the user
   } finally {
+    console.log("--- AgentAddressCard: handleSave finished ---");
     isSaving.value = false;
   }
 };
