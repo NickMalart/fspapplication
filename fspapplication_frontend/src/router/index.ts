@@ -5,7 +5,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/auth/callback',
     name: 'AuthCallback',
-    component: () => import('../views/AuthCallback.vue'),
+    component: () => import('../views/Auth/AuthCallback.vue'),
     meta: {
       title: 'Authenticating...',
       requiresAuth: false,
