@@ -95,7 +95,7 @@ export const userService = {
   
   async getUserProfile(): Promise<CompleteUser> {
     try {
-      const response = await apiClient.get(`account/user/profile/`);
+      const response = await apiClient.get(`account/profile/`);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
       if (error.name === 'RetryAfterRefresh') {
@@ -123,7 +123,7 @@ export const userService = {
         simplifiedData.profile = convertObjectKeysToSnake(formattedProfile);
       }
       
-      const response = await apiClient.put(`account/user/profile/update/`, simplifiedData);
+      const response = await apiClient.put(`account/profile/update/`, simplifiedData);
       return convertObjectKeysToCamel(response.data);
     } catch (error: any) {
       if (error.name === 'RetryAfterRefresh') {

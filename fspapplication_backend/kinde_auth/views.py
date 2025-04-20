@@ -7,12 +7,15 @@ from django.db import connection
 from django.urls import reverse
 import requests
 import uuid
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlencode
 
 # JWT verification
 from jose import jwt, jwk
 from jose.exceptions import JOSEError, JWTError
 import time 
+
+# Simple JWT Token Generation
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # Models
 from tenant.models import Client
@@ -224,11 +227,11 @@ class KindeCallbackView(View):
             
             # --- Step 5: Switch Schema and Log In --- 
             print(f"Switching to tenant schema: {tenant.schema_name}")
+            user = None # Initialize user variable
             try:
                 connection.set_tenant(tenant)
                 
                 # Find the corresponding User within the tenant schema
-                # *** This requires 'account' app to be in TENANT_APPS ***
                 user = User.objects.get(email__iexact=email)
                 print(f"Found tenant user: {user.email}")
                 
@@ -238,59 +241,57 @@ class KindeCallbackView(View):
                     connection.set_schema_to_public() # Switch back
                     return HttpResponse("Authentication failed: Account is inactive.", status=403)
                 
-                # Log the user into the Django session
+                # Log the user into the Django session (still useful for Django Admin, etc.)
                 login(request, user) 
-                print(f"User {user.email} logged in successfully.")
+                print(f"User {user.email} logged into Django session successfully.")
+
+                # --- Step 6: Generate Simple JWT Tokens ---
+                print("Generating JWT tokens for frontend...")
+                refresh = RefreshToken.for_user(user)
+                access_token = str(refresh.access_token)
+                refresh_token = str(refresh)
+                print("JWT tokens generated.")
+
+                # --- Step 7: Redirect to Frontend with Tokens ---
+                # Redirect to a dedicated frontend callback handler route
+                # Use fragment (#) to pass tokens securely (not in server logs/history)
+                frontend_callback_url = urljoin(settings.FRONTEND_BASE_URL, '/auth/callback') # Or your preferred frontend callback route
                 
-                # Store tokens in session if needed for backend API calls
-                # request.session['access_token'] = access_token
-                # request.session['refresh_token'] = refresh_token
-                # request.session['id_token'] = id_token # May not need to store full ID token
+                token_params = urlencode({
+                    'access_token': access_token,
+                    'refresh_token': refresh_token,
+                    'tenant_schema_name': tenant.schema_name # Pass tenant schema if needed by frontend
+                })
                 
+                redirect_url = f"{frontend_callback_url}#{token_params}"
+                
+                print(f"Redirecting to frontend callback: {frontend_callback_url} with tokens in fragment.")
+                connection.set_schema_to_public() # Switch back before redirecting
+                return redirect(redirect_url)
+
             except User.DoesNotExist:
-                # This *shouldn't* happen if KindeUser existed, but handle defensively
-                print(f"CRITICAL Error: KindeUser found for {email}, but no corresponding User in tenant schema '{tenant.schema_name}'.")
+                print(f"Login failed: Tenant user {email} not found in schema {tenant.schema_name}.")
                 connection.set_schema_to_public() # Switch back
-                return HttpResponse("Authentication failed: User record mismatch.", status=500)
+                # Maybe redirect to a specific error page on the frontend?
+                return HttpResponse(f"Authentication failed: User profile not found for tenant.", status=403)
             except Exception as e:
-                print(f"Error switching schema or finding tenant user: {e}")
+                # Log the full exception for debugging
+                import traceback
+                traceback.print_exc() 
+                print(f"Error during tenant login or token generation for {email} in schema {tenant.schema_name}: {e}")
                 connection.set_schema_to_public() # Switch back
                 return HttpResponse("An internal error occurred during login.", status=500)
             finally:
-                # Always switch back to public schema after request processing within tenant context
-                # Note: Django-tenants middleware might handle this automatically depending on setup,
-                # but being explicit here can be safer within the view.
-                connection.set_schema_to_public()
-            
-            # --- Step 6: Redirect --- 
-            print("Redirecting to tenant dashboard...")
-            # Find the primary domain for the selected tenant
-            primary_domain = None
-            for domain in tenant.domains.all(): # Use cached domains from prefetch
-                if domain.is_primary:
-                    primary_domain = domain
-                    break
+                # Ensure schema is always switched back. 
+                # Temporarily removing conditional check for debugging.
+                try:
+                    print(f"Finally block: Current schema before switch attempt: {connection.schema_name}")
+                    connection.set_schema_to_public()
+                    print("Switched back to public schema in finally block.")
+                except Exception as final_e:
+                    print(f"ERROR in finally block trying to switch schema: {final_e}")
+                    # Avoid raising another exception from finally if possible
                     
-            if primary_domain:
-                # Construct URL using tenant's primary domain
-                # Determine scheme based on request or settings
-                scheme = 'https' if request.is_secure() or not settings.DEBUG else 'http' 
-                # Construct dashboard path (adjust if needed)
-                dashboard_path = "/dashboard"
-                # Assume frontend runs on a different port in development (e.g., 5173)
-                # In production, the domain might handle routing without port needed?
-                # You might need a more robust way to determine the frontend port/URL base.
-                port_suffix = ":5173" if settings.DEBUG and ':' not in primary_domain.domain else ""
-                dashboard_url = f"{scheme}://{primary_domain.domain}{port_suffix}{dashboard_path}"
-                print(f"Redirecting to: {dashboard_url}")
-            else:
-                print(f"Error: No primary domain found for tenant {tenant.name}. Cannot redirect.")
-                # Fallback redirect or error page
-                # For now, redirecting to root, but this should be handled better.
-                dashboard_url = '/' 
-            
-            return redirect(dashboard_url)
-
         except requests.exceptions.RequestException as e:
             print(f"Token Exchange Error: {e}")
             # Check if response object exists and has content

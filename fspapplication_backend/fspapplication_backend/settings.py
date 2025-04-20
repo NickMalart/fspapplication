@@ -55,6 +55,11 @@ KINDE_JWKS_URL = f"{KINDE_DOMAIN}/.well-known/jwks.json"
 KINDE_AUDIENCE = None # Disable audience check for ID token verification first
 # --- End Kinde Settings ---
 
+# --- Frontend Base URL --- 
+# Used for redirects after Kinde callback
+FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL', 'http://dev.localhost:5173')
+# --- End Frontend Base URL ---
+
 # --- Kinde Management API (M2M) Settings ---
 # For backend operations like creating users via API
 # MUST be set via environment variables

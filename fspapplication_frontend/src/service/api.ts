@@ -38,14 +38,16 @@ export const apiClient = axios.create({
 });
 
 // --- Request Interceptor ---
-// Adds Tenant header ONLY. Authorization is handled by session cookies.
+// Adds Tenant header AND Authorization header.
 apiClient.interceptors.request.use(
   (config) => {
     const auth = useAuthStore(); 
-    // REMOVED: Logic to add Authorization: Bearer header
-    // if (auth.accessToken) {
-    //   config.headers.Authorization = `Bearer ${auth.accessToken}`;
-    // }
+    // Log the token value for debugging
+    console.log('Auth Token in Interceptor:', auth.accessToken);
+    // RESTORED: Logic to add Authorization: Bearer header
+    if (auth.accessToken) {
+      config.headers.Authorization = `Bearer ${auth.accessToken}`;
+    }
 
     // Keep Tenant header logic if needed
     if (auth.tenant) {
