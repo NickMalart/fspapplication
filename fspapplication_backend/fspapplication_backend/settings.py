@@ -39,7 +39,7 @@ if IS_PRODUCTION:
 # Ensure these are set as environment variables in production!
 KINDE_DOMAIN = os.environ.get('KINDE_DOMAIN', 'https://fspapplicationdev.kinde.com')
 KINDE_CLIENT_ID = os.environ.get('KINDE_CLIENT_ID', 'f999f9947f6a4b39ab27ea5437b59346')
-KINDE_CLIENT_SECRET = os.environ.get('KINDE_CLIENT_SECRET', 'h67zve1HENCduEAFtPoePFzbokdaM7QjMXDNs1JfKjHxlBhIi') # MUST be set via environment variable
+KINDE_CLIENT_SECRET = 'h67zve1HENCduEAFtPoePFzbokdaM7QjMXDNs1JfKjHxlBhIi' # Hardcoded for local testing ONLY!
 
 # Default callback URL - adjust if needed for production/staging
 DEFAULT_BACKEND_BASE_URL = os.environ.get('BACKEND_BASE_URL', 'http://localhost:8000')
@@ -51,9 +51,20 @@ KINDE_CALLBACK_URL = os.environ.get(
 # Derived Kinde URLs
 KINDE_ISSUER = KINDE_DOMAIN
 KINDE_JWKS_URL = f"{KINDE_DOMAIN}/.well-known/jwks.json"
-# KINDE_AUDIENCE = None # Set this if your Kinde app has a specific API audience configured
-KINDE_AUDIENCE = KINDE_CLIENT_ID # Often the Client ID can serve as the Audience for ID tokens
+# KINDE_AUDIENCE = KINDE_CLIENT_ID # Often the Client ID can serve as the Audience for ID tokens
+KINDE_AUDIENCE = None # Disable audience check for ID token verification first
 # --- End Kinde Settings ---
+
+# --- Kinde Management API (M2M) Settings ---
+# For backend operations like creating users via API
+# MUST be set via environment variables
+# KINDE_MGMNT_CLIENT_ID = os.environ.get('KINDE_MGMNT_CLIENT_ID') 
+KINDE_MGMNT_CLIENT_ID = 'e82153b23544405e8ef91a2d63429b12' # Hardcoded for local testing ONLY!
+# KINDE_MGMNT_CLIENT_SECRET = os.environ.get('KINDE_MGMNT_CLIENT_SECRET')
+KINDE_MGMNT_CLIENT_SECRET = 'BBtyc0U3IsUA8C7gK0jYpQkMhgOVaDNfwxfn9wjHkVshAq9QDdhi' # Hardcoded for local testing ONLY!
+# The audience for the Kinde Management API (e.g., https://yourdomain.kinde.com/api)
+KINDE_MGMNT_AUDIENCE = os.environ.get('KINDE_MGMNT_AUDIENCE', f"{KINDE_DOMAIN}/api")
+# --- End Kinde Management API Settings ---
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),

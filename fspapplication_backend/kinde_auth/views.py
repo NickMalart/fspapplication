@@ -32,7 +32,7 @@ def fetch_jwks(jwks_url):
         print(f"Error fetching JWKS: {e}")
         return None
 
-def verify_id_token(id_token, jwks, audience, issuer):
+def verify_id_token(id_token, jwks, audience, issuer, access_token):
     """Verifies the ID token signature and claims."""
     try:
         # Find the key used to sign the token
@@ -61,7 +61,8 @@ def verify_id_token(id_token, jwks, audience, issuer):
             algorithms=[header['alg']],
             audience=audience,
             issuer=issuer,
-            options=options
+            options=options,
+            access_token=access_token
         )
         print("ID Token verified successfully.")
         return payload
@@ -163,7 +164,8 @@ class KindeCallbackView(View):
                 id_token,
                 jwks,
                 settings.KINDE_AUDIENCE, # Can be None if no specific audience
-                settings.KINDE_ISSUER
+                settings.KINDE_ISSUER,
+                access_token # Pass the received access token here
             )
             
             if not verified_payload:
@@ -182,26 +184,35 @@ class KindeCallbackView(View):
                 
             print(f"Token verified for email: {email}, Kinde ID: {kinde_user_id}")
 
-            # --- Step 4: Find/Update KindeUser and Get Tenant --- 
+            # --- Step 4: Find KindeUser, associated Tenant(s), and Update ID --- 
             print(f"Looking up KindeUser for email: {email} in public schema...")
             try:
                 # Query public schema explicitly
-                kinde_user_link = KindeUser.objects.using('default').get(email__iexact=email) 
-                tenant = kinde_user_link.tenant
-                print(f"Found KindeUser link. User belongs to tenant: {tenant.name} ({tenant.schema_name})")
+                kinde_user_link = KindeUser.objects.using('default').prefetch_related('tenants', 'tenants__domains').get(email__iexact=email)
                 
-                # Update kinde_user_id if it's missing (first login)
-                if not kinde_user_link.kinde_user_id:
+                # Get associated tenants
+                associated_tenants = list(kinde_user_link.tenants.all())
+                
+                if len(associated_tenants) == 1:
+                    tenant = associated_tenants[0]
+                    print(f"Found KindeUser link. User belongs to single tenant: {tenant.name} ({tenant.schema_name})")
+                elif len(associated_tenants) == 0:
+                    print(f"Error: KindeUser {email} found but not associated with any tenant.")
+                    return HttpResponse("Authentication failed: User has no assigned tenant.", status=403)
+                else: # More than one tenant associated
+                    # TODO: Implement tenant selection logic here if needed in the future
+                    # For now, treat as an error or pick the first one?
+                    # Picking the first one for now, but this might be ambiguous.
+                    tenant = associated_tenants[0] 
+                    tenant_names = ", ".join([t.name for t in associated_tenants])
+                    print(f"Warning: KindeUser {email} associated with multiple tenants ({tenant_names}). Proceeding with first tenant: {tenant.name}")
+                    # return HttpResponse(f"Ambiguous login: User belongs to multiple tenants ({tenant_names}).", status=400)
+                
+                # Update kinde_user_id if it's missing or changed
+                if kinde_user_link.kinde_user_id is None or kinde_user_link.kinde_user_id != kinde_user_id:
                     kinde_user_link.kinde_user_id = kinde_user_id
                     kinde_user_link.save(using='default')
                     print(f"Updated KindeUser record with kinde_user_id: {kinde_user_id}")
-                elif kinde_user_link.kinde_user_id != kinde_user_id:
-                    # This case is unlikely but could indicate an issue
-                    print(f"Warning: Kinde ID mismatch! DB: {kinde_user_link.kinde_user_id}, Token: {kinde_user_id}")
-                    # Decide how to handle: update, log, or error?
-                    # For now, let's update it
-                    kinde_user_link.kinde_user_id = kinde_user_id
-                    kinde_user_link.save(using='default')
                     
             except KindeUser.DoesNotExist:
                 print(f"Error: No KindeUser found for email {email}. User must be pre-registered.")
@@ -252,22 +263,33 @@ class KindeCallbackView(View):
                 connection.set_schema_to_public()
             
             # --- Step 6: Redirect --- 
-            print("Redirecting to dashboard...")
-            # Construct tenant-aware dashboard URL
-            # Option 1: Based on primary domain (requires frontend to handle subdomains/paths)
-            primary_domain = tenant.domains.filter(is_primary=True).first()
+            print("Redirecting to tenant dashboard...")
+            # Find the primary domain for the selected tenant
+            primary_domain = None
+            for domain in tenant.domains.all(): # Use cached domains from prefetch
+                if domain.is_primary:
+                    primary_domain = domain
+                    break
+                    
             if primary_domain:
-                # Assuming frontend runs on HTTPS and default port
-                # Adjust protocol/port as needed
-                dashboard_url = f"https://{primary_domain.domain}/dashboard" 
+                # Construct URL using tenant's primary domain
+                # Determine scheme based on request or settings
+                scheme = 'https' if request.is_secure() or not settings.DEBUG else 'http' 
+                # Construct dashboard path (adjust if needed)
+                dashboard_path = "/dashboard"
+                # Assume frontend runs on a different port in development (e.g., 5173)
+                # In production, the domain might handle routing without port needed?
+                # You might need a more robust way to determine the frontend port/URL base.
+                port_suffix = ":5173" if settings.DEBUG and ':' not in primary_domain.domain else ""
+                dashboard_url = f"{scheme}://{primary_domain.domain}{port_suffix}{dashboard_path}"
+                print(f"Redirecting to: {dashboard_url}")
             else:
-                # Fallback if no primary domain found (should not happen)
-                dashboard_url = reverse('some_generic_dashboard_or_error_page') 
-
-            # Option 2: Fixed frontend URL (if frontend handles routing based on session/API data)
-            # dashboard_url = "http://localhost:5173/dashboard" 
+                print(f"Error: No primary domain found for tenant {tenant.name}. Cannot redirect.")
+                # Fallback redirect or error page
+                # For now, redirecting to root, but this should be handled better.
+                dashboard_url = '/' 
             
-            return redirect(dashboard_url) 
+            return redirect(dashboard_url)
 
         except requests.exceptions.RequestException as e:
             print(f"Token Exchange Error: {e}")
