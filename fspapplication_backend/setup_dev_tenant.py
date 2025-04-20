@@ -72,6 +72,40 @@ def create_subscription_plans():
     
     return created_plans
 
+def create_public_tenant():
+    """Creates the public tenant and its localhost domain."""
+    public_schema_name = 'public'
+    public_domain_name = 'localhost'
+    
+    # Create the public tenant
+    public_tenant, created = Client.objects.get_or_create(
+        schema_name=public_schema_name,
+        defaults={
+            'name': 'Public Tenant',
+            # Add any other required fields for Client model with defaults
+            # 'subscription_plan': None, # Or a default free plan if applicable
+            'is_subscription_active': True, # Or False if not applicable
+            'paid_user_count': 0,
+        }
+    )
+    if created:
+        print(f"Created public tenant: {public_tenant.name} (Schema: {public_tenant.schema_name})")
+    else:
+        print(f"Found existing public tenant: {public_tenant.name}")
+
+    # Create the domain for localhost
+    domain, created = Domain.objects.get_or_create(
+        domain=public_domain_name,
+        tenant=public_tenant,
+        defaults={'is_primary': True}
+    )
+    if created:
+        print(f"Created domain '{domain.domain}' for public tenant.")
+    else:
+        print(f"Found existing domain '{domain.domain}' for public tenant.")
+        
+    return public_tenant
+
 def create_dev_tenant():
     """Create the development tenant with a basic plan"""
     # Create or get the basic plan
@@ -109,12 +143,16 @@ def create_dev_tenant():
 
 def main():
     """Main setup function"""
-    # Create subscription plans
+    # Create subscription plans (still needed for tenant creation)
     print("Ensuring subscription plans exist...")
     create_subscription_plans()
     
+    # Create the public tenant and localhost domain
+    print("\nCreating public tenant...")
+    public_tenant = create_public_tenant()
+    
     # Create development tenant
-    print("Creating development tenant...")
+    print("\nCreating development tenant...")
     tenant = create_dev_tenant()
     
     print("\n--- Development Tenant Setup Complete ---")
