@@ -100,7 +100,8 @@ CSRF_TRUSTED_ORIGINS = [
 
 SHARED_APPS = (
     'django_tenants',
-    'tenant',    
+    'tenant',
+    'kinde_auth',
     'account',
     'company',
     'dashboard',
@@ -128,6 +129,7 @@ TENANT_APPS = (
     'agent',
     'common_utils',
     'files',
+    'user_management',
 )
 
 INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]

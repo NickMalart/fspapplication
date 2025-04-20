@@ -19,12 +19,14 @@ def serve_vue_frontend(request, path=''):
     return serve(request, 'index.html', document_root=os.path.join(settings.BASE_DIR, 'static'))
 
 urlpatterns = [
+    path('auth/', include('kinde_auth.urls')),
     path('api/account/', include('account.urls')),
     path('api/company/', include('company.urls')),
     path('api/files/', include('files.urls')),
     path('api/client/', include('client.urls')),
     path('api/agent/', include('agent.urls')),
     path('api/', include('common_utils.urls')),
+    path('api/user-management/', include('user_management.urls')),
     path('admin/', admin.site.urls),
     path('health/', health_check, name='health_check'),
     path('<path:path>', serve_vue_frontend),
