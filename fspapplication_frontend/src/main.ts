@@ -4,6 +4,22 @@ import 'swiper/css/navigation'
 import 'swiper/css/pagination'
 import 'jsvectormap/dist/jsvectormap.css'
 
+// --- Leaflet Icon Configuration ---
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+
+// Configure Leaflet's default icon paths globally
+L.Icon.Default.imagePath = ''; 
+L.Icon.Default.mergeOptions({
+  iconUrl: iconUrl,
+  iconRetinaUrl: iconRetinaUrl,
+  shadowUrl: shadowUrl,
+});
+// --- End Leaflet Icon Configuration ---
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'

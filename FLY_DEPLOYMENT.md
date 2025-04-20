@@ -35,7 +35,7 @@ This guide walks you through deploying your Django Tenants + Vue.js application 
 
 3. Deploy your application with minimal resources:
    ```bash
-   fly deploy -a fspapplication
+   fly deploy -a fspapplication-dev
    ```
 
    > Note: All environment variables are already included in the fly.toml file for development purposes. For production, you should use `fly secrets set` instead.
