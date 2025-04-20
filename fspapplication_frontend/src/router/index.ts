@@ -212,9 +212,13 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
   document.title = `Vue.js ${String(to.meta.title)} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
-  if (to.meta.requiresAuth && !localStorage.getItem('accessToken')) {
-    return next({ name: 'Signin' })
-  }
+  // Remove the check for localStorage accessToken
+  // if (to.meta.requiresAuth && !localStorage.getItem('accessToken')) {
+  //   return next({ name: 'Signin' })
+  // }
+  
+  // Temporarily allow navigation to protected routes.
+  // Authentication should be verified by API calls within components.
   next()
 })
 
