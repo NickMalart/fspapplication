@@ -1,42 +1,133 @@
 from django.shortcuts import render, redirect
 from django.views import View
-from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
+from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.conf import settings
-import requests # Make sure requests is installed
+from django.contrib.auth import login
+from django.db import connection
+from django.urls import reverse
+import requests
+import uuid
+from urllib.parse import urljoin
 
-# Placeholder for JWT verification later
-# from jose import jwt, jwk
-# from jose.exceptions import JOSEError
+# JWT verification
+from jose import jwt, jwk
+from jose.exceptions import JOSEError, JWTError
+import time 
 
-# Placeholder for Django auth later
-# from django.contrib.auth import login
+# Models
+from tenant.models import Client
+from .models import KindeUser
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
-# Placeholder for tenant/auth models later
-# from tenant.models import Client
-# from .models import KindeUser
+# --- Helper Functions ---
+
+def fetch_jwks(jwks_url):
+    """Fetches JWKS keys from Kinde."""
+    try:
+        response = requests.get(jwks_url, timeout=10) # Add timeout
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching JWKS: {e}")
+        return None
+
+def verify_id_token(id_token, jwks, audience, issuer):
+    """Verifies the ID token signature and claims."""
+    try:
+        # Find the key used to sign the token
+        header = jwt.get_unverified_header(id_token)
+        signing_key = None
+        for key in jwks['keys']:
+            if key['kid'] == header['kid']:
+                signing_key = key
+                break
+        
+        if not signing_key:
+            print("Signing key not found in JWKS.")
+            return None
+
+        # Decode and verify
+        # `audience` check is strict. If KINDE_AUDIENCE is None, it won't check audience.
+        options = {
+            "verify_signature": True,
+            "verify_aud": audience is not None,
+            "verify_iss": True,
+            "verify_exp": True,
+        }
+        payload = jwt.decode(
+            id_token,
+            signing_key,
+            algorithms=[header['alg']],
+            audience=audience,
+            issuer=issuer,
+            options=options
+        )
+        print("ID Token verified successfully.")
+        return payload
+
+    except JWTError as e:
+        print(f"JWT Verification Error: {e}")
+        return None
+    except Exception as e:
+        print(f"General Token Verification Error: {e}")
+        return None
+
+# --- Kinde Views ---
+
+class KindeLoginView(View):
+    """Initiates the Kinde OIDC login flow."""
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        state = uuid.uuid4().hex # Generate unique state
+        request.session['oauth_state'] = state # Store state in session
+        # Store nonce and expiry if using nonce validation (recommended)
+
+        auth_url = f"{settings.KINDE_ISSUER}/oauth2/auth"
+        params = {
+            'response_type': 'code',
+            'client_id': settings.KINDE_CLIENT_ID,
+            'redirect_uri': settings.KINDE_CALLBACK_URL,
+            'scope': 'openid profile email', # Request necessary scopes
+            'state': state,
+            # 'nonce': nonce, # Add if using nonce validation
+        }
+        
+        # Use requests library to correctly encode parameters
+        login_url = requests.Request('GET', auth_url, params=params).prepare().url
+        print(f"Redirecting to Kinde: {login_url}")
+        return redirect(login_url)
 
 class KindeCallbackView(View):
     def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         print("--- Kinde Callback Received ---")
+        error = request.GET.get('error')
+        if error:
+            error_desc = request.GET.get('error_description', 'No description provided.')
+            print(f"Kinde Error: {error} - {error_desc}")
+            return HttpResponseBadRequest(f"Error during Kinde authentication: {error_desc}")
+
         code = request.GET.get('code')
-        state = request.GET.get('state') # We will need to validate this later
+        state = request.GET.get('state')
 
         if not code:
             print("Callback Error: 'code' parameter missing.")
             return HttpResponseBadRequest("Missing authorization code.")
         
-        print(f"Received code: {code[:10]}... (truncated)") # Truncate code for logging
+        print(f"Received code: {code[:10]}... (truncated)")
         print(f"Received state: {state}")
         
-        # --- TODO: Step 1: Validate state parameter --- 
-        # Compare 'state' with the value stored in the session before redirecting to Kinde
-        # If mismatch, return error (potential CSRF)
-        print("State validation is currently skipped.")
+        # --- Step 1: Validate state parameter --- 
+        session_state = request.session.pop('oauth_state', None)
+        if not state or state != session_state:
+            print("State mismatch error. Potential CSRF attack.")
+            return HttpResponseBadRequest("Invalid state parameter.")
+        print("State validation successful.")
 
-        # --- TODO: Step 2: Exchange code for tokens --- 
+        # --- Step 2: Exchange code for tokens --- 
         print("Attempting to exchange code for tokens...")
-        token_url = f"{settings.KINDE_DOMAIN}/oauth2/token"
-        redirect_uri = request.build_absolute_uri(request.path) # Or construct from settings/request
+        token_url = f"{settings.KINDE_ISSUER}/oauth2/token"
+        # Ensure redirect_uri matches exactly what was sent in the initial auth request
+        redirect_uri = settings.KINDE_CALLBACK_URL 
         
         payload = {
             'grant_type': 'authorization_code',
@@ -44,67 +135,153 @@ class KindeCallbackView(View):
             'client_secret': settings.KINDE_CLIENT_SECRET,
             'code': code,
             'redirect_uri': redirect_uri,
-            # 'scope': 'openid profile email' # Often needed, depends on Kinde setup
+            # 'scope': 'openid profile email' # Scope usually not needed here
         }
         
         try:
-            response = requests.post(token_url, data=payload)
-            response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+            response = requests.post(token_url, data=payload, timeout=15)
+            response.raise_for_status() 
             token_data = response.json()
             print("Successfully exchanged code for tokens.")
-            # print(f"Token data received: {token_data}") # Careful logging tokens
+            
             id_token = token_data.get('id_token')
-            access_token = token_data.get('access_token') # May need this later
+            access_token = token_data.get('access_token') 
+            refresh_token = token_data.get('refresh_token') # Store if needed
 
             if not id_token:
                  print("Token Error: ID token missing in response.")
                  return HttpResponse("Authentication failed: ID token missing.", status=500)
 
-            # --- TODO: Step 3: Verify ID Token --- 
-            print("ID Token verification is currently skipped.")
-            # Fetch JWKS from Kinde
-            # Verify signature using JWKS
-            # Verify claims (iss, aud, exp, nonce if used)
-            # Extract user info (sub, email, name etc.) from verified token
-            # placeholder_kinde_id = "real_kinde_id_from_token"
-            # placeholder_email = "real_email_from_token"
+            # --- Step 3: Verify ID Token --- 
+            print("Fetching JWKS...")
+            jwks = fetch_jwks(settings.KINDE_JWKS_URL)
+            if not jwks:
+                return HttpResponse("Failed to fetch JWKS for token verification.", status=500)
+                
+            print("Verifying ID Token...")
+            verified_payload = verify_id_token(
+                id_token,
+                jwks,
+                settings.KINDE_AUDIENCE, # Can be None if no specific audience
+                settings.KINDE_ISSUER
+            )
             
-            # --- TODO: Step 4: Find/Update KindeUser and Get Tenant --- 
-            print("Finding/Updating KindeUser is currently skipped.")
-            # Look up KindeUser by placeholder_email in public schema
-            # If found:
-            #   Update user record with placeholder_kinde_id
-            #   Get associated tenant
-            # If not found:
-            #   Handle error: User not pre-associated
-            # placeholder_tenant = None # Get the actual tenant object
+            if not verified_payload:
+                print("ID Token verification failed.")
+                return HttpResponse("Invalid ID Token.", status=403) # Forbidden
             
-            # --- TODO: Step 5: Switch Schema and Log In --- 
-            print("Switching schema and logging in is currently skipped.")
-            # if placeholder_tenant:
-            #   connection.set_tenant(placeholder_tenant)
-            #   # Find corresponding account.User if necessary
-            #   # login(request, django_user_object) 
-            #   print(f"Switched to tenant: {placeholder_tenant.schema_name}")
-            # else:
-            #   Handle error: Tenant not found for user
+            # Extract user info from *verified* token
+            kinde_user_id = verified_payload.get('sub') # Subject (unique Kinde ID)
+            email = verified_payload.get('email')
+            given_name = verified_payload.get('given_name', '')
+            family_name = verified_payload.get('family_name', '')
+
+            if not kinde_user_id or not email:
+                print("Essential claims (sub, email) missing from token.")
+                return HttpResponse("Incomplete user information from Kinde.", status=500)
+                
+            print(f"Token verified for email: {email}, Kinde ID: {kinde_user_id}")
+
+            # --- Step 4: Find/Update KindeUser and Get Tenant --- 
+            print(f"Looking up KindeUser for email: {email} in public schema...")
+            try:
+                # Query public schema explicitly
+                kinde_user_link = KindeUser.objects.using('default').get(email__iexact=email) 
+                tenant = kinde_user_link.tenant
+                print(f"Found KindeUser link. User belongs to tenant: {tenant.name} ({tenant.schema_name})")
+                
+                # Update kinde_user_id if it's missing (first login)
+                if not kinde_user_link.kinde_user_id:
+                    kinde_user_link.kinde_user_id = kinde_user_id
+                    kinde_user_link.save(using='default')
+                    print(f"Updated KindeUser record with kinde_user_id: {kinde_user_id}")
+                elif kinde_user_link.kinde_user_id != kinde_user_id:
+                    # This case is unlikely but could indicate an issue
+                    print(f"Warning: Kinde ID mismatch! DB: {kinde_user_link.kinde_user_id}, Token: {kinde_user_id}")
+                    # Decide how to handle: update, log, or error?
+                    # For now, let's update it
+                    kinde_user_link.kinde_user_id = kinde_user_id
+                    kinde_user_link.save(using='default')
+                    
+            except KindeUser.DoesNotExist:
+                print(f"Error: No KindeUser found for email {email}. User must be pre-registered.")
+                # Redirect to an error page or show a message
+                return HttpResponse("Authentication failed: User not registered in this system.", status=403)
+            except Exception as e:
+                print(f"Error finding/updating KindeUser: {e}")
+                return HttpResponse("An internal error occurred during user lookup.", status=500)
             
-            # --- TODO: Step 6: Redirect --- 
-            print("Redirecting to placeholder dashboard...")
-            # Replace with actual tenant dashboard URL
-            return redirect('/') # Redirect to homepage for now
+            # --- Step 5: Switch Schema and Log In --- 
+            print(f"Switching to tenant schema: {tenant.schema_name}")
+            try:
+                connection.set_tenant(tenant)
+                
+                # Find the corresponding User within the tenant schema
+                # *** This requires 'account' app to be in TENANT_APPS ***
+                user = User.objects.get(email__iexact=email)
+                print(f"Found tenant user: {user.email}")
+                
+                # Ensure user is active before login
+                if not user.is_active:
+                    print(f"Login failed: User {email} is inactive.")
+                    connection.set_schema_to_public() # Switch back
+                    return HttpResponse("Authentication failed: Account is inactive.", status=403)
+                
+                # Log the user into the Django session
+                login(request, user) 
+                print(f"User {user.email} logged in successfully.")
+                
+                # Store tokens in session if needed for backend API calls
+                # request.session['access_token'] = access_token
+                # request.session['refresh_token'] = refresh_token
+                # request.session['id_token'] = id_token # May not need to store full ID token
+                
+            except User.DoesNotExist:
+                # This *shouldn't* happen if KindeUser existed, but handle defensively
+                print(f"CRITICAL Error: KindeUser found for {email}, but no corresponding User in tenant schema '{tenant.schema_name}'.")
+                connection.set_schema_to_public() # Switch back
+                return HttpResponse("Authentication failed: User record mismatch.", status=500)
+            except Exception as e:
+                print(f"Error switching schema or finding tenant user: {e}")
+                connection.set_schema_to_public() # Switch back
+                return HttpResponse("An internal error occurred during login.", status=500)
+            finally:
+                # Always switch back to public schema after request processing within tenant context
+                # Note: Django-tenants middleware might handle this automatically depending on setup,
+                # but being explicit here can be safer within the view.
+                connection.set_schema_to_public()
+            
+            # --- Step 6: Redirect --- 
+            print("Redirecting to dashboard...")
+            # Construct tenant-aware dashboard URL
+            # Option 1: Based on primary domain (requires frontend to handle subdomains/paths)
+            primary_domain = tenant.domains.filter(is_primary=True).first()
+            if primary_domain:
+                # Assuming frontend runs on HTTPS and default port
+                # Adjust protocol/port as needed
+                dashboard_url = f"https://{primary_domain.domain}/dashboard" 
+            else:
+                # Fallback if no primary domain found (should not happen)
+                dashboard_url = reverse('some_generic_dashboard_or_error_page') 
+
+            # Option 2: Fixed frontend URL (if frontend handles routing based on session/API data)
+            # dashboard_url = "http://localhost:5173/dashboard" 
+            
+            return redirect(dashboard_url) 
 
         except requests.exceptions.RequestException as e:
             print(f"Token Exchange Error: {e}")
-            # Log the error details securely
-            return HttpResponse("Authentication failed during token exchange.", status=500)
+            # Check if response object exists and has content
+            error_details = "No details available."
+            if e.response is not None:
+                try:
+                    error_details = e.response.json() 
+                except ValueError:
+                    error_details = e.response.text
+            print(f"Error details: {error_details}")
+            return HttpResponse(f"Authentication failed during token exchange: {error_details}", status=500)
         except Exception as e:
             print(f"Callback Processing Error: {e}")
-            # Log the error details securely
             return HttpResponse("An internal error occurred during authentication.", status=500)
 
-        # Fallback return (should ideally be handled above)
-        return HttpResponse("Authentication callback processing finished (intermediate stage).")
-
-# TODO: Add KindeLoginView
 # TODO: Add KindeLogoutView

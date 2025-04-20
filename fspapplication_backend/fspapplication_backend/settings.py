@@ -35,6 +35,26 @@ if IS_PRODUCTION:
     # Example: CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://yourfrontend.com').split(',')
     pass # Add production-specific overrides here if needed
 
+# --- Kinde Authentication Settings --- 
+# Ensure these are set as environment variables in production!
+KINDE_DOMAIN = os.environ.get('KINDE_DOMAIN', 'https://fspapplicationdev.kinde.com')
+KINDE_CLIENT_ID = os.environ.get('KINDE_CLIENT_ID', 'f999f9947f6a4b39ab27ea5437b59346')
+KINDE_CLIENT_SECRET = os.environ.get('KINDE_CLIENT_SECRET', 'h67zve1HENCduEAFtPoePFzbokdaM7QjMXDNs1JfKjHxlBhIi') # MUST be set via environment variable
+
+# Default callback URL - adjust if needed for production/staging
+DEFAULT_BACKEND_BASE_URL = os.environ.get('BACKEND_BASE_URL', 'http://localhost:8000')
+KINDE_CALLBACK_URL = os.environ.get(
+    'KINDE_CALLBACK_URL',
+    f"{DEFAULT_BACKEND_BASE_URL}/auth/callback/" 
+)
+
+# Derived Kinde URLs
+KINDE_ISSUER = KINDE_DOMAIN
+KINDE_JWKS_URL = f"{KINDE_DOMAIN}/.well-known/jwks.json"
+# KINDE_AUDIENCE = None # Set this if your Kinde app has a specific API audience configured
+KINDE_AUDIENCE = KINDE_CLIENT_ID # Often the Client ID can serve as the Audience for ID tokens
+# --- End Kinde Settings ---
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
@@ -131,6 +151,11 @@ TENANT_APPS = (
 )
 
 INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
+
+# --- Django Tenants Configuration ---
+TENANT_MODEL = "tenant.Client" # app.Model
+TENANT_DOMAIN_MODEL = "tenant.Domain" # app.Model
+# --- End Django Tenants Configuration ---
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -300,10 +325,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-TENANT_MODEL = "tenant.Client" 
-
-TENANT_DOMAIN_MODEL = "tenant.Domain"
 
 AUTH_USER_MODEL = 'account.User'
 
