@@ -227,16 +227,13 @@ router.beforeEach((to, _from, next) => {
 
   if (to.meta.requiresAuth) {
     if (!auth.isAuthenticated) {
-      console.log('Router Guard: Route requires auth, but user is not authenticated. Redirecting to Signin.');
       return next({ 
         name: 'Signin', 
       })
     } else {
-      console.log('Router Guard: User authenticated, allowing access.');
       next()
     }
   } else {
-    console.log('Router Guard: Route does not require auth, allowing access.');
     next()
   }
 })

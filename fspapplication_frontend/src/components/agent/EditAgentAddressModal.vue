@@ -174,14 +174,6 @@ const props = defineProps<{
   isSaving: boolean;
 }>();
 
-// Add a watcher for the isSaving prop
-watch(() => props.isSaving, (newValue, oldValue) => {
-  console.log(`--- EditAgentAddressModal: isSaving prop changed from ${oldValue} to ${newValue} ---`);
-});
-
-// Log initial value on setup
-console.log(`--- EditAgentAddressModal: Initial isSaving prop value: ${props.isSaving} ---`);
-
 // Define emits
 const emit = defineEmits(['close', 'save']);
 
@@ -316,8 +308,6 @@ const submitForm = () => {
       errorMessage.value = 'Please provide at least a street name or city.';
       return;
   }
-  console.log("--- EditAgentAddressModal: submitForm called ---");
-  console.log("Emitting save event with data:", JSON.stringify(formData, null, 2));
   emit('save', { ...formData });
 };
 </script> 

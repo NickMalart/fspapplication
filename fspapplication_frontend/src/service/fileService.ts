@@ -144,10 +144,6 @@ export const fileService = {
               file.name,
               { type: outputFormat, lastModified: Date.now() }
             );
-            
-            // Use the formatFileSize method from this object
-            // const formatSize = fileService.formatFileSize;
-            // console.log(`Resized image from ${formatSize(file.size)} to ${formatSize(resizedFile.size)}`); // Removed debugging
             resolve(resizedFile);
           },
           outputFormat,

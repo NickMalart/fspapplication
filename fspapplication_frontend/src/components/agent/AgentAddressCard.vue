@@ -149,8 +149,6 @@ const formatStreetAddress = (agent: Agent) => {
 
 // Handle save from modal
 const handleSave = async (formData: Partial<Agent>) => {
-  console.log("--- AgentAddressCard: handleSave triggered ---");
-  console.log("Received formData from modal:", JSON.stringify(formData, null, 2));
   isSaving.value = true;
   
   try {
@@ -168,12 +166,8 @@ const handleSave = async (formData: Partial<Agent>) => {
       longitude: formData.longitude
     };
     
-    console.log("Constructed addressData for update:", JSON.stringify(addressData, null, 2));
-    
     // Update agent through store
-    console.log(`Calling agentStore.updateAgent for agent ID: ${props.agentId}`);
     await agentStore.updateAgent(props.agentId, addressData);
-    console.log("agentStore.updateAgent successful");
     
     // Increment key to force modal re-render on next open
     modalKey.value++;
@@ -182,14 +176,11 @@ const handleSave = async (formData: Partial<Agent>) => {
     isModalOpen.value = false;
     
     // Emit an event to notify the parent page to refresh data
-    console.log("Emitting agent-updated event");
     emit('agent-updated'); 
     
   } catch (saveError) {
-    console.error('AgentAddressCard: Failed to save address changes:', saveError);
     // Optionally display an error message to the user
   } finally {
-    console.log("--- AgentAddressCard: handleSave finished ---");
     isSaving.value = false;
   }
 };
@@ -202,7 +193,6 @@ const handleSave = async (formData: Partial<Agent>) => {
 //   () => props.agentId,
 //   async (newId) => {
 //     if (newId && !agent.value) {
-//        // console.log(`AgentAddressCard: Agent ${newId} not found in store, parent should fetch.`);
 //        // Consider if we need a fallback fetch here, but ideally parent handles it.
 //        // await agentStore.fetchAgentById(newId); // Need to add fetchAgentById to store if we do this
 //     }
@@ -233,7 +223,6 @@ const initMap = () => {
       // Add marker
       L.marker([currentAgent.latitude, currentAgent.longitude]).addTo(mapInstance.value as L.Map);
     } catch (mapError) {
-      console.error("Failed to initialize Leaflet map:", mapError);
       // Clean up if initialization failed partially
       destroyMap(); 
     }
