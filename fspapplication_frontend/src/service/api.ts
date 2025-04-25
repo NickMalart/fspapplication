@@ -87,19 +87,54 @@ apiClient.interceptors.response.use(
     return response; // Pass through successful responses
   },
   async (error) => {
-    // WARNING: This block assumes JWT refresh tokens and might conflict
-    // with session-based authentication. Review/remove if needed.
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const auth = useAuthStore();
 
+    // --- Handle 403 Forbidden (Tenant Access Denied) ---
+    if (error.response?.status === 403) {
+      console.error('Access Denied (403): User does not have access to this tenant. Logging out...');
+      
+      // Prevent infinite loops if logout itself fails
+      if (originalRequest.url !== '/api/auth/logout/') { 
+        try {
+          // 1. Attempt to hit the backend logout endpoint
+          console.log('Attempting backend logout...');
+          await apiClient.get('/api/auth/logout/'); // Use GET if your KindeLogoutView uses GET
+          console.log('Backend logout call successful (or response received).');
+        } catch (logoutError: any) {
+          console.error('Backend logout call failed:', logoutError.message);
+          // Decide if you still want to clear frontend state even if backend logout fails
+        }
+      }
+
+      // 2. Clear frontend auth state (do this regardless of backend logout success for immediate UI update)
+      auth.removeToken(); // Use the likely correct method from store actions
+      // TODO: Verify if auth.setUser(null) and auth.setTenant('') are also needed here
+      console.log('Frontend auth state cleared (token removed).');
+      
+      // 3. Redirect to a base login page (without tenant subdomain)
+      const baseUrl = `${window.location.protocol}//${window.location.host.split('.').slice(-2).join('.')}`; 
+      const loginUrl = `${baseUrl}/login`; // Or your designated login path
+      
+      console.log(`Redirecting to login: ${loginUrl}`);
+      window.location.href = loginUrl; 
+
+      // Reject the promise to stop further processing of this failed request
+      return Promise.reject(new Error('Access Denied to Tenant - Logged Out')); 
+    }
+    // --- End 403 Handling ---
+
+    // Existing 401 handling (potentially needs review/removal for session auth)
     if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/api/account/token/refresh/') {
        // ... existing JWT refresh logic ...
-       // This logic will probably fail or act unexpectedly now.
-       // Consider removing or replacing with logic to redirect to login for 401s.
-       console.warn('Existing 401 JWT refresh logic encountered in session-based flow. This may need removal.');
+       console.warn('Existing 401 JWT refresh logic encountered. Consider removing or replacing with redirect to login for 401s.');
+       // If Kinde/session auth is primary, you might want to redirect on 401 too:
+       // auth.clearAuth();
+       // window.location.href = '/login'; // Or your login path
+       // return Promise.reject(new Error('Authentication Required'));
     }
 
-    // For errors other than 401 or retries, just pass them along
+    // For errors other than 401/403 or retries, just pass them along
     return Promise.reject(error);
   }
 );

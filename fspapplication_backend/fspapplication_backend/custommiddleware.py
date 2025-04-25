@@ -4,6 +4,7 @@ import logging
 from django.db import connection
 from django.apps import apps
 from functools import lru_cache
+from django.urls import reverse
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,22 @@ class CustomTenantMiddleware(TenantMainMiddleware):
         return domain_obj.tenant
         
     def process_request(self, request):
+        # --- NEW: Explicitly handle public paths ---
+        public_paths = [
+            reverse('kinde_auth:kinde_login'), 
+            reverse('kinde_auth:kinde_callback'),
+            # Add other public paths like admin if needed
+            # '/admin/' 
+        ]
+        if request.path_info in public_paths:
+            logger.info(f"Request path {request.path_info} is public. Setting schema to public.")
+            connection.set_schema_to_public()
+            request.tenant = None # Ensure no tenant is set for public paths
+            # Skip further tenant processing for these paths
+            # We don't call super().process_request() here as that would try tenant resolution
+            return None # Middleware finished for this request
+        # --- End Public Path Handling ---
+
         # Check for tenant header first
         tenant_from_header = request.headers.get('X-DTS-TENANT')
         
@@ -81,6 +98,8 @@ class CustomTenantMiddleware(TenantMainMiddleware):
             logger.info("Using domain-based tenant resolution")
             self._domain_log_counter = 0
             
+        # If we reach here, it's not a public path and header failed/was absent,
+        # proceed with default django-tenants domain resolution.
         return super().process_request(request)
     
     def get_tenant(self, model, hostname):
@@ -149,4 +168,90 @@ class CustomTenantMiddleware(TenantMainMiddleware):
         if tenant_id not in self._tenant_activation_log:
             logger.info(f"Activated tenant: {tenant.schema_name}")
             self._tenant_activation_log.add(tenant_id)
+
+class TenantUserAccessMiddleware:
+    """
+    Middleware to verify that authenticated users have access to the current tenant.
+    This middleware should be placed after the authentication and tenant middleware.
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self._access_checks_cache = {}  # Cache for user-tenant access checks
+        self._logger = logging.getLogger(__name__)
+    
+    def __call__(self, request):
+        # --- NEW: Skip check if no tenant is set (e.g., for public paths) ---
+        if not hasattr(request, 'tenant') or request.tenant is None:
+             return self.get_response(request)
+        # --- End Skip Check ---
+
+        # If there's no authenticated user, continue (tenant is set, but user not logged in)
+        # Note: Combined the user check with the tenant check above implicitly
+        # Original check: if not hasattr(request, 'user') or not request.user.is_authenticated:
+        # Simplified: Check authentication only if we proceed past the tenant check
+        if not hasattr(request, 'user') or not request.user.is_authenticated:
+            return self.get_response(request)
+        
+        # Get current tenant and user
+        current_tenant = request.tenant
+        current_user = request.user
+        
+        # Check if the user has access to this tenant
+        if not self.user_has_tenant_access(current_user, current_tenant):
+            # User doesn't have access to this tenant
+            self._logger.warning(
+                f"User {current_user.email} attempted to access unauthorized tenant: {current_tenant.schema_name}"
+            )
+            
+            # Import here to avoid circular dependency issues if middleware loads early
+            from django.http import HttpResponseForbidden 
+            
+            # Return 403 Forbidden for ALL unauthorized access attempts (API or UI)
+            return HttpResponseForbidden('Access denied. You do not have permission to access this tenant.')
+            
+        # User has access, continue with the request
+        return self.get_response(request)
+    
+    def user_has_tenant_access(self, user, tenant):
+        """
+        Check if a user has access to a specific tenant.
+        Uses a cache to avoid repeated database queries.
+        """
+        # Create a cache key
+        cache_key = f"{user.email}:{tenant.schema_name}"
+        
+        # Check if we have a cached result
+        if cache_key in self._access_checks_cache:
+            return self._access_checks_cache[cache_key]
+        
+        # Check in the public schema if this user has access to this tenant
+        from django.db import connection
+        
+        # Store the current schema to restore it later
+        current_schema = connection.schema_name
+        
+        try:
+            # Switch to public schema to check KindeUser associations
+            connection.set_schema_to_public()
+            
+            # Import KindeUser model from the public schema
+            from kinde_auth.models import KindeUser
+            
+            # Check if the user exists in the KindeUser table
+            # and if they have access to the current tenant
+            try:
+                kinde_user = KindeUser.objects.get(email__iexact=user.email)
+                has_access = tenant in kinde_user.tenants.all()
+                
+                # Cache the result
+                self._access_checks_cache[cache_key] = has_access
+                return has_access
+            except KindeUser.DoesNotExist:
+                # If the KindeUser doesn't exist, they don't have access
+                self._access_checks_cache[cache_key] = False
+                return False
+        finally:
+            # Always restore the original schema
+            if current_schema:
+                connection.set_tenant(tenant)
 

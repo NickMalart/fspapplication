@@ -2,12 +2,13 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.conf import settings
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.db import connection
 from django.urls import reverse
 import requests
 import uuid
 from urllib.parse import urljoin, urlencode
+import os
 
 # JWT verification
 from jose import jwt, jwk
@@ -306,5 +307,38 @@ class KindeCallbackView(View):
         except Exception as e:
             print(f"Callback Processing Error: {e}")
             return HttpResponse("An internal error occurred during authentication.", status=500)
+
+class KindeLogoutView(View):
+    """Logs the user out of the Django session and initiates Kinde SLO."""
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        print("--- Kinde Logout Initiated ---")
+
+        # Log the user out of the Django session first
+        logout(request)
+        print("Django session cleared.")
+
+        # Construct the Kinde end session endpoint URL
+        # Ensure your KINDE_POST_LOGOUT_REDIRECT_URL is configured in Kinde settings
+        # and matches where you want users to land after logout (e.g., your base frontend URL)
+        # If KINDE_POST_LOGOUT_REDIRECT_URL is not set, Kinde might redirect to a default.
+        kinde_logout_url = f"{settings.KINDE_ISSUER}/logout"
+        
+        # The post_logout_redirect_uri tells Kinde where to send the user back *after* Kinde logout
+        post_logout_redirect_uri = os.environ.get('KINDE_POST_LOGOUT_REDIRECT_URL', settings.FRONTEND_BASE_URL + '/') # Default to frontend base
+
+        params = {
+            'post_logout_redirect_uri': post_logout_redirect_uri
+            # Kinde might support id_token_hint but it's often not strictly necessary for basic logout
+        }
+        
+        # Build the full URL with parameters
+        logout_redirect_url = f"{kinde_logout_url}?{urlencode(params)}"
+        
+        print(f"Redirecting to Kinde end session endpoint: {logout_redirect_url}")
+        
+        # Redirect the browser to Kinde's logout endpoint
+        # Use HttpResponseTemporaryRedirect (307) or PermanentRedirect (308)
+        # A simple redirect (302) is often sufficient here.
+        return redirect(logout_redirect_url)
 
 # TODO: Add KindeLogoutView

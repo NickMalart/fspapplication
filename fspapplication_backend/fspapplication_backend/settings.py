@@ -188,6 +188,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'fspapplication_backend.custommiddleware.CustomTenantMiddleware',
+    'fspapplication_backend.custommiddleware.TenantUserAccessMiddleware',
     'account.middleware.TenantUserLimitMiddleware',
 ]
 

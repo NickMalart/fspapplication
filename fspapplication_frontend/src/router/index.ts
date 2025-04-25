@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -220,15 +221,24 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
-  document.title = `Vue.js ${String(to.meta.title)} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
-  // Remove the check for localStorage accessToken
-  // if (to.meta.requiresAuth && !localStorage.getItem('accessToken')) {
-  //   return next({ name: 'Signin' })
-  // }
-  
-  // Temporarily allow navigation to protected routes.
-  // Authentication should be verified by API calls within components.
-  next()
+  document.title = `FSP Application - ${String(to.meta.title || 'Welcome')}`
+
+  const auth = useAuthStore()
+
+  if (to.meta.requiresAuth) {
+    if (!auth.isAuthenticated) {
+      console.log('Router Guard: Route requires auth, but user is not authenticated. Redirecting to Signin.');
+      return next({ 
+        name: 'Signin', 
+      })
+    } else {
+      console.log('Router Guard: User authenticated, allowing access.');
+      next()
+    }
+  } else {
+    console.log('Router Guard: Route does not require auth, allowing access.');
+    next()
+  }
 })
 
 export default router
