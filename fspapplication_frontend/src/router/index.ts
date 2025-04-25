@@ -220,8 +220,19 @@ const router = createRouter({
   routes
 })
 
+// Define the expected public hostname and the full public login URL
+const publicHostname = 'localhost' 
+const publicLoginUrl = 'http://localhost:5173/' // Assuming the signin page is at the root '/'. Adjust if needed.
+
 router.beforeEach((to, _from, next) => {
   document.title = `FSP Application - ${String(to.meta.title || 'Welcome')}`
+
+  // Check if navigating to the Signin page and if the hostname is not the public one
+  if (to.name === 'Signin' && window.location.hostname !== publicHostname) {
+    // Redirect to the public login URL
+    window.location.href = publicLoginUrl
+    return false // Stop the current navigation
+  }
 
   const auth = useAuthStore()
 
