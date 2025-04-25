@@ -42,6 +42,7 @@ class CustomTenantMiddleware(TenantMainMiddleware):
         public_paths = [
             reverse('kinde_auth:kinde_login'), 
             reverse('kinde_auth:kinde_callback'),
+            '/favicon.ico', # Treat favicon as public
             # Add other public paths like admin if needed
             # '/admin/' 
         ]

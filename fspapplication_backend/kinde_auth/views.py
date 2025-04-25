@@ -9,20 +9,29 @@ import requests
 import uuid
 from urllib.parse import urljoin, urlencode
 import os
+import logging # Add logging
+import time # Import time for token expiry
+import json
 
 # JWT verification
 from jose import jwt, jwk
 from jose.exceptions import JOSEError, JWTError
-import time 
 
 # Simple JWT Token Generation
 from rest_framework_simplejwt.tokens import RefreshToken
+# Import AuthenticationFailed for explicit error handling if needed
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
+# Import Django signing tools
+from django.core.signing import Signer, BadSignature, SignatureExpired
 
 # Models
 from tenant.models import Client
 from .models import KindeUser
 from django.contrib.auth import get_user_model
 User = get_user_model()
+
+# Get logger instance
+logger = logging.getLogger(__name__)
 
 # --- Helper Functions ---
 
@@ -103,35 +112,38 @@ class KindeLoginView(View):
         return redirect(login_url)
 
 class KindeCallbackView(View):
+    # Set a duration for the temporary token (e.g., 5 minutes)
+    TEMP_TOKEN_MAX_AGE_SECONDS = 300 
+
     def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        print("--- Kinde Callback Received ---")
+        logger.debug("--- Kinde Callback Received ---")
         error = request.GET.get('error')
         if error:
             error_desc = request.GET.get('error_description', 'No description provided.')
-            print(f"Kinde Error: {error} - {error_desc}")
-            return HttpResponseBadRequest(f"Error during Kinde authentication: {error_desc}")
+            logger.error(f"Kinde Error: {error} - {error_desc}")
+            # Return JSON error for frontend to handle potentially
+            return JsonResponse({'error': 'kinde_authentication_error', 'detail': error_desc}, status=400)
 
         code = request.GET.get('code')
         state = request.GET.get('state')
 
         if not code:
-            print("Callback Error: 'code' parameter missing.")
-            return HttpResponseBadRequest("Missing authorization code.")
+            logger.error("Callback Error: 'code' parameter missing.")
+            return JsonResponse({'error': 'missing_code'}, status=400)
         
-        print(f"Received code: {code[:10]}... (truncated)")
-        print(f"Received state: {state}")
+        logger.debug(f"Received code: {code[:10]}... (truncated)")
+        logger.debug(f"Received state: {state}")
         
         # --- Step 1: Validate state parameter --- 
         session_state = request.session.pop('oauth_state', None)
         if not state or state != session_state:
-            print("State mismatch error. Potential CSRF attack.")
-            return HttpResponseBadRequest("Invalid state parameter.")
-        print("State validation successful.")
+            logger.warning("State mismatch error. Potential CSRF attack.")
+            return JsonResponse({'error': 'invalid_state'}, status=400)
+        logger.debug("State validation successful.")
 
         # --- Step 2: Exchange code for tokens --- 
-        print("Attempting to exchange code for tokens...")
+        logger.debug("Attempting to exchange code for tokens...")
         token_url = f"{settings.KINDE_ISSUER}/oauth2/token"
-        # Ensure redirect_uri matches exactly what was sent in the initial auth request
         redirect_uri = settings.KINDE_CALLBACK_URL 
         
         payload = {
@@ -140,173 +152,163 @@ class KindeCallbackView(View):
             'client_secret': settings.KINDE_CLIENT_SECRET,
             'code': code,
             'redirect_uri': redirect_uri,
-            # 'scope': 'openid profile email' # Scope usually not needed here
         }
         
         try:
-            response = requests.post(token_url, data=payload, timeout=15)
-            response.raise_for_status() 
-            token_data = response.json()
-            print("Successfully exchanged code for tokens.")
+            token_response = requests.post(token_url, data=payload, timeout=15)
+            token_response.raise_for_status() 
+            token_data = token_response.json()
+            logger.debug("Successfully exchanged code for tokens.")
             
             id_token = token_data.get('id_token')
-            access_token = token_data.get('access_token') 
-            refresh_token = token_data.get('refresh_token') # Store if needed
+            access_token_kinde = token_data.get('access_token') # Kinde's access token (might differ from our app's)
+            refresh_token_kinde = token_data.get('refresh_token') # Kinde's refresh token
 
             if not id_token:
-                 print("Token Error: ID token missing in response.")
-                 return HttpResponse("Authentication failed: ID token missing.", status=500)
+                 logger.error("Token Error: ID token missing in response.")
+                 return JsonResponse({'error': 'id_token_missing'}, status=500)
 
             # --- Step 3: Verify ID Token --- 
-            print("Fetching JWKS...")
+            logger.debug("Fetching JWKS...")
             jwks = fetch_jwks(settings.KINDE_JWKS_URL)
             if not jwks:
-                return HttpResponse("Failed to fetch JWKS for token verification.", status=500)
+                logger.error("Failed to fetch JWKS for token verification.")
+                return JsonResponse({'error': 'jwks_fetch_failed'}, status=500)
                 
-            print("Verifying ID Token...")
+            logger.debug("Verifying ID Token...")
             verified_payload = verify_id_token(
                 id_token,
                 jwks,
-                settings.KINDE_AUDIENCE, # Can be None if no specific audience
+                settings.KINDE_AUDIENCE, 
                 settings.KINDE_ISSUER,
-                access_token # Pass the received access token here
+                access_token_kinde # Pass the received Kinde access token here
             )
             
             if not verified_payload:
-                print("ID Token verification failed.")
-                return HttpResponse("Invalid ID Token.", status=403) # Forbidden
+                logger.warning("ID Token verification failed.")
+                return JsonResponse({'error': 'invalid_id_token'}, status=403) # Forbidden
             
             # Extract user info from *verified* token
-            kinde_user_id = verified_payload.get('sub') # Subject (unique Kinde ID)
+            kinde_user_id = verified_payload.get('sub') 
             email = verified_payload.get('email')
             given_name = verified_payload.get('given_name', '')
             family_name = verified_payload.get('family_name', '')
 
             if not kinde_user_id or not email:
-                print("Essential claims (sub, email) missing from token.")
-                return HttpResponse("Incomplete user information from Kinde.", status=500)
+                logger.error("Essential claims (sub, email) missing from token.")
+                return JsonResponse({'error': 'incomplete_kinde_claims'}, status=500)
                 
-            print(f"Token verified for email: {email}, Kinde ID: {kinde_user_id}")
+            logger.info(f"Token verified for email: {email}, Kinde ID: {kinde_user_id}")
 
             # --- Step 4: Find KindeUser, associated Tenant(s), and Update ID --- 
-            print(f"Looking up KindeUser for email: {email} in public schema...")
+            logger.debug(f"Looking up KindeUser for email: {email} in public schema...")
             try:
-                # Query public schema explicitly
-                kinde_user_link = KindeUser.objects.using('default').prefetch_related('tenants', 'tenants__domains').get(email__iexact=email)
+                # Query public schema explicitly, prefetch related tenants and their domains
+                kinde_user_link = KindeUser.objects.using('default').prefetch_related('tenants__domains').get(email__iexact=email)
                 
                 # Get associated tenants
                 associated_tenants = list(kinde_user_link.tenants.all())
                 
-                if len(associated_tenants) == 1:
-                    tenant = associated_tenants[0]
-                    print(f"Found KindeUser link. User belongs to single tenant: {tenant.name} ({tenant.schema_name})")
-                elif len(associated_tenants) == 0:
-                    print(f"Error: KindeUser {email} found but not associated with any tenant.")
-                    return HttpResponse("Authentication failed: User has no assigned tenant.", status=403)
-                else: # More than one tenant associated
-                    # TODO: Implement tenant selection logic here if needed in the future
-                    # For now, treat as an error or pick the first one?
-                    # Picking the first one for now, but this might be ambiguous.
-                    tenant = associated_tenants[0] 
-                    tenant_names = ", ".join([t.name for t in associated_tenants])
-                    print(f"Warning: KindeUser {email} associated with multiple tenants ({tenant_names}). Proceeding with first tenant: {tenant.name}")
-                    # return HttpResponse(f"Ambiguous login: User belongs to multiple tenants ({tenant_names}).", status=400)
-                
-                # Update kinde_user_id if it's missing or changed
+                # Update kinde_user_id if it's missing or changed (do this regardless of tenant count)
                 if kinde_user_link.kinde_user_id is None or kinde_user_link.kinde_user_id != kinde_user_id:
                     kinde_user_link.kinde_user_id = kinde_user_id
+                    # Also update names if they are blank in our record but present in Kinde's token
+                    if not kinde_user_link.first_name and given_name:
+                         kinde_user_link.first_name = given_name
+                    if not kinde_user_link.last_name and family_name:
+                         kinde_user_link.last_name = family_name
                     kinde_user_link.save(using='default')
-                    print(f"Updated KindeUser record with kinde_user_id: {kinde_user_id}")
+                    logger.info(f"Updated KindeUser record for {email} with kinde_user_id and potentially names.")
                     
             except KindeUser.DoesNotExist:
-                print(f"Error: No KindeUser found for email {email}. User must be pre-registered.")
+                logger.warning(f"Error: No KindeUser found for email {email}. User must be pre-registered.")
                 # Redirect to an error page or show a message
-                return HttpResponse("Authentication failed: User not registered in this system.", status=403)
+                return JsonResponse({'error': 'user_not_registered'}, status=403)
             except Exception as e:
-                print(f"Error finding/updating KindeUser: {e}")
-                return HttpResponse("An internal error occurred during user lookup.", status=500)
+                logger.exception(f"Error finding/updating KindeUser for {email}: {e}")
+                return JsonResponse({'error': 'user_lookup_failed', 'detail': str(e)}, status=500)
+
+            # --- Step 5: Handle Tenant Scenarios ---
             
-            # --- Step 5: Switch Schema and Log In --- 
-            print(f"Switching to tenant schema: {tenant.schema_name}")
-            user = None # Initialize user variable
-            try:
-                connection.set_tenant(tenant)
-                
-                # Find the corresponding User within the tenant schema
-                user = User.objects.get(email__iexact=email)
-                print(f"Found tenant user: {user.email}")
-                
-                # Ensure user is active before login
-                if not user.is_active:
-                    print(f"Login failed: User {email} is inactive.")
-                    connection.set_schema_to_public() # Switch back
-                    return HttpResponse("Authentication failed: Account is inactive.", status=403)
-                
-                # Log the user into the Django session (still useful for Django Admin, etc.)
-                login(request, user) 
-                print(f"User {user.email} logged into Django session successfully.")
+            num_tenants = len(associated_tenants)
+            logger.info(f"User {email} is associated with {num_tenants} tenant(s).")
 
-                # --- Step 6: Generate Simple JWT Tokens ---
-                print("Generating JWT tokens for frontend...")
-                refresh = RefreshToken.for_user(user)
-                access_token = str(refresh.access_token)
-                refresh_token = str(refresh)
-                print("JWT tokens generated.")
+            # Always require tenant selection if user has *any* assigned tenants
+            if num_tenants == 0:
+                logger.warning(f"Authentication failed for {email}: User has no assigned tenant.")
+                # Option: Redirect to a frontend error page?
+                # frontend_error_url = f"{settings.FRONTEND_BASE_URL}/auth-error?error=no_tenant_assigned"
+                # return redirect(frontend_error_url)
+                return JsonResponse({'error': 'no_tenant_assigned'}, status=403) # Keep JSON for now, frontend can handle
 
-                # --- Step 7: Redirect to Frontend with Tokens ---
-                # Redirect to a dedicated frontend callback handler route
-                # Use fragment (#) to pass tokens securely (not in server logs/history)
-                frontend_callback_url = urljoin(settings.FRONTEND_BASE_URL, '/auth/callback') # Or your preferred frontend callback route
-                
-                token_params = urlencode({
-                    'access_token': access_token,
-                    'refresh_token': refresh_token,
-                    'tenant_schema_name': tenant.schema_name # Pass tenant schema if needed by frontend
-                })
-                
-                redirect_url = f"{frontend_callback_url}#{token_params}"
-                
-                print(f"Redirecting to frontend callback: {frontend_callback_url} with tokens in fragment.")
-                connection.set_schema_to_public() # Switch back before redirecting
-                return redirect(redirect_url)
+            # Now, if num_tenants >= 1, proceed to tenant selection flow
+            else:
+                # --- Redirect to Frontend with Temp Token for selection ---
+                tenant_names = ", ".join([t.name for t in associated_tenants])
+                logger.info(f"User {email} associated with {num_tenants} tenant(s) ({tenant_names}). Redirecting to frontend for selection.")
 
-            except User.DoesNotExist:
-                print(f"Login failed: Tenant user {email} not found in schema {tenant.schema_name}.")
-                connection.set_schema_to_public() # Switch back
-                # Maybe redirect to a specific error page on the frontend?
-                return HttpResponse(f"Authentication failed: User profile not found for tenant.", status=403)
-            except Exception as e:
-                # Log the full exception for debugging
-                import traceback
-                traceback.print_exc() 
-                print(f"Error during tenant login or token generation for {email} in schema {tenant.schema_name}: {e}")
-                connection.set_schema_to_public() # Switch back
-                return HttpResponse("An internal error occurred during login.", status=500)
-            finally:
-                # Ensure schema is always switched back. 
-                # Temporarily removing conditional check for debugging.
+                # Prepare tenant data for frontend
+                tenants_data = []
+                for t in associated_tenants:
+                    domain_obj = t.domains.filter(is_primary=True).first() or t.domains.first()
+                    tenants_data.append({
+                        'name': t.name,
+                        'schema_name': t.schema_name,
+                        'domain': domain_obj.domain if domain_obj else None
+                    })
+
                 try:
-                    print(f"Finally block: Current schema before switch attempt: {connection.schema_name}")
-                    connection.set_schema_to_public()
-                    print("Switched back to public schema in finally block.")
-                except Exception as final_e:
-                    print(f"ERROR in finally block trying to switch schema: {final_e}")
-                    # Avoid raising another exception from finally if possible
-                    
+                    # Generate a short-lived signed token containing essential verified info
+                    signer = Signer()
+                    payload_to_sign = {
+                        'email': email,
+                        'sub': kinde_user_id, # Kinde subject ID
+                        'exp': int(time.time()) + self.TEMP_TOKEN_MAX_AGE_SECONDS
+                    }
+                    temp_token = signer.sign_object(payload_to_sign)
+                    logger.debug(f"Generated temporary token for {email}")
+
+                    # ---> NEW CODE: Redirect to Frontend <---
+                    frontend_callback_url = settings.FRONTEND_CALLBACK_URL # Ensure this is defined in settings.py
+
+                    # Encode tenants_data as JSON string to pass in URL
+                    tenants_json = json.dumps(tenants_data)
+
+                    query_params = urlencode({
+                        'status': 'select_tenant',
+                        'temp_token': temp_token,
+                        'tenants': tenants_json # Pass JSON string
+                    })
+
+                    redirect_url = f"{frontend_callback_url}?{query_params}"
+                    logger.debug(f"Redirecting browser to frontend callback: {redirect_url}")
+                    return redirect(redirect_url) # Use Django's redirect shortcut
+
+                except Exception as e:
+                     logger.exception(f"Error during temporary token generation or redirect prep for {email}: {e}")
+                     # Redirect to a frontend error page if possible
+                     # frontend_error_url = f"{settings.FRONTEND_BASE_URL}/auth-error?error=token_error"
+                     # return redirect(frontend_error_url)
+                     return JsonResponse({'error': 'multi_tenant_token_error', 'detail': str(e)}, status=500)
+
+
         except requests.exceptions.RequestException as e:
-            print(f"Token Exchange Error: {e}")
-            # Check if response object exists and has content
+            logger.exception(f"Token Exchange Error: {e}")
             error_details = "No details available."
             if e.response is not None:
                 try:
                     error_details = e.response.json() 
-                except ValueError:
+                except ValueError: # If response is not JSON
                     error_details = e.response.text
-            print(f"Error details: {error_details}")
-            return HttpResponse(f"Authentication failed during token exchange: {error_details}", status=500)
+            logger.error(f"Token exchange failed. Details: {error_details}")
+            return JsonResponse({'error': 'token_exchange_failed', 'detail': str(error_details)}, status=500)
         except Exception as e:
-            print(f"Callback Processing Error: {e}")
-            return HttpResponse("An internal error occurred during authentication.", status=500)
+            logger.exception(f"General Callback Processing Error: {e}")
+            # Ensure schema is switched back if error happened before finally block
+            if connection.schema_name != settings.PUBLIC_SCHEMA_NAME:
+                 logger.warning(f"Exception handler: Current schema is {connection.schema_name}, switching back.")
+                 connection.set_schema_to_public()
+            return JsonResponse({'error': 'internal_server_error', 'detail': str(e)}, status=500)
 
 class KindeLogoutView(View):
     """Logs the user out of the Django session and initiates Kinde SLO."""
@@ -340,5 +342,77 @@ class KindeLogoutView(View):
         # Use HttpResponseTemporaryRedirect (307) or PermanentRedirect (308)
         # A simple redirect (302) is often sufficient here.
         return redirect(logout_redirect_url)
+
+# --- Tenant Login Finalization View ---
+class FinalizeLoginView(View):
+    """Handles the final login step on the tenant domain using a temporary token."""
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        logger.debug(f"--- Finalize Login Request Received on schema: {connection.schema_name} ---")
+        token = request.GET.get('token')
+        if not token:
+            logger.warning("Finalize login failed: Missing temporary token.")
+            return JsonResponse({'error': 'missing_token'}, status=400)
+        
+        signer = Signer()
+        try:
+            # Note: unsign_object doesn't automatically check expiry
+            payload = signer.unsign_object(token) 
+            logger.debug(f"Successfully unsigned temporary token.")
+            
+            # Manual expiry check
+            if time.time() > payload.get('exp', 0):
+                logger.warning("Finalize login failed: Temporary token has expired.")
+                raise SignatureExpired("Token has expired.")
+                
+            email = payload.get('email')
+            kinde_sub = payload.get('sub') # Optional: Can verify against KindeUser if needed
+
+            if not email:
+                 logger.error("Finalize login failed: Email missing from temporary token payload.")
+                 return JsonResponse({'error': 'invalid_token_payload'}, status=400)
+            
+            # We should be in the tenant context because this view is accessed via tenant domain
+            logger.info(f"Finalizing login for {email} in schema {connection.schema_name} using temp token.")
+            
+            # Find the user within the *current* tenant schema
+            user = User.objects.get(email__iexact=email)
+            logger.debug(f"Found tenant user: {user.email} (ID: {user.id})")
+
+            if not user.is_active:
+                 logger.warning(f"Login finalization failed for {email}: User account is inactive in this tenant.")
+                 return JsonResponse({'error': 'account_inactive'}, status=403)
+                 
+            # Log the user into the Django session for this tenant domain
+            login(request, user) 
+            logger.info(f"User {email} logged into Django session for tenant {connection.schema_name}.")
+            
+            # Generate final tenant-specific JWTs
+            logger.debug("Generating final JWT tokens...")
+            refresh = RefreshToken.for_user(user)
+            app_access_token = str(refresh.access_token)
+            app_refresh_token = str(refresh)
+            logger.debug("Final JWT tokens generated.")
+            
+            # Return tokens in JSON 
+            logger.info(f"Login finalization successful for {email}. Returning JWTs.")
+            return JsonResponse({
+                'access_token': app_access_token,
+                'refresh_token': app_refresh_token,
+                'user_email': user.email, 
+                'tenant_schema_name': connection.schema_name 
+            })
+
+        except (BadSignature, SignatureExpired) as e:
+            logger.warning(f"Invalid or expired temporary token received: {e}")
+            return JsonResponse({'error': 'invalid_or_expired_token', 'detail': str(e)}, status=403)
+        except User.DoesNotExist:
+            logger.error(f"Login finalization failed: User {email} not found in current schema {connection.schema_name}.")
+            # This shouldn't happen if KindeUser was linked correctly, but handle defensively
+            return JsonResponse({'error': 'tenant_user_not_found'}, status=403) 
+        except Exception as e:
+            # Log the email if available, otherwise just the error
+            log_email = email if 'email' in locals() else 'unknown'
+            logger.exception(f"Error during login finalization for {log_email}: {e}")
+            return JsonResponse({'error': 'finalize_login_error', 'detail': str(e)}, status=500)
 
 # TODO: Add KindeLogoutView

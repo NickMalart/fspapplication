@@ -58,6 +58,7 @@ KINDE_AUDIENCE = None # Disable audience check for ID token verification first
 # --- Frontend Base URL --- 
 # Used for redirects after Kinde callback
 FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL', 'http://dev.localhost:5173')
+FRONTEND_CALLBACK_URL = 'http://localhost:5173/auth/callback/'
 # --- End Frontend Base URL ---
 
 # --- Kinde Management API (M2M) Settings ---
@@ -175,6 +176,7 @@ INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in S
 # --- Django Tenants Configuration ---
 TENANT_MODEL = "tenant.Client" # app.Model
 TENANT_DOMAIN_MODEL = "tenant.Domain" # app.Model
+PUBLIC_SCHEMA_NAME = 'public' # Define the public schema name
 # --- End Django Tenants Configuration ---
 
 MIDDLEWARE = [

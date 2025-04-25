@@ -205,6 +205,15 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: '/select-tenant',
+    name: 'SelectTenant',
+    component: () => import('../views/Auth/SelectTenant.vue'),
+    meta: {
+      title: 'Select Tenant',
+      requiresAuth: false,
+    },
+  },
+  {
     path: '/signup',
     name: 'Signup',
     component: () => import('../views/Auth/Signup.vue'),
@@ -224,28 +233,41 @@ const router = createRouter({
 const publicHostname = 'localhost' 
 const publicLoginUrl = 'http://localhost:5173/' // Assuming the signin page is at the root '/'. Adjust if needed.
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to, from, next) => {
   document.title = `FSP Application - ${String(to.meta.title || 'Welcome')}`
 
   // Check if navigating to the Signin page and if the hostname is not the public one
   if (to.name === 'Signin' && window.location.hostname !== publicHostname) {
     // Redirect to the public login URL
     window.location.href = publicLoginUrl
-    return false // Stop the current navigation
+    return // Stop the current navigation (use return instead of return false)
   }
 
   const auth = useAuthStore()
 
+  // If the route requires authentication
   if (to.meta.requiresAuth) {
-    if (!auth.isAuthenticated) {
-      return next({ 
-        name: 'Signin', 
-      })
-    } else {
+    // If navigating FROM the callback, assume success and allow passage
+    // AuthCallback component handles storing tokens before pushing
+    if (from.name === 'AuthCallback') {
       next()
+    } 
+    // Otherwise, perform the standard authentication check
+    else if (!auth.isAuthenticated) {
+      next({ name: 'Signin' }) // Redirect to Signin if not authenticated
+    } else {
+      next() // Proceed if authenticated
     }
-  } else {
-    next()
+  } 
+  // If the route does NOT require authentication
+  else {
+    // Prevent authenticated users from accessing Signin/Signup again? (Optional)
+    // if ((to.name === 'Signin' || to.name === 'Signup') && auth.isAuthenticated) {
+    //   next({ name: 'Dashboard' }) // Redirect to dashboard
+    // } else {
+    //   next() // Proceed to public route
+    // }
+    next() // Allow access to public routes like Signin, AuthCallback, SelectTenant
   }
 })
 
