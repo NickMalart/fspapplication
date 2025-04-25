@@ -13,6 +13,15 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: '/auth/finalize/',
+    name: 'AuthFinalize',
+    component: () => import('../views/Auth/AuthFinalize.vue'),
+    meta: {
+      title: 'Finalizing Login...',
+      requiresAuth: false,
+    },
+  },
+  {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('../views/Dashboard.vue'),
@@ -261,13 +270,12 @@ router.beforeEach((to, from, next) => {
   } 
   // If the route does NOT require authentication
   else {
-    // Prevent authenticated users from accessing Signin/Signup again? (Optional)
-    // if ((to.name === 'Signin' || to.name === 'Signup') && auth.isAuthenticated) {
-    //   next({ name: 'Dashboard' }) // Redirect to dashboard
-    // } else {
-    //   next() // Proceed to public route
-    // }
-    next() // Allow access to public routes like Signin, AuthCallback, SelectTenant
+    // Prevent authenticated users from accessing Signin/Signup again
+    if ((to.name === 'Signin' || to.name === 'Signup') && auth.isAuthenticated) {
+      next({ name: 'Dashboard' }) // Redirect to dashboard
+    } else {
+      next() // Proceed to public route
+    }
   }
 })
 

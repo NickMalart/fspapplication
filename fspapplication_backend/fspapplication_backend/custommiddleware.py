@@ -101,6 +101,10 @@ class CustomTenantMiddleware(TenantMainMiddleware):
             
         # If we reach here, it's not a public path and header failed/was absent,
         # proceed with default django-tenants domain resolution.
+        # --- ADD LOGGING FOR DOMAIN RESOLUTION --- 
+        hostname = request.get_host()
+        print(f"---> No/Invalid Header. Falling back to domain resolution for hostname: {hostname}")
+        # --- END LOGGING --- 
         return super().process_request(request)
     
     def get_tenant(self, model, hostname):

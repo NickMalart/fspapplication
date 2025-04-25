@@ -91,25 +91,29 @@ apiClient.interceptors.response.use(
     // --- Handle 403 Forbidden (Tenant Access Denied) ---
     if (error.response?.status === 403) {
       
-      // Prevent infinite loops if logout itself fails
-      if (originalRequest.url !== '/api/auth/logout/') { 
+      // Prevent infinite loops if the original request was already the logout attempt
+      const logoutPath = 'auth/logout/'; // Define the correct relative path
+      if (originalRequest.url !== logoutPath) { 
         try {
-          // 1. Attempt to hit the backend logout endpoint
-          await apiClient.get('/api/auth/logout/'); // Use GET if your KindeLogoutView uses GET
+          // 1. Attempt to hit the backend logout endpoint using the correct relative path
+          await apiClient.get(logoutPath); // Use correct relative path
         } catch (logoutError: any) {
-          // Decide if you still want to clear frontend state even if backend logout fails
+          console.error("Backend logout call failed:", logoutError);
+          // Decide if you still want to clear frontend state even if backend logout fails (currently yes)
         }
       }
 
       // 2. Clear frontend auth state (do this regardless of backend logout success for immediate UI update)
-      auth.removeToken(); // Use the likely correct method from store actions
-      // TODO: Verify if auth.setUser(null) and auth.setTenant('') are also needed here
+      auth.removeToken(); 
       
-      // 3. Redirect to a base login page (without tenant subdomain)
-      const baseUrl = `${window.location.protocol}//${window.location.host.split('.').slice(-2).join('.')}`; 
-      const loginUrl = `${baseUrl}/login`; // Or your designated login path
+      // 3. Redirect to a base login page (using the root path '/')
+      // Define the known public hostname (consider moving to env vars or config)
+      const publicHostname = 'localhost'; 
+      const port = window.location.port ? `:${window.location.port}` : '';
+      const publicLoginUrl = `${window.location.protocol}//${publicHostname}${port}/`; // Construct the correct public URL
       
-      window.location.href = loginUrl; 
+      console.log(`Redirecting to login page due to 403: ${publicLoginUrl}`);
+      window.location.href = publicLoginUrl; // Redirect to the correct public root path
 
       // Reject the promise to stop further processing of this failed request
       return Promise.reject(new Error('Access Denied to Tenant - Logged Out')); 

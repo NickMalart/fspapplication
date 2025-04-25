@@ -265,7 +265,9 @@ class KindeCallbackView(View):
                         'sub': kinde_user_id, # Kinde subject ID
                         'exp': int(time.time()) + self.TEMP_TOKEN_MAX_AGE_SECONDS
                     }
-                    temp_token = signer.sign_object(payload_to_sign)
+                    # Convert payload to JSON string BEFORE signing
+                    payload_json_str = json.dumps(payload_to_sign)
+                    temp_token = signer.sign(payload_json_str) # Sign the JSON string
                     logger.debug(f"Generated temporary token for {email}")
 
                     # ---> NEW CODE: Redirect to Frontend <---

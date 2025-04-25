@@ -14,6 +14,13 @@ from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import CompleteUserSerializer, UserListSerializer, UserProfileAdminSerializer # Import from local serializers
 from .models import UserProfile # Import from local models
+from django.core.signing import Signer, BadSignature, SignatureExpired
+from django.conf import settings
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.db import connection # Import connection
+import json # Import json
+# Assuming you have a utility to get the current tenant schema name, if not provided by middleware
+# from your_tenant_utils import get_current_tenant_schema_name
 
 class CurrentUserLoginView(APIView):
     permission_classes = [IsAuthenticated]
@@ -179,5 +186,97 @@ class UserProfileAdminView(APIView):
     def patch(self, request, pk=None):
         """Partial update of a specific user's profile"""
         return self.put(request, pk)
+
+# IMPORTANT: Ensure the key used here matches the key used when CREATING the temp_token
+# It might be settings.SECRET_KEY or a dedicated key.
+# Consider using TimestampSigner for expiration handling.
+signer = Signer() 
+
+class FinalizeTenantAuthenticationView(APIView):
+    """
+    Finalizes authentication on the tenant domain using a temporary token.
+    Validates the token, finds the user within the tenant context,
+    and issues final JWT tokens.
+    """
+    authentication_classes = [] # No authentication needed for this endpoint itself
+    permission_classes = [] # Public endpoint
+
+    def get(self, request, *args, **kwargs):
+        temp_token = request.query_params.get('token')
+
+        if not temp_token:
+            return Response({'error': 'Temporary token missing.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # 1. Validate the temporary token and parse payload
+            print(f"---> Attempting to unsign token: {temp_token[:20]}...")
+            payload_str = signer.unsign(temp_token)
+            print(f"---> Unsigned payload string: {payload_str}")
+            
+            try:
+                payload = json.loads(payload_str)
+                user_email = payload.get('email')
+                if not user_email:
+                    print("ERROR: 'email' not found in token payload.")
+                    return Response({'error': 'Invalid token payload structure.'}, status=status.HTTP_400_BAD_REQUEST)
+                print(f"---> Extracted email from payload: {user_email}")
+            except json.JSONDecodeError:
+                print(f"ERROR: Failed to decode JSON payload: {payload_str}")
+                return Response({'error': 'Invalid token payload format.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # 2. Get current tenant (Django Tenants middleware should provide this)
+            tenant = getattr(request, 'tenant', None)
+            if not tenant:
+                 print("ERROR: Tenant context missing in FinalizeTenantAuthenticationView")
+                 return Response({'error': 'Tenant context missing.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            print(f"---> Tenant identified: {tenant.schema_name}")
+            print(f"---> DB Connection Schema BEFORE query: {connection.schema_name}")
+            if connection.schema_name != tenant.schema_name:
+                print(f"ERROR: DB connection schema '{connection.schema_name}' does NOT match tenant schema '{tenant.schema_name}'!")
+                return Response({'error': 'Database schema mismatch detected.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            # 3. Find the user within the tenant context using the extracted email
+            try:
+                print(f"---> Looking for user with email: {user_email} in schema: {connection.schema_name}")
+                user = User.objects.get(email=user_email)
+                print(f"---> Found user: {user.pk}")
+            except User.DoesNotExist:
+                print(f"User not found for email: {user_email} in tenant {tenant.schema_name}")
+                return Response({'error': 'User not found for this tenant.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # 4. Generate final JWT tokens
+            refresh = RefreshToken.for_user(user)
+            # Optional: Add custom claims to the access token if needed
+            # access_token = refresh.access_token
+            # access_token['tenant_schema'] = tenant.schema_name
+
+            response_data = {
+                'access_token': str(refresh.access_token),
+                'refresh_token': str(refresh),
+                'user': {
+                    # Use user.pk or user.id depending on your model primary key type
+                    'id': str(user.pk), 
+                    'email': user.email,
+                    # Add other non-sensitive user details if needed (e.g., first_name, last_name)
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                },
+                'tenant_schema_name': tenant.schema_name,
+            }
+            print(f"Finalization successful for user {user.email} in tenant {tenant.schema_name}") # Add logging
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except SignatureExpired:
+            print(f"Temporary token expired: {temp_token[:20]}...") # Add logging
+            return Response({'error': 'Temporary token has expired.'}, status=status.HTTP_400_BAD_REQUEST)
+        except BadSignature:
+            print(f"Invalid temporary token signature: {temp_token[:20]}...") # Add logging
+            return Response({'error': 'Invalid temporary token signature.'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(f"Error during finalization: {e}")
+            # Also log the schema name when the error occurs
+            print(f"---> DB Connection Schema DURING exception: {connection.schema_name}") 
+            return Response({'error': 'An unexpected error occurred during finalization.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
