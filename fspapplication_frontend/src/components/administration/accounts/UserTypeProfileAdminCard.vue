@@ -555,7 +555,7 @@ const handleClientSave = async (updatedData: ClientProfileData) => {
       companyName: updatedData.companyName || '',
       companyNameId: updatedData.companyNameId || '', // Make sure ID is included
       industry: updatedData.industry || null,
-      clientSince: updatedData.clientSince || new Date().toISOString().split('T')[0]
+      clientSince: updatedData.clientSince
     };
     
     // Create the updated user object with just the client profile
