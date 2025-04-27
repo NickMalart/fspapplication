@@ -22,10 +22,7 @@ function convertKeys(obj: any): any {
   return obj;
 }
 // --- End Case Conversion Utilities ---
-
-// Get the API URL from environment variables or use a default
-// Use '/api' to route requests through the Vite proxy during development
-const API_BASE_URL = '/api'; // Changed from import.meta.env.VITE_API_URL
+const API_BASE_URL = '/api'; 
 
 // Create API client instance with default configuration
 export const apiClient = axios.create({
@@ -34,20 +31,17 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  withCredentials: true, // Enable cookies and credentials if needed for CSRF or session auth
+  withCredentials: true, 
 });
 
 // --- Request Interceptor ---
-// Adds Tenant header AND Authorization header.
 apiClient.interceptors.request.use(
   (config) => {
     const auth = useAuthStore(); 
-    // RESTORED: Logic to add Authorization: Bearer header
     if (auth.accessToken) {
       config.headers.Authorization = `Bearer ${auth.accessToken}`;
     }
 
-    // Keep Tenant header logic if needed
     if (auth.tenant) {
       config.headers['X-DTS-TENANT'] = auth.tenant;
     }
@@ -59,11 +53,9 @@ apiClient.interceptors.request.use(
 
 
 // --- Response Interceptor ---
-// Handles token expiry and refresh automatically
-// Also handles case conversion for response data
 
-let isRefreshing = false; // Flag to prevent multiple refresh requests
-let failedQueue: { resolve: (value?: any) => void; reject: (reason?: any) => void }[] = []; // Queue for requests that failed during refresh
+let isRefreshing = false; 
+let failedQueue: { resolve: (value?: any) => void; reject: (reason?: any) => void }[] = [];
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach(prom => {

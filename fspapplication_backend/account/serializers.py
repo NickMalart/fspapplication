@@ -90,8 +90,8 @@ class ClientProfileSerializer(serializers.ModelSerializer):
     company_name_id = serializers.PrimaryKeyRelatedField(
         source='company_name',
         queryset=django_apps.get_model('client', 'Client').objects.all(),
-        write_only=True,
-        required=False
+        required=False,
+        allow_null=True # Allow null when reading/writing if not required
     )
     # Explicitly define client_since to ensure null/blank is handled
     client_since = serializers.DateField(required=False, allow_null=True)

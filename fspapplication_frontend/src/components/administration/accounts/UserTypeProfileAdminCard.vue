@@ -369,6 +369,13 @@ const getProfileTitle = () => {
 
 // Initialize profile data based on user type
 const initializeProfileData = () => {
+  console.log('[Card Init] initializeProfileData called.'); // Log function entry
+
+  // Log the conditions being checked
+  console.log(`[Card Init] isAgent: ${isAgent.value}, has agentProfile: ${!!props.userData.agentProfile}`);
+  console.log(`[Card Init] isClient: ${isClient.value}, has clientProfile: ${!!props.userData.clientProfile}`);
+  console.log(`[Card Init] isEmployee: ${isEmployee.value}, has employeeProfile: ${!!props.userData.employeeProfile}`);
+  
   // Explicitly reset all local profile refs first
   agentProfileData.value = {};
   clientProfileData.value = {};
@@ -391,18 +398,25 @@ const initializeProfileData = () => {
       abn: profile.abn || '',
       yearsOfExperience: profile.yearsOfExperience || 0
     };
+    console.log('[Card Init] Populated agentProfileData'); // Added log
   } else if (isClient.value && props.userData.clientProfile) {
+    console.log('[Card Init] Raw props.userData.clientProfile:', JSON.parse(JSON.stringify(props.userData.clientProfile)));
     // Convert any snake_case keys to camelCase
     const profile = convertObjectKeysToCamel(props.userData.clientProfile);
+    console.log('[Card Init] CamelCased profile:', JSON.parse(JSON.stringify(profile)));
     clientProfileData.value = { 
       companyName: profile.companyName || '',
-      companyNameId: profile.companyNameId || '',
+      companyNameId: profile.companyNameId || '', // Check if this is present
       industry: profile.industry || null,
       clientSince: profile.clientSince || ''
     };
+    console.log('[Card Init] Final clientProfileData ref (passed to modal):', JSON.parse(JSON.stringify(clientProfileData.value)));
+    console.log('[Card Init] Populated clientProfileData'); // Added log
   } else if (isEmployee.value && props.userData.employeeProfile) {
+    console.log('[Card Init] Raw props.userData.employeeProfile:', JSON.parse(JSON.stringify(props.userData.employeeProfile))); // Added log
     // Convert any snake_case keys to camelCase
     const profile = convertObjectKeysToCamel(props.userData.employeeProfile);
+    console.log('[Card Init] CamelCased employee profile:', JSON.parse(JSON.stringify(profile))); // Added log
     employeeProfileData.value = { 
       companyName: profile.companyName || '',
       department: profile.department || '',
@@ -411,6 +425,7 @@ const initializeProfileData = () => {
       startDate: profile.startDate || '',
       reportsTo: profile.reportsTo || null
     };
+    console.log('[Card Init] Populated employeeProfileData'); // Added log
     // If company name is missing in profile but we fetched it, update
     if (!employeeProfileData.value.companyName && tenantCompany.value?.name) {
       employeeProfileData.value.companyName = tenantCompany.value.name;

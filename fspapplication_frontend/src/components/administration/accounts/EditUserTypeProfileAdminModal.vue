@@ -219,7 +219,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, watchEffect } from 'vue';
 import { clientService, type Client } from '@/service/clientService';
 import { companyService, type CompanyProfile } from '@/service/companyService';
 
@@ -275,15 +275,34 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'save:agent', 'save:client', 'save:employee']);
 
+// Helper function to format date to YYYY-MM-DD or return undefined
+const formatDateForInput = (dateString: string | null | undefined): string | undefined => {
+  if (!dateString) return undefined;
+  try {
+    const date = new Date(dateString);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
+    }
+  } catch (e) {
+    console.error('Error parsing date:', e);
+  }
+  return undefined; // Return undefined if invalid or parsing fails
+};
+
 // Create local copies for editing
 const localAgentData = ref<AgentProfileData>({ ...props.agentProfileData });
+// Initialize companyNameId as empty, let watchEffect handle setting it.
+// Format clientSince date during initialization.
 const localClientData = ref<ClientProfileData>({
   companyName: props.clientProfileData?.companyName || '',
-  companyNameId: props.clientProfileData?.companyNameId || '',
+  companyNameId: '', // Initialize as empty
   industry: props.clientProfileData?.industry || null,
-  clientSince: props.clientProfileData?.clientSince || null
+  clientSince: formatDateForInput(props.clientProfileData?.clientSince) || null // Format on init
 });
 const localEmployeeData = ref<EmployeeProfileData>({ ...props.employeeProfileData });
+
+// Log initial local state
+console.log('[Modal Setup] Initial localClientData:', JSON.parse(JSON.stringify(localClientData.value)));
 
 // State for available clients
 const clients = ref<Client[]>([]);
@@ -300,12 +319,15 @@ const clientSinceInput = ref<HTMLInputElement | null>(null); // Added ref for cl
 // Function to fetch clients
 const fetchClients = async () => {
   isLoadingClients.value = true;
-  
+  console.log('[fetchClients] Starting fetch...');
   try {
     // Request a larger page size to get more clients for the dropdown
-    const response = await clientService.getClients({ status: 'active', pageSize: 100 }); 
+    const response = await clientService.getClients({ status: 'active', pageSize: 100 });
     clients.value = response.results;
+    console.log(`[fetchClients] Fetched ${clients.value.length} clients:`, JSON.parse(JSON.stringify(clients.value)));
+    // Removed the explicit ID setting from here
   } catch (error) {
+    console.error('[fetchClients] Error fetching clients:', error);
     // TODO: Add user-facing error message
   } finally {
     isLoadingClients.value = false;
@@ -365,20 +387,6 @@ const getTitle = () => {
   return 'User Profile';
 };
 
-// Helper function to format date to YYYY-MM-DD or return undefined
-const formatDateForInput = (dateString: string | null | undefined): string | undefined => {
-  if (!dateString) return undefined;
-  try {
-    const date = new Date(dateString);
-    if (!isNaN(date.getTime())) {
-      return date.toISOString().split('T')[0];
-    }
-  } catch (e) {
-    console.error('Error parsing date:', e);
-  }
-  return undefined; // Return undefined if invalid or parsing fails
-};
-
 // Event handlers
 const handleClose = () => {
   emit('close');
@@ -424,22 +432,29 @@ onMounted(() => {
   if (isEmployee.value) {
     fetchTenantCompany(); // Fetch company details if editing an employee
   }
+  // Removed initForm call - let watchers handle initial state
 });
 
 // Watch for changes in the specific profile data props and update local state
 watch(() => props.agentProfileData, (newData) => {
   localAgentData.value = { ...newData };
-}, { deep: true });
+}, { deep: true, immediate: true }); // Add immediate
 
+// Watch client profile data - primarily for non-ID fields now
 watch(() => props.clientProfileData, (newData) => {
-  localClientData.value = { 
-    companyName: newData?.companyName || '',
-    companyNameId: newData?.companyNameId || '',
+  console.log('[watch props.clientProfileData] Running. newData:', JSON.parse(JSON.stringify(newData)));
+  // Update non-ID fields. ID setting is handled by watchEffect.
+  // Preserve the ID potentially set by watchEffect.
+  // Format date if props change after mount.
+  localClientData.value = {
+    ...localClientData.value, // Keep existing ID
+    companyName: newData?.companyName || '', // Update name if provided
     industry: newData?.industry || null,
-    // Format date on init/watch - ensure it remains string | null
-    clientSince: formatDateForInput(newData?.clientSince) || null 
+    clientSince: formatDateForInput(newData?.clientSince) || null
    };
-}, { deep: true });
+  // Log current state but avoid setting ID here directly
+  console.log('[watch props.clientProfileData] Updated localClientData (non-ID fields only):', JSON.parse(JSON.stringify(localClientData.value)));
+}, { deep: true }); // Remove immediate: true
 
 watch(() => props.employeeProfileData, (newData) => {
   console.log('[EditUserTypeProfileAdminModal] Watcher - newData:', JSON.parse(JSON.stringify(newData)));
@@ -450,7 +465,68 @@ watch(() => props.employeeProfileData, (newData) => {
       companyName: newData?.companyName || '' 
   };
   console.log('[EditUserTypeProfileAdminModal] Watcher - updated localEmployeeData:', JSON.parse(JSON.stringify(localEmployeeData.value)));
-}, { deep: true });
+}, { deep: true, immediate: true }); // Add immediate
+
+// Use watchEffect to synchronize the companyNameId when both props and clients are ready
+watchEffect(() => {
+  console.log(`[watchEffect] Running. isClient: ${isClient.value}, Clients loaded: ${clients.value.length > 0}, Props ID: ${props.clientProfileData?.companyNameId}`);
+
+  // Ensure we are dealing with the client form, clients are loaded, and props have an ID
+  if (isClient.value && clients.value.length > 0 && props.clientProfileData?.companyNameId) {
+    const clientIdToSet = props.clientProfileData.companyNameId;
+    console.log(`[watchEffect] Condition met: Has client ID from props (${clientIdToSet}). Current local ID: ${localClientData.value.companyNameId}`);
+
+    // Check if the client ID exists in the fetched list
+    const clientExists = clients.value.some(client => client.id === clientIdToSet);
+    console.log(`[watchEffect] Does client ID ${clientIdToSet} exist in fetched clients? ${clientExists}`);
+
+    if (clientExists) {
+       // Only update if the ID is different from the current local state
+       if (localClientData.value.companyNameId !== clientIdToSet) {
+           console.log(`[watchEffect] Setting companyNameId from props to: ${clientIdToSet}`);
+           localClientData.value.companyNameId = clientIdToSet;
+           // Also update the name for consistency if it wasn't updated by the other watcher
+           const selectedClient = clients.value.find(c => c.id === clientIdToSet);
+           if (selectedClient && localClientData.value.companyName !== selectedClient.name) {
+               localClientData.value.companyName = selectedClient.name;
+               console.log(`[watchEffect] Updated companyName based on new ID to: ${selectedClient.name}`);
+           }
+       } else {
+         console.log(`[watchEffect] companyNameId (${clientIdToSet}) already matches props ID. No change needed.`);
+       }
+    } else {
+        console.warn(`[watchEffect] Client ID ${clientIdToSet} from props not found in fetched clients list. Will reset selection if currently set.`);
+        // If the ID from props isn't valid according to the fetched list, reset the selection
+        if (localClientData.value.companyNameId !== '') {
+            console.log(`[watchEffect] Resetting companyNameId because ID from props (${clientIdToSet}) is invalid or not found.`);
+            localClientData.value.companyNameId = '';
+            localClientData.value.companyName = '';
+        }
+    }
+  } else if (isClient.value && clients.value.length > 0 && !props.clientProfileData?.companyNameId) {
+      console.log(`[watchEffect] Condition met: Clients loaded, but props has NO client ID.`);
+      // If clients are loaded but props explicitly have no ID, ensure local state is reset
+      if (localClientData.value.companyNameId !== '') {
+          console.log(`[watchEffect] Resetting companyNameId as props has no ID.`);
+          localClientData.value.companyNameId = '';
+          localClientData.value.companyName = '';
+      }
+  } else if (isClient.value && clients.value.length === 0 && props.clientProfileData?.companyNameId) {
+      // Handle case where props have ID but clients aren't loaded yet: pre-set the ID
+      // The effect will run again when clients load to validate and potentially update the name
+      console.log(`[watchEffect] Condition met: Props has client ID (${props.clientProfileData.companyNameId}), but clients NOT loaded yet.`);
+      if (localClientData.value.companyNameId !== props.clientProfileData.companyNameId) {
+          console.log(`[watchEffect] Pre-setting companyNameId to ${props.clientProfileData.companyNameId} while waiting for clients.`);
+          localClientData.value.companyNameId = props.clientProfileData.companyNameId;
+          // Keep existing name or name from props if available
+          localClientData.value.companyName = props.clientProfileData.companyName || localClientData.value.companyName || '';
+          console.log(`[watchEffect] Pre-set localClientData:`, JSON.parse(JSON.stringify(localClientData.value)));
+      }
+  } else {
+      console.log(`[watchEffect] Conditions not met for ID synchronization or reset.`);
+  }
+  console.log(`[watchEffect] Finished run. Final localClientData.companyNameId: ${localClientData.value.companyNameId}`);
+});
 </script>
 
 <!-- Add scoped styles -->
