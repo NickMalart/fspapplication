@@ -93,10 +93,12 @@ class ClientProfileSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
+    # Explicitly define client_since to ensure null/blank is handled
+    client_since = serializers.DateField(required=False, allow_null=True)
     
     class Meta:
         model = ClientProfile
-        exclude = ('user',)
+        exclude = ('user',) # Exclude user to avoid redundancy
 
 # Moved from account/serializers.py
 class EmployeeProfileSerializer(serializers.ModelSerializer):

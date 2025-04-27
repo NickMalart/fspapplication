@@ -134,7 +134,7 @@ class ClientProfile(models.Model):
     )
     company_name = models.ForeignKey('client.Client', on_delete=models.CASCADE, related_name='client_profiles')
     industry = models.CharField(max_length=100, blank=True, null=True)
-    client_since = models.DateField(default=timezone.now)
+    client_since = models.DateField(blank=True, null=True)
     
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}'s Client Profile"

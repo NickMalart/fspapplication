@@ -75,7 +75,7 @@
 <script setup lang="ts">
 import { ref, computed, defineProps, defineEmits } from 'vue';
 import ComponentCard from '@/components/common/ComponentCard.vue';
-import UserPersonalInformationAdminModal from '@/components/administration/accounts/UserPersonalInformationAdminmodal.vue';
+import UserPersonalInformationAdminModal from '@/components/administration/accounts/UserPersonalInformationAdminModal.vue';
 import { useUserProfileAdminStore } from '@/stores/userProfileAdminStore';
 import type { UserProfileAdmin } from '@/stores/userProfileAdminStore';
 import type { PropType } from 'vue';

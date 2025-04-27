@@ -100,11 +100,23 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Client Since</label>
-            <input
-              type="date"
-              v-model="localClientData.clientSince"
-              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:bg-gray-800 dark:text-white dark:border-gray-700"
-            />
+            <div class="relative date-picker-wrapper">
+              <input
+                type="date"
+                ref="clientSinceInput"
+                v-model="localClientData.clientSince"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:bg-gray-800 dark:text-white dark:border-gray-700 appearance-none"
+              />
+              <div
+                class="absolute right-4 top-1/2 transform -translate-y-1/2 cursor-pointer"
+                @click="focusClientSincePicker"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Format: MM/DD/YYYY</p>
           </div>
           
           <!-- Form Actions -->
@@ -222,7 +234,7 @@ interface ClientProfileData {
   companyName?: string;
   companyNameId?: string;
   industry?: string | null;
-  clientSince?: string; // Date as string in YYYY-MM-DD format
+  clientSince?: string | null; // Allow string or null
 }
 
 interface EmployeeProfileData {
@@ -269,7 +281,7 @@ const localClientData = ref<ClientProfileData>({
   companyName: props.clientProfileData?.companyName || '',
   companyNameId: props.clientProfileData?.companyNameId || '',
   industry: props.clientProfileData?.industry || null,
-  clientSince: props.clientProfileData?.clientSince || new Date().toISOString().split('T')[0]
+  clientSince: props.clientProfileData?.clientSince || null
 });
 const localEmployeeData = ref<EmployeeProfileData>({ ...props.employeeProfileData });
 
@@ -281,15 +293,17 @@ const isLoadingClients = ref(false);
 const tenantCompany = ref<CompanyProfile | null>(null);
 const isLoadingCompany = ref(false);
 
-// Add ref for start date input
+// Add refs for date inputs
 const startDateInput = ref<HTMLInputElement | null>(null);
+const clientSinceInput = ref<HTMLInputElement | null>(null); // Added ref for client since
 
 // Function to fetch clients
 const fetchClients = async () => {
   isLoadingClients.value = true;
   
   try {
-    const response = await clientService.getClients({ status: 'active' });
+    // Request a larger page size to get more clients for the dropdown
+    const response = await clientService.getClients({ status: 'active', pageSize: 100 }); 
     clients.value = response.results;
   } catch (error) {
     // TODO: Add user-facing error message
@@ -315,6 +329,13 @@ const fetchTenantCompany = async () => {
 const focusStartDatePicker = () => {
   if (startDateInput.value) {
     startDateInput.value.showPicker();
+  }
+};
+
+// Function to focus client since date picker
+const focusClientSincePicker = () => {
+  if (clientSinceInput.value) {
+    clientSinceInput.value.showPicker();
   }
 };
 
@@ -344,6 +365,20 @@ const getTitle = () => {
   return 'User Profile';
 };
 
+// Helper function to format date to YYYY-MM-DD or return undefined
+const formatDateForInput = (dateString: string | null | undefined): string | undefined => {
+  if (!dateString) return undefined;
+  try {
+    const date = new Date(dateString);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
+    }
+  } catch (e) {
+    console.error('Error parsing date:', e);
+  }
+  return undefined; // Return undefined if invalid or parsing fails
+};
+
 // Event handlers
 const handleClose = () => {
   emit('close');
@@ -363,6 +398,8 @@ const handleClientSubmit = () => {
   // Create the data to send to the parent component
   const clientData = {
     ...localClientData.value,
+    // Format date before emitting - needs to be string | null for ClientProfileData
+    clientSince: formatDateForInput(localClientData.value.clientSince) || null, 
     // Include the client name for display purposes
     companyName: localClientData.value.companyName,
     companyNameId: localClientData.value.companyNameId
@@ -372,7 +409,11 @@ const handleClientSubmit = () => {
 };
 
 const handleEmployeeSubmit = () => {
-  emit('save:employee', localEmployeeData.value);
+  const employeeData = {
+      ...localEmployeeData.value,
+      startDate: formatDateForInput(localEmployeeData.value.startDate) // Format date before emitting
+  };
+  emit('save:employee', employeeData);
 };
 
 // Fetch necessary data when component is mounted
@@ -395,7 +436,8 @@ watch(() => props.clientProfileData, (newData) => {
     companyName: newData?.companyName || '',
     companyNameId: newData?.companyNameId || '',
     industry: newData?.industry || null,
-    clientSince: newData?.clientSince || new Date().toISOString().split('T')[0]
+    // Format date on init/watch - ensure it remains string | null
+    clientSince: formatDateForInput(newData?.clientSince) || null 
    };
 }, { deep: true });
 
@@ -404,6 +446,7 @@ watch(() => props.employeeProfileData, (newData) => {
   // Ensure companyName is copied correctly, even if initially null/undefined
   localEmployeeData.value = { 
       ...newData,
+      startDate: formatDateForInput(newData?.startDate), // Format date on init/watch
       companyName: newData?.companyName || '' 
   };
   console.log('[EditUserTypeProfileAdminModal] Watcher - updated localEmployeeData:', JSON.parse(JSON.stringify(localEmployeeData.value)));
