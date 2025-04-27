@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.db import models
 from django.utils import timezone
+from company.models import Company
 
 
 class CustomUserManager(UserManager):
@@ -36,6 +37,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     is_active = models.BooleanField(default=True)
     is_tenant_owner = models.BooleanField(default=False, help_text="Designates whether this user is the owner of the tenant")
+
+    USER_TYPE_CHOICES = (
+        ('agent', 'Agent'),
+        ('client', 'Client'),
+        ('employee', 'Employee'),
+    )
+    user_type = models.CharField(
+        max_length=10,
+        choices=USER_TYPE_CHOICES,
+        blank=True, # Allow blank initially, might be set later
+        null=True,  # Allow null initially
+        help_text="Type of the user profile (Agent, Client, or Employee)"
+    )
 
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(blank=True, null=True)
@@ -150,8 +164,35 @@ class EmployeeProfile(models.Model):
         related_name='subordinates'
     )
     
+    def save(self, *args, **kwargs):
+        """Automatically assign the singleton company before saving."""
+        # Ensure the company_name is set to the singleton Company instance
+        # Only if it's not already set or if it's a new instance
+        if not self.company_name_id:
+            try:
+                # Use the get_solo method from the Company model
+                tenant_company = Company.get_solo()
+                self.company_name = tenant_company
+            except Company.DoesNotExist:
+                # Handle the case where the company doesn't exist yet?
+                # This shouldn't happen if the Company is truly a singleton
+                # Maybe raise an error or log a warning
+                print("WARNING: Singleton Company does not exist while saving EmployeeProfile.")
+                # Depending on requirements, you might want to prevent saving:
+                # raise ValidationError("Cannot save EmployeeProfile: Tenant Company not found.")
+                pass # Or allow saving without company if that's acceptable
+        
+        super().save(*args, **kwargs) # Call the original save method
+    
     def __str__(self):
-        return f"{self.user.first_name} {self.user.last_name} - {self.company_name.name}"
+        # Use try-except for company_name in case it's not set (though save should handle it)
+        company_display_name = "Unknown Company"
+        try:
+            if self.company_name:
+                company_display_name = self.company_name.name
+        except Company.DoesNotExist: # Handle potential RelatedObjectDoesNotExist
+            pass 
+        return f"{self.user.first_name} {self.user.last_name} - {company_display_name}"
     
     class Meta:
         verbose_name = 'Employee Profile'

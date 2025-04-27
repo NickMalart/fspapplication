@@ -131,12 +131,11 @@
         <form v-else-if="isEmployee" @submit.prevent="handleEmployeeSubmit" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Company Name</label>
-            <input
-              type="text"
-              v-model="localEmployeeData.companyName"
-              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:bg-gray-800 dark:text-white dark:border-gray-700"
-              disabled
-            />
+            <!-- Display fetched tenant company name -->
+            <p class="mt-1 block w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700">
+              <span v-if="isLoadingCompany">Loading...</span>
+              <span v-else>{{ tenantCompany?.name || 'Tenant Company Not Found' }}</span> 
+            </p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Department</label>
@@ -198,6 +197,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { clientService, type Client } from '@/service/clientService';
+import { companyService, type CompanyProfile } from '@/service/companyService';
 
 // Define interfaces for the different profile types
 interface AgentProfileData {
@@ -265,6 +265,10 @@ const localEmployeeData = ref<EmployeeProfileData>({ ...props.employeeProfileDat
 const clients = ref<Client[]>([]);
 const isLoadingClients = ref(false);
 
+// State for tenant company details
+const tenantCompany = ref<CompanyProfile | null>(null);
+const isLoadingCompany = ref(false);
+
 // Function to fetch clients
 const fetchClients = async () => {
   isLoadingClients.value = true;
@@ -276,6 +280,19 @@ const fetchClients = async () => {
     // TODO: Add user-facing error message
   } finally {
     isLoadingClients.value = false;
+  }
+};
+
+// Function to fetch tenant company details
+const fetchTenantCompany = async () => {
+  isLoadingCompany.value = true;
+  try {
+    tenantCompany.value = await companyService.getCompanyProfile();
+  } catch (error) {
+    console.error("Failed to load company details for modal display.");
+    // Handle error appropriately - maybe show a default or error message
+  } finally {
+    isLoadingCompany.value = false;
   }
 };
 
@@ -336,11 +353,38 @@ const handleEmployeeSubmit = () => {
   emit('save:employee', localEmployeeData.value);
 };
 
-// Fetch clients when component is mounted
+// Fetch necessary data when component is mounted
 onMounted(() => {
   if (isClient.value) {
     fetchClients();
   }
+  if (isEmployee.value) {
+    fetchTenantCompany(); // Fetch company details if editing an employee
+  }
 });
+
+// Watch for changes in the specific profile data props and update local state
+watch(() => props.agentProfileData, (newData) => {
+  localAgentData.value = { ...newData };
+}, { deep: true });
+
+watch(() => props.clientProfileData, (newData) => {
+  localClientData.value = { 
+    companyName: newData?.companyName || '',
+    companyNameId: newData?.companyNameId || '',
+    industry: newData?.industry || null,
+    clientSince: newData?.clientSince || new Date().toISOString().split('T')[0]
+   };
+}, { deep: true });
+
+watch(() => props.employeeProfileData, (newData) => {
+  console.log('[EditUserTypeProfileAdminModal] Watcher - newData:', JSON.parse(JSON.stringify(newData)));
+  // Ensure companyName is copied correctly, even if initially null/undefined
+  localEmployeeData.value = { 
+      ...newData,
+      companyName: newData?.companyName || '' 
+  };
+  console.log('[EditUserTypeProfileAdminModal] Watcher - updated localEmployeeData:', JSON.parse(JSON.stringify(localEmployeeData.value)));
+}, { deep: true });
 </script>
 

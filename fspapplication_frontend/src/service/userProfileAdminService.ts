@@ -36,8 +36,8 @@ export const userProfileAdminService = {
         delete convertedData.functional_groups;
       }
       
-      // Use apiClient and relative path
-      const response = await apiClient.put(`account/users/${userId}/`, convertedData);
+      // Use apiClient and relative path - Changed to PATCH
+      const response = await apiClient.patch(`account/users/${userId}/`, convertedData);
       return convertObjectKeysToCamel(response.data);
     } catch (error) {
       // TODO: Implement proper error handling
