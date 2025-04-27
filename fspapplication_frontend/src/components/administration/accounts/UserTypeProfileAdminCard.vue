@@ -454,11 +454,19 @@ const changeUserType = async () => {
       } as EmployeeProfile;
     }
 
+    // --- BEGIN DEBUG LOGS ---
+    console.log('[UserTypeProfileAdminCard] changeUserType - Tenant Company Value:', tenantCompany.value);
+    console.log('[UserTypeProfileAdminCard] changeUserType - Payload being sent:', JSON.parse(JSON.stringify({
+      userType: updatedUser.userType,
+      agentProfile: updatedUser.agentProfile,
+      clientProfile: updatedUser.clientProfile,
+      employeeProfile: updatedUser.employeeProfile,
+    })));
+    // --- END DEBUG LOGS ---
+
     // Save to the database using the service
     // Using patchUserProfile might be better if the backend supports partial updates robustly
     // For now, using updateUser as it seems intended to replace the whole user object structure
-    // await userProfileAdminService.updateUserProfile(String(props.userData.id), updatedUser);
-    // Using patch ensures other user fields (like email, name) are not accidentally cleared
     await userProfileAdminService.patchUserProfile(String(props.userData.id), {
       userType: updatedUser.userType,
       agentProfile: updatedUser.agentProfile,
@@ -570,23 +578,27 @@ const handleEmployeeSave = async (updatedData: EmployeeProfileData) => {
   isSaving.value = true;
   try {
     // Create a properly typed employee profile object
-    // Ensure companyName is included, potentially using tenantCompany as fallback if not provided
-    const finalCompanyName = updatedData.companyName || tenantCompany.value?.name || '';
+    // EXCLUDE companyName as it's read-only on the backend serializer
+    // const finalCompanyName = updatedData.companyName || tenantCompany.value?.name || '';
     const employeeProfile = {
-      companyName: finalCompanyName,
+      // companyName: finalCompanyName, // DO NOT SEND read-only field
       department: updatedData.department || '',
       employeeId: updatedData.employeeId || null,
       jobTitle: updatedData.jobTitle || null,
       startDate: updatedData.startDate || new Date().toISOString().split('T')[0],
       reportsTo: updatedData.reportsTo || null
     };
-    
+
     // Create the updated user object with just the employee profile
-    const updatedUser = { 
+    const updatedUser = {
       // id: String(props.userData.id), // ID is in URL
       employeeProfile,
     };
-        
+
+    // --- BEGIN DEBUG LOG ---
+    console.log('[UserTypeProfileAdminCard] handleEmployeeSave - Payload being sent:', JSON.parse(JSON.stringify(updatedUser)));
+    // --- END DEBUG LOG ---
+
     // Save to the database using the service
     if (props.userData.id) {
       // Use patchUserProfile to only send the relevant profile data
@@ -600,10 +612,14 @@ const handleEmployeeSave = async (updatedData: EmployeeProfileData) => {
       console.error("Cannot save profile: User ID is missing.");
       throw new Error("User ID is missing."); // Prevent modal closing
     }
-    
+
     showEditForm.value = false; // Close modal on success
   } catch (error: any) {
     console.error("Error saving employee profile:", error);
+    // Log detailed error response from backend if available
+    if (error.response && error.response.data) {
+      console.error("Backend validation error:", error.response.data);
+    }
     // Optional: Add user feedback
     // alert(`Failed to save employee profile: ${error.message}`);
     // Keep the modal open on error

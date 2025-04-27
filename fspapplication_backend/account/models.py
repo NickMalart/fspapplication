@@ -152,10 +152,10 @@ class EmployeeProfile(models.Model):
         limit_choices_to={'user_type': 'employee'}
     )
     company_name = models.ForeignKey('company.Company', on_delete=models.CASCADE, related_name='employees')
-    department = models.CharField(max_length=100)
+    department = models.CharField(max_length=100, blank=True, null=True)
     employee_id = models.CharField(max_length=50, blank=True, null=True)
     job_title = models.CharField(max_length=100, blank=True, null=True)
-    start_date = models.DateField(default=timezone.now)
+    start_date = models.DateField(blank=True, null=True)
     reports_to = models.ForeignKey(
         'self',
         on_delete=models.SET_NULL,
