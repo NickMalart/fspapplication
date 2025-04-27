@@ -163,11 +163,23 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Start Date</label>
-            <input
-              type="date"
-              v-model="localEmployeeData.startDate"
-              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:bg-gray-800 dark:text-white dark:border-gray-700"
-            />
+            <div class="relative date-picker-wrapper">
+              <input
+                type="date"
+                ref="startDateInput"
+                v-model="localEmployeeData.startDate"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:bg-gray-800 dark:text-white dark:border-gray-700 appearance-none"
+              />
+              <div 
+                class="absolute right-4 top-1/2 transform -translate-y-1/2 cursor-pointer" 
+                @click="focusStartDatePicker"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Format: MM/DD/YYYY</p> 
           </div>
           
           <!-- Form Actions -->
@@ -269,6 +281,9 @@ const isLoadingClients = ref(false);
 const tenantCompany = ref<CompanyProfile | null>(null);
 const isLoadingCompany = ref(false);
 
+// Add ref for start date input
+const startDateInput = ref<HTMLInputElement | null>(null);
+
 // Function to fetch clients
 const fetchClients = async () => {
   isLoadingClients.value = true;
@@ -293,6 +308,13 @@ const fetchTenantCompany = async () => {
     // Handle error appropriately - maybe show a default or error message
   } finally {
     isLoadingCompany.value = false;
+  }
+};
+
+// Add function to focus start date picker
+const focusStartDatePicker = () => {
+  if (startDateInput.value) {
+    startDateInput.value.showPicker();
   }
 };
 
@@ -387,4 +409,27 @@ watch(() => props.employeeProfileData, (newData) => {
   console.log('[EditUserTypeProfileAdminModal] Watcher - updated localEmployeeData:', JSON.parse(JSON.stringify(localEmployeeData.value)));
 }, { deep: true });
 </script>
+
+<!-- Add scoped styles -->
+<style scoped>
+/* Improve date picker styling for different browsers */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+}
+
+/* Ensure clicking anywhere in the date picker wrapper activates the date input */
+.date-picker-wrapper {
+  position: relative;
+}
+
+/* Override browser default styling */
+input[type="date"] {
+  color-scheme: light dark;
+}
+
+/* Fix date picker text color in dark mode */
+.dark input[type="date"] {
+  color: rgb(229 231 235); /* Equivalent to text-gray-200 */
+}
+</style>
 
