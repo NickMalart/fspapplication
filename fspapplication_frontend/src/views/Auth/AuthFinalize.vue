@@ -30,24 +30,19 @@ const errorMessage = ref<string | null>(null);
 onMounted(async () => {
   const token = route.query.token as string | undefined;
 
-  console.log('AuthFinalize mounted. Token from query:', token);
-
   if (!token) {
     errorMessage.value = 'Authentication token missing. Please try logging in again.';
-    console.error('Finalization failed: Token missing from URL query parameters.');
     return;
   }
 
   try {
     // 1. Call the actual backend API to finalize authentication
-    console.log(`Calling finalize API with token: ${token}`);
     const response = await apiClient.get('/account/auth/finalize/', { // Use the correct path relative to baseURL '/api'
         params: { token } // Pass token as query parameter
     });
 
     const apiResponse = response.data; // Axios puts response data in .data
-    console.log('API call successful. Response:', apiResponse);
-    
+
     // Check for expected fields in the response (using camelCase keys)
     if (!apiResponse.accessToken || !apiResponse.refreshToken || !apiResponse.user || !apiResponse.tenantSchemaName) {
         throw new Error('Incomplete data received from finalization API.');
@@ -62,11 +57,9 @@ onMounted(async () => {
     authStore.setTenant(apiResponse.tenantSchemaName); 
 
     // 3. Redirect to the dashboard or intended page
-    console.log('Authentication successful. Redirecting to dashboard...');
     router.push({ name: 'Dashboard' }); // Adjust route name if needed
 
   } catch (error: any) {
-    console.error('Error during authentication finalization:', error);
     // Extract more specific error from Axios if available
     const backendError = error.response?.data?.error || error.message || 'An unknown error occurred.';
     errorMessage.value = `Login failed: ${backendError}. Please try again.`;

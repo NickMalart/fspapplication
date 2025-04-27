@@ -36,20 +36,16 @@ const goToLogin = () => {
 };
 
 onMounted(() => {
-  console.log('AuthCallback mounted. Processing redirect from backend...');
-
   // --- Read data from URL query parameters ---
   const status = route.query.status as string | undefined;
   const tempToken = route.query.temp_token as string | undefined;
   const tenantsJson = route.query.tenants as string | undefined;
   const errorParam = route.query.error as string | undefined; // Check for errors passed from backend redirect
 
-  console.log('Query Params:', { status, tempToken, tenantsJson, errorParam });
-
   // Handle potential errors passed from backend
   if (errorParam) {
       errorMessage.value = `Authentication failed: ${errorParam}. Please try again or contact support.`;
-      console.error('Error received from backend redirect:', errorParam);
+      // Optionally redirect automatically after a delay
       // setTimeout(goToLogin, 5000);
       return;
   }
@@ -64,7 +60,6 @@ onMounted(() => {
         // Parse the JSON string back into an array
         const tenants = JSON.parse(tenantsJson);
 
-        console.log('Status: select_tenant. Storing temp token and tenants, redirecting to selection.');
         authStore.setTenantSelectionInfo(tenants, tempToken);
         router.push('/select-tenant');
         break;
@@ -75,7 +70,6 @@ onMounted(() => {
       //   const refreshToken = route.query.refresh_token as string | undefined;
       //   const tenantSchema = route.query.tenant_schema_name as string | undefined;
       //   if (!accessToken || !refreshToken) throw new Error('Missing tokens in redirect.');
-      //   console.log('Status: success. Storing tokens and redirecting to dashboard.');
       //   authStore.setToken({ access: accessToken, refresh: refreshToken });
       //   if (tenantSchema) authStore.setTenant(tenantSchema);
       //   router.push('/dashboard');
@@ -85,13 +79,13 @@ onMounted(() => {
         throw new Error(`Unexpected status received in redirect: ${status || 'missing'}`);
     }
   } catch (error) {
-      console.error('Error processing redirect parameters:', error);
-      // Try to decode JSON parsing errors specifically
+      // Handle potential errors during parameter processing
       if (error instanceof SyntaxError && tenantsJson) {
            errorMessage.value = 'Failed to parse tenant data from redirect. Please try again.';
       } else {
           errorMessage.value = error instanceof Error ? error.message : 'An unexpected error occurred processing login. Please try again.';
       }
+      // Optionally redirect automatically after a delay
       // setTimeout(goToLogin, 5000);
   }
 });

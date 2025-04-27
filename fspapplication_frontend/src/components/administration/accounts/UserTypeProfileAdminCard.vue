@@ -103,7 +103,7 @@
 
       <!-- No profile type detected -->
       <div v-else class="py-4 text-center text-gray-500 dark:text-gray-400">
-        No specific profile type detected for this user (Type: {{ userTypeDebug }}). <br>
+        No specific profile type detected for this user (Type: {{ userData?.userType || 'undefined' }}). <br>
         Please ensure the user account is properly configured with one of the following types: agent, client, or employee.
       </div>
 
@@ -139,7 +139,7 @@
     <UserTypeProfileEditModal
       v-if="showEditForm && userData"
       :userData="userData"
-      :userType="userTypeDebug"
+      :userType="userData?.userType || 'undefined'"
       :agentProfileData="agentProfileData"
       :clientProfileData="clientProfileData"
       :employeeProfileData="employeeProfileData"
@@ -299,10 +299,8 @@ const fetchTenantCompany = async () => {
   isLoadingCompany.value = true;
   try {
     tenantCompany.value = await companyService.getCompanyProfile();
-    console.log('[UserTypeProfileAdminCard] Fetched Tenant Company:', tenantCompany.value);
   } catch (error) {
-    console.error("[UserTypeProfileAdminCard] Failed to load company details.");
-    // Handle error appropriately - maybe show a user message?
+    // TODO: Handle error appropriately - maybe show a user message?
   } finally {
     isLoadingCompany.value = false;
   }
@@ -338,11 +336,6 @@ const formatDate = (dateString?: string) => {
   }
 };
 
-// For debugging
-const userTypeDebug = computed(() => {
-  return props.userData?.userType || 'undefined';
-});
-
 // Improved computed properties to check user type with more flexibility
 const isAgent = computed(() => {
   const userType = props.userData?.userType;
@@ -364,18 +357,11 @@ const getProfileTitle = () => {
   if (isAgent.value) return 'Agent Profile Information';
   if (isClient.value) return 'Client Profile Information';
   if (isEmployee.value) return 'Employee Profile Information';
-  return `Profile Information (Type: ${userTypeDebug.value})`;
+  return `Profile Information (Type: ${props.userData?.userType || 'undefined'})`;
 };
 
 // Initialize profile data based on user type
 const initializeProfileData = () => {
-  console.log('[Card Init] initializeProfileData called.'); // Log function entry
-
-  // Log the conditions being checked
-  console.log(`[Card Init] isAgent: ${isAgent.value}, has agentProfile: ${!!props.userData.agentProfile}`);
-  console.log(`[Card Init] isClient: ${isClient.value}, has clientProfile: ${!!props.userData.clientProfile}`);
-  console.log(`[Card Init] isEmployee: ${isEmployee.value}, has employeeProfile: ${!!props.userData.employeeProfile}`);
-  
   // Explicitly reset all local profile refs first
   agentProfileData.value = {};
   clientProfileData.value = {};
@@ -398,25 +384,18 @@ const initializeProfileData = () => {
       abn: profile.abn || '',
       yearsOfExperience: profile.yearsOfExperience || 0
     };
-    console.log('[Card Init] Populated agentProfileData'); // Added log
   } else if (isClient.value && props.userData.clientProfile) {
-    console.log('[Card Init] Raw props.userData.clientProfile:', JSON.parse(JSON.stringify(props.userData.clientProfile)));
     // Convert any snake_case keys to camelCase
     const profile = convertObjectKeysToCamel(props.userData.clientProfile);
-    console.log('[Card Init] CamelCased profile:', JSON.parse(JSON.stringify(profile)));
     clientProfileData.value = { 
       companyName: profile.companyName || '',
       companyNameId: profile.companyNameId || '', // Check if this is present
       industry: profile.industry || null,
       clientSince: profile.clientSince || ''
     };
-    console.log('[Card Init] Final clientProfileData ref (passed to modal):', JSON.parse(JSON.stringify(clientProfileData.value)));
-    console.log('[Card Init] Populated clientProfileData'); // Added log
   } else if (isEmployee.value && props.userData.employeeProfile) {
-    console.log('[Card Init] Raw props.userData.employeeProfile:', JSON.parse(JSON.stringify(props.userData.employeeProfile))); // Added log
     // Convert any snake_case keys to camelCase
     const profile = convertObjectKeysToCamel(props.userData.employeeProfile);
-    console.log('[Card Init] CamelCased employee profile:', JSON.parse(JSON.stringify(profile))); // Added log
     employeeProfileData.value = { 
       companyName: profile.companyName || '',
       department: profile.department || '',
@@ -425,7 +404,6 @@ const initializeProfileData = () => {
       startDate: profile.startDate || '',
       reportsTo: profile.reportsTo || null
     };
-    console.log('[Card Init] Populated employeeProfileData'); // Added log
     // If company name is missing in profile but we fetched it, update
     if (!employeeProfileData.value.companyName && tenantCompany.value?.name) {
       employeeProfileData.value.companyName = tenantCompany.value.name;
@@ -469,19 +447,8 @@ const changeUserType = async () => {
       } as EmployeeProfile;
     }
 
-    // --- BEGIN DEBUG LOGS ---
-    console.log('[UserTypeProfileAdminCard] changeUserType - Tenant Company Value:', tenantCompany.value);
-    console.log('[UserTypeProfileAdminCard] changeUserType - Payload being sent:', JSON.parse(JSON.stringify({
-      userType: updatedUser.userType,
-      agentProfile: updatedUser.agentProfile,
-      clientProfile: updatedUser.clientProfile,
-      employeeProfile: updatedUser.employeeProfile,
-    })));
-    // --- END DEBUG LOGS ---
-
     // Save to the database using the service
     // Using patchUserProfile might be better if the backend supports partial updates robustly
-    // For now, using updateUser as it seems intended to replace the whole user object structure
     await userProfileAdminService.patchUserProfile(String(props.userData.id), {
       userType: updatedUser.userType,
       agentProfile: updatedUser.agentProfile,
@@ -497,8 +464,7 @@ const changeUserType = async () => {
 
     showChangeTypeConfirm.value = false;
   } catch (error) {
-    console.error("Error changing user type:", error);
-    // Add user feedback for the error
+    // TODO: Add user feedback for the error
   } finally {
     isChangingType.value = false;
   }
@@ -516,9 +482,7 @@ const handleAgentSave = async (updatedData: AgentProfileData) => {
     };
     
     // Create the updated user object with the new agent profile data
-    // Only include the profile type being saved
-    const updatedUser = { 
-      // id: String(props.userData.id), // ID is in URL
+    const updatedUser = {
       agentProfile,
     };
     
@@ -528,19 +492,15 @@ const handleAgentSave = async (updatedData: AgentProfileData) => {
       await userProfileAdminService.patchUserProfile(String(props.userData.id), updatedUser);
        // Fetch the user again to get the complete, updated state
       const refreshedUser = await userProfileAdminService.getUserProfile(String(props.userData.id));
-      console.log('[UserTypeProfileAdminCard] Refreshed User (after patch):', JSON.parse(JSON.stringify(refreshedUser))); // Log the data
       // Emit the full refreshed user data
       emit('update:user', refreshedUser);
     } else {
-      console.error("Cannot save profile: User ID is missing.");
       throw new Error("User ID is missing."); // Prevent modal closing
     }
     
     showEditForm.value = false; // Close modal on success
   } catch (error: any) {
-    console.error("Error saving agent profile:", error);
-    // Optional: Add user feedback (e.g., toast notification)
-    // alert(`Failed to save agent profile: ${error.message}`); 
+    // TODO: Optional: Add user feedback (e.g., toast notification)
     // Keep the modal open on error
   } finally {
     isSaving.value = false;
@@ -559,8 +519,7 @@ const handleClientSave = async (updatedData: ClientProfileData) => {
     };
     
     // Create the updated user object with just the client profile
-    const updatedUser = { 
-      // id: String(props.userData.id), // ID is in URL
+    const updatedUser = {
       clientProfile,
     };
         
@@ -570,20 +529,16 @@ const handleClientSave = async (updatedData: ClientProfileData) => {
       await userProfileAdminService.patchUserProfile(String(props.userData.id), updatedUser);
       // Fetch the user again to get the complete, updated state
       const refreshedUser = await userProfileAdminService.getUserProfile(String(props.userData.id));
-      console.log('[UserTypeProfileAdminCard] Refreshed User (after patch):', JSON.parse(JSON.stringify(refreshedUser))); // Log the data
       // Emit the full refreshed user data
       emit('update:user', refreshedUser);
     } else {
-      console.error("Cannot save profile: User ID is missing.");
       throw new Error("User ID is missing."); // Prevent modal closing
     }
     
     showEditForm.value = false; // Close modal on success
   } catch (error: any) {
-    console.error("Error saving client profile:", error);
-    // Optional: Add user feedback
-    // alert(`Failed to save client profile: ${error.message}`);
-     // Keep the modal open on error
+    // TODO: Optional: Add user feedback
+    // Keep the modal open on error
   } finally {
     isSaving.value = false;
   }
@@ -594,9 +549,7 @@ const handleEmployeeSave = async (updatedData: EmployeeProfileData) => {
   try {
     // Create a properly typed employee profile object
     // EXCLUDE companyName as it's read-only on the backend serializer
-    // const finalCompanyName = updatedData.companyName || tenantCompany.value?.name || '';
     const employeeProfile = {
-      // companyName: finalCompanyName, // DO NOT SEND read-only field
       department: updatedData.department || '',
       employeeId: updatedData.employeeId || null,
       jobTitle: updatedData.jobTitle || null,
@@ -606,13 +559,8 @@ const handleEmployeeSave = async (updatedData: EmployeeProfileData) => {
 
     // Create the updated user object with just the employee profile
     const updatedUser = {
-      // id: String(props.userData.id), // ID is in URL
       employeeProfile,
     };
-
-    // --- BEGIN DEBUG LOG ---
-    console.log('[UserTypeProfileAdminCard] handleEmployeeSave - Payload being sent:', JSON.parse(JSON.stringify(updatedUser)));
-    // --- END DEBUG LOG ---
 
     // Save to the database using the service
     if (props.userData.id) {
@@ -620,23 +568,15 @@ const handleEmployeeSave = async (updatedData: EmployeeProfileData) => {
       await userProfileAdminService.patchUserProfile(String(props.userData.id), updatedUser);
        // Fetch the user again to get the complete, updated state
       const refreshedUser = await userProfileAdminService.getUserProfile(String(props.userData.id));
-      console.log('[UserTypeProfileAdminCard] Refreshed User (after patch):', JSON.parse(JSON.stringify(refreshedUser))); // Log the data
       // Emit the full refreshed user data
       emit('update:user', refreshedUser);
     } else {
-      console.error("Cannot save profile: User ID is missing.");
       throw new Error("User ID is missing."); // Prevent modal closing
     }
 
     showEditForm.value = false; // Close modal on success
   } catch (error: any) {
-    console.error("Error saving employee profile:", error);
-    // Log detailed error response from backend if available
-    if (error.response && error.response.data) {
-      console.error("Backend validation error:", error.response.data);
-    }
-    // Optional: Add user feedback
-    // alert(`Failed to save employee profile: ${error.message}`);
+    // TODO: Log detailed error response from backend if available
     // Keep the modal open on error
   } finally {
     isSaving.value = false;
@@ -653,8 +593,6 @@ watch(selectedUserType, (newType) => {
 // Initialize on mount and when userData changes
 onMounted(() => {
     initializeProfileData();
-    // Optionally fetch company details immediately if the initial type is employee
-    // Already handled within initializeProfileData
 });
 watch(() => props.userData, initializeProfileData, { deep: true });
 </script> 

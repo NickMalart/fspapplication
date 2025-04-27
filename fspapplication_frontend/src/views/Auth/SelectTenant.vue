@@ -16,7 +16,7 @@
             v-for="tenant in tenantList"
             :key="tenant.schema_name"
             @click="selectTenant(tenant)"
-            :disabled="!tempToken" 
+            :disabled="!tempToken"
             type="button"
             class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md text-lg font-semibold transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -25,11 +25,11 @@
         </div>
         <div v-else-if="isLoading">
            <p class="text-center text-gray-400">Loading tenant information...</p>
-           <!-- Add spinner maybe -->
+           <!-- Optional: Add spinner -->
         </div>
          <div v-else>
            <p class="text-center text-red-400">Could not load tenant information or no tenants assigned. Please try logging in again.</p>
-           <button 
+           <button
              @click="goToLogin"
              class="mt-4 mx-auto block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm font-semibold transition"
            >
@@ -42,7 +42,7 @@
       <!-- Right Side Image -->
       <div class="hidden lg:block">
         <img
-          :src="loginImg" 
+          :src="loginImg"
           alt="Illustration"
           class="w-[1000px] max-w-full"
         />
@@ -54,62 +54,51 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth'; // Import auth store
-import loginImg from '@/assets/103.png'; 
+import { useAuthStore } from '@/stores/auth';
+import loginImg from '@/assets/103.png';
 
-// Interface for tenant data (can be moved to a types file if preferred)
+// Interface for tenant data
 interface TenantInfo {
   name: string;
   schema_name: string;
-  domain: string | null; 
+  domain: string | null;
 }
 
 const router = useRouter();
-const authStore = useAuthStore(); // Use the auth store
-const isLoading = ref(true); // Add a loading state
+const authStore = useAuthStore();
+const isLoading = ref(true);
 
 // Computed properties to get data from the store
 const tenantList = computed(() => authStore.tenantListForSelection);
 const tempToken = computed(() => authStore.tempTokenForSelection);
 
-
 onMounted(() => {
   // Data should already be in the store, set by AuthCallback.vue
-  console.log('SelectTenant mounted. Tenant list from store:', tenantList.value);
-  console.log('SelectTenant mounted. Temp token from store:', tempToken.value);
-  isLoading.value = false; // Assume loading is done once mounted
+  isLoading.value = false;
 
   // Optional: Check if data is missing and redirect if necessary
   if (!tenantList.value || !tempToken.value) {
-      console.warn('Tenant list or temp token missing from store on SelectTenant mount.');
-      // Maybe set an error message or redirect
-      // errorMessage.value = "Missing authentication details..."; 
-      // setTimeout(goToLogin, 3000);
+      // Consider setting an error message or redirecting
+      // goToLogin();
   }
 });
 
 const selectTenant = (tenant: TenantInfo) => {
   if (!tempToken.value) {
-      console.error('Cannot select tenant: Temporary token is missing.');
-      // Show error to user?
+      // TODO: Show error to user?
       return;
   }
-  
-  console.log('Selected tenant:', tenant);
-  
+
   if (tenant.domain) {
     // Construct the finalization URL on the tenant domain
     const port = window.location.port ? `:${window.location.port}` : '';
     // Use http for localhost development, adjust protocol if needed for production
     const finalizeUrl = `http://${tenant.domain}${port}/auth/finalize/?token=${encodeURIComponent(tempToken.value)}`;
-    
-    console.log(`Redirecting to tenant finalization URL: ${finalizeUrl}`);
-    // Clear selection state *before* redirecting
-    // authStore.clearTenantSelectionInfo(); // Maybe clear *after* successful finalization?
+
+    // Consider clearing selection state *after* successful finalization?
     window.location.href = finalizeUrl; // Perform the redirect
   } else {
-    console.error(`Cannot redirect: Domain not provided for tenant ${tenant.name}`);
-    // Handle error - show a message to the user
+    // Handle configuration error - show a message to the user
     alert(`Configuration error: Domain is missing for tenant ${tenant.name}. Please contact support.`);
   }
 };

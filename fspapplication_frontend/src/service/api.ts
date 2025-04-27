@@ -22,7 +22,7 @@ function convertKeys(obj: any): any {
   return obj;
 }
 // --- End Case Conversion Utilities ---
-const API_BASE_URL = '/api'; 
+const API_BASE_URL = '/api';
 
 // Create API client instance with default configuration
 export const apiClient = axios.create({
@@ -31,13 +31,14 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  withCredentials: true, 
+  withCredentials: true,
 });
 
 // --- Request Interceptor ---
+// Adds Authorization header and Tenant header if available in the store
 apiClient.interceptors.request.use(
   (config) => {
-    const auth = useAuthStore(); 
+    const auth = useAuthStore();
     if (auth.accessToken) {
       config.headers.Authorization = `Bearer ${auth.accessToken}`;
     }
@@ -54,7 +55,8 @@ apiClient.interceptors.request.use(
 
 // --- Response Interceptor ---
 
-let isRefreshing = false; 
+// Variables for handling token refresh queueing
+let isRefreshing = false;
 let failedQueue: { resolve: (value?: any) => void; reject: (reason?: any) => void }[] = [];
 
 const processQueue = (error: any, token: string | null = null) => {
@@ -82,42 +84,39 @@ apiClient.interceptors.response.use(
 
     // --- Handle 403 Forbidden (Tenant Access Denied) ---
     if (error.response?.status === 403) {
-      
+
       // Prevent infinite loops if the original request was already the logout attempt
       const logoutPath = 'auth/logout/'; // Define the correct relative path
-      if (originalRequest.url !== logoutPath) { 
+      if (originalRequest.url !== logoutPath) {
         try {
-          // 1. Attempt to hit the backend logout endpoint using the correct relative path
-          await apiClient.get(logoutPath); // Use correct relative path
+          // 1. Attempt to hit the backend logout endpoint
+          await apiClient.get(logoutPath);
         } catch (logoutError: any) {
-          console.error("Backend logout call failed:", logoutError);
-          // Decide if you still want to clear frontend state even if backend logout fails (currently yes)
+          // Logged out on frontend even if backend call fails
         }
       }
 
-      // 2. Clear frontend auth state (do this regardless of backend logout success for immediate UI update)
-      auth.removeToken(); 
-      
-      // 3. Redirect to a base login page (using the root path '/')
-      // Define the known public hostname (consider moving to env vars or config)
-      const publicHostname = 'localhost'; 
-      const port = window.location.port ? `:${window.location.port}` : '';
-      const publicLoginUrl = `${window.location.protocol}//${publicHostname}${port}/`; // Construct the correct public URL
-      
-      console.log(`Redirecting to login page due to 403: ${publicLoginUrl}`);
-      window.location.href = publicLoginUrl; // Redirect to the correct public root path
+      // 2. Clear frontend auth state for immediate UI update
+      auth.removeToken();
 
-      // Reject the promise to stop further processing of this failed request
-      return Promise.reject(new Error('Access Denied to Tenant - Logged Out')); 
+      // 3. Redirect to a base login page (using the root path '/')
+      const publicHostname = 'localhost'; // Consider moving to env vars or config
+      const port = window.location.port ? `:${window.location.port}` : '';
+      const publicLoginUrl = `${window.location.protocol}//${publicHostname}${port}/`; // Construct the public URL
+
+      window.location.href = publicLoginUrl; // Redirect to the public root path
+
+      // Reject the promise to stop further processing
+      return Promise.reject(new Error('Access Denied to Tenant - Logged Out'));
     }
     // --- End 403 Handling ---
 
     // Existing 401 handling (potentially needs review/removal for session auth)
     if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/api/account/token/refresh/') {
-       // ... existing JWT refresh logic ...
+       // TODO: Review JWT refresh logic if session auth is primary
        // If Kinde/session auth is primary, you might want to redirect on 401 too:
-       // auth.clearAuth();
-       // window.location.href = '/login'; // Or your login path
+       // auth.removeToken();
+       // window.location.href = '/'; // Or your login path
        // return Promise.reject(new Error('Authentication Required'));
     }
 
@@ -127,13 +126,12 @@ apiClient.interceptors.response.use(
 );
 
 
-// Add isAxiosError method to the apiClient
-// This is a type-safe way to extend the AxiosInstance
+// Add isAxiosError method to the apiClient for type safety
 interface ExtendedAxiosInstance extends AxiosInstance {
   isAxiosError: typeof axios.isAxiosError;
 }
 
-// Add the method to our instance and cast it to the extended type
+// Add the method to our instance and cast it
 (apiClient as ExtendedAxiosInstance).isAxiosError = axios.isAxiosError;
 
 // Re-export with the extended type

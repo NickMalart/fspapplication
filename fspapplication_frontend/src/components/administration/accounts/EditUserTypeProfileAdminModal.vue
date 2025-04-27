@@ -301,9 +301,6 @@ const localClientData = ref<ClientProfileData>({
 });
 const localEmployeeData = ref<EmployeeProfileData>({ ...props.employeeProfileData });
 
-// Log initial local state
-console.log('[Modal Setup] Initial localClientData:', JSON.parse(JSON.stringify(localClientData.value)));
-
 // State for available clients
 const clients = ref<Client[]>([]);
 const isLoadingClients = ref(false);
@@ -319,15 +316,12 @@ const clientSinceInput = ref<HTMLInputElement | null>(null); // Added ref for cl
 // Function to fetch clients
 const fetchClients = async () => {
   isLoadingClients.value = true;
-  console.log('[fetchClients] Starting fetch...');
   try {
     // Request a larger page size to get more clients for the dropdown
     const response = await clientService.getClients({ status: 'active', pageSize: 100 });
     clients.value = response.results;
-    console.log(`[fetchClients] Fetched ${clients.value.length} clients:`, JSON.parse(JSON.stringify(clients.value)));
     // Removed the explicit ID setting from here
   } catch (error) {
-    console.error('[fetchClients] Error fetching clients:', error);
     // TODO: Add user-facing error message
   } finally {
     isLoadingClients.value = false;
@@ -340,7 +334,6 @@ const fetchTenantCompany = async () => {
   try {
     tenantCompany.value = await companyService.getCompanyProfile();
   } catch (error) {
-    console.error("Failed to load company details for modal display.");
     // Handle error appropriately - maybe show a default or error message
   } finally {
     isLoadingCompany.value = false;
@@ -442,7 +435,6 @@ watch(() => props.agentProfileData, (newData) => {
 
 // Watch client profile data - primarily for non-ID fields now
 watch(() => props.clientProfileData, (newData) => {
-  console.log('[watch props.clientProfileData] Running. newData:', JSON.parse(JSON.stringify(newData)));
   // Update non-ID fields. ID setting is handled by watchEffect.
   // Preserve the ID potentially set by watchEffect.
   // Format date if props change after mount.
@@ -453,79 +445,58 @@ watch(() => props.clientProfileData, (newData) => {
     clientSince: formatDateForInput(newData?.clientSince) || null
    };
   // Log current state but avoid setting ID here directly
-  console.log('[watch props.clientProfileData] Updated localClientData (non-ID fields only):', JSON.parse(JSON.stringify(localClientData.value)));
 }, { deep: true }); // Remove immediate: true
 
 watch(() => props.employeeProfileData, (newData) => {
-  console.log('[EditUserTypeProfileAdminModal] Watcher - newData:', JSON.parse(JSON.stringify(newData)));
   // Ensure companyName is copied correctly, even if initially null/undefined
-  localEmployeeData.value = { 
+  localEmployeeData.value = {
       ...newData,
       startDate: formatDateForInput(newData?.startDate), // Format date on init/watch
-      companyName: newData?.companyName || '' 
+      companyName: newData?.companyName || ''
   };
-  console.log('[EditUserTypeProfileAdminModal] Watcher - updated localEmployeeData:', JSON.parse(JSON.stringify(localEmployeeData.value)));
 }, { deep: true, immediate: true }); // Add immediate
 
 // Use watchEffect to synchronize the companyNameId when both props and clients are ready
 watchEffect(() => {
-  console.log(`[watchEffect] Running. isClient: ${isClient.value}, Clients loaded: ${clients.value.length > 0}, Props ID: ${props.clientProfileData?.companyNameId}`);
-
   // Ensure we are dealing with the client form, clients are loaded, and props have an ID
   if (isClient.value && clients.value.length > 0 && props.clientProfileData?.companyNameId) {
     const clientIdToSet = props.clientProfileData.companyNameId;
-    console.log(`[watchEffect] Condition met: Has client ID from props (${clientIdToSet}). Current local ID: ${localClientData.value.companyNameId}`);
 
     // Check if the client ID exists in the fetched list
     const clientExists = clients.value.some(client => client.id === clientIdToSet);
-    console.log(`[watchEffect] Does client ID ${clientIdToSet} exist in fetched clients? ${clientExists}`);
 
     if (clientExists) {
        // Only update if the ID is different from the current local state
        if (localClientData.value.companyNameId !== clientIdToSet) {
-           console.log(`[watchEffect] Setting companyNameId from props to: ${clientIdToSet}`);
            localClientData.value.companyNameId = clientIdToSet;
            // Also update the name for consistency if it wasn't updated by the other watcher
            const selectedClient = clients.value.find(c => c.id === clientIdToSet);
            if (selectedClient && localClientData.value.companyName !== selectedClient.name) {
                localClientData.value.companyName = selectedClient.name;
-               console.log(`[watchEffect] Updated companyName based on new ID to: ${selectedClient.name}`);
            }
-       } else {
-         console.log(`[watchEffect] companyNameId (${clientIdToSet}) already matches props ID. No change needed.`);
        }
     } else {
-        console.warn(`[watchEffect] Client ID ${clientIdToSet} from props not found in fetched clients list. Will reset selection if currently set.`);
         // If the ID from props isn't valid according to the fetched list, reset the selection
         if (localClientData.value.companyNameId !== '') {
-            console.log(`[watchEffect] Resetting companyNameId because ID from props (${clientIdToSet}) is invalid or not found.`);
             localClientData.value.companyNameId = '';
             localClientData.value.companyName = '';
         }
     }
   } else if (isClient.value && clients.value.length > 0 && !props.clientProfileData?.companyNameId) {
-      console.log(`[watchEffect] Condition met: Clients loaded, but props has NO client ID.`);
       // If clients are loaded but props explicitly have no ID, ensure local state is reset
       if (localClientData.value.companyNameId !== '') {
-          console.log(`[watchEffect] Resetting companyNameId as props has no ID.`);
           localClientData.value.companyNameId = '';
           localClientData.value.companyName = '';
       }
   } else if (isClient.value && clients.value.length === 0 && props.clientProfileData?.companyNameId) {
       // Handle case where props have ID but clients aren't loaded yet: pre-set the ID
       // The effect will run again when clients load to validate and potentially update the name
-      console.log(`[watchEffect] Condition met: Props has client ID (${props.clientProfileData.companyNameId}), but clients NOT loaded yet.`);
       if (localClientData.value.companyNameId !== props.clientProfileData.companyNameId) {
-          console.log(`[watchEffect] Pre-setting companyNameId to ${props.clientProfileData.companyNameId} while waiting for clients.`);
           localClientData.value.companyNameId = props.clientProfileData.companyNameId;
           // Keep existing name or name from props if available
           localClientData.value.companyName = props.clientProfileData.companyName || localClientData.value.companyName || '';
-          console.log(`[watchEffect] Pre-set localClientData:`, JSON.parse(JSON.stringify(localClientData.value)));
       }
-  } else {
-      console.log(`[watchEffect] Conditions not met for ID synchronization or reset.`);
   }
-  console.log(`[watchEffect] Finished run. Final localClientData.companyNameId: ${localClientData.value.companyNameId}`);
 });
 </script>
 
