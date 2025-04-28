@@ -448,8 +448,8 @@ const changeUserType = async () => {
     }
 
     // Save to the database using the service
-    // Using patchUserProfile might be better if the backend supports partial updates robustly
-    await userProfileAdminService.patchUserProfile(String(props.userData.id), {
+    // Using updateUserProfilePartial might be better if the backend supports partial updates robustly
+    await userProfileAdminService.updateUserProfilePartial(String(props.userData.id), {
       userType: updatedUser.userType,
       agentProfile: updatedUser.agentProfile,
       clientProfile: updatedUser.clientProfile,
@@ -488,8 +488,8 @@ const handleAgentSave = async (updatedData: AgentProfileData) => {
     
     // Save to the database using the service
     if (props.userData.id) {
-      // Use patchUserProfile to only send the relevant profile data
-      await userProfileAdminService.patchUserProfile(String(props.userData.id), updatedUser);
+      // Use updateUserProfilePartial to only send the relevant profile data
+      await userProfileAdminService.updateUserProfilePartial(String(props.userData.id), updatedUser);
        // Fetch the user again to get the complete, updated state
       const refreshedUser = await userProfileAdminService.getUserProfile(String(props.userData.id));
       // Emit the full refreshed user data
@@ -515,7 +515,7 @@ const handleClientSave = async (updatedData: ClientProfileData) => {
       companyName: updatedData.companyName || '',
       companyNameId: updatedData.companyNameId || '', // Make sure ID is included
       industry: updatedData.industry || null,
-      clientSince: updatedData.clientSince
+      clientSince: updatedData.clientSince || '' // Ensure clientSince is always a string
     };
     
     // Create the updated user object with just the client profile
@@ -525,8 +525,8 @@ const handleClientSave = async (updatedData: ClientProfileData) => {
         
     // Save to the database using the service
     if (props.userData.id) {
-      // Use patchUserProfile to only send the relevant profile data
-      await userProfileAdminService.patchUserProfile(String(props.userData.id), updatedUser);
+      // Use updateUserProfilePartial to only send the relevant profile data
+      await userProfileAdminService.updateUserProfilePartial(String(props.userData.id), updatedUser);
       // Fetch the user again to get the complete, updated state
       const refreshedUser = await userProfileAdminService.getUserProfile(String(props.userData.id));
       // Emit the full refreshed user data
@@ -548,8 +548,10 @@ const handleEmployeeSave = async (updatedData: EmployeeProfileData) => {
   isSaving.value = true;
   try {
     // Create a properly typed employee profile object
-    // EXCLUDE companyName as it's read-only on the backend serializer
+    // Include companyName based on fetched tenant data or existing profile data
+    const companyNameToUse = tenantCompany.value?.name || employeeProfileData.value.companyName || '';
     const employeeProfile = {
+      companyName: companyNameToUse, // Add companyName back for type correctness
       department: updatedData.department || '',
       employeeId: updatedData.employeeId || null,
       jobTitle: updatedData.jobTitle || null,
@@ -564,8 +566,8 @@ const handleEmployeeSave = async (updatedData: EmployeeProfileData) => {
 
     // Save to the database using the service
     if (props.userData.id) {
-      // Use patchUserProfile to only send the relevant profile data
-      await userProfileAdminService.patchUserProfile(String(props.userData.id), updatedUser);
+      // Use updateUserProfilePartial to only send the relevant profile data
+      await userProfileAdminService.updateUserProfilePartial(String(props.userData.id), updatedUser);
        // Fetch the user again to get the complete, updated state
       const refreshedUser = await userProfileAdminService.getUserProfile(String(props.userData.id));
       // Emit the full refreshed user data
